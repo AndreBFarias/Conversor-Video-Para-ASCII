@@ -17,7 +17,7 @@
 
 ---
 
-### Descricao
+### Descrição
 Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), sistema de temas Dark/Light, efeitos visuais PostFX e modos especiais como Unicode Braille (4x resolucao) e High Fidelity Texture.
 
 ---
@@ -57,7 +57,7 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 
 ---
 
-### Instalacao
+### Instalação
 
 #### AppImage (Universal - Recomendado)
 
@@ -138,7 +138,7 @@ python cli.py convert --video data_input/video.mp4 --format mp4 --quality low
 # Converter video para HTML com audio
 python cli.py convert --video data_input/video.mp4 --format html
 
-# Ver/alterar configuracao
+# Ver/alterar configuração
 python cli.py config show
 python cli.py config presets
 
