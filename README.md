@@ -26,7 +26,7 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 
 | Categoria | Funcionalidade |
 |-----------|---------------|
-| **Renderizacao** | ASCII Colorido, Pixel Art, Unicode Braille (4x res), High Fidelity |
+| **Renderização** | ASCII Colorido, Pixel Art, Unicode Braille (4x res), High Fidelity |
 | **Performance** | GPU CUDA (CuPy), Async Streams, 60+ FPS |
 | **Chroma Key** | Calibrador GTK em tempo real, Presets (Studio/Natural/Bright), Auto Seg (MediaPipe) |
 | **Edge Boost** | Realce de bordas para ASCII denso, chars especiais de borda, controle de intensidade |
@@ -36,7 +36,7 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 | **Audio Reactive** | Modulacao por frequencia (Bass/Mids/Treble) |
 | **Optical Flow** | Interpolacao de frames (15 FPS para 60 FPS) |
 | **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado, UI reorganizada |
-| **Exportacao** | TXT, MP4, GIF, HTML standalone, PNG |
+| **Exportação** | TXT, MP4, GIF, HTML standalone, PNG |
 | **Deploy** | AppImage, Flatpak, .deb |
 
 ---
@@ -162,7 +162,7 @@ Documentacao completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 
 ---
 
-### Modos de Renderizacao
+### Modos de Renderização
 
 | Modo | Descricao |
 |------|-----------|
