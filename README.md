@@ -1,11 +1,11 @@
 <div align="center">
 
 [![opensource](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](#)
-[![Licenca](https://img.shields.io/badge/licenca-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Licença](https://img.shields.io/badge/licenca-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/)
 [![GTK](https://img.shields.io/badge/GTK-3.0-green.svg)](https://www.gtk.org/)
 [![Estrelas](https://img.shields.io/github/stars/[REDACTED]/Conversor-Video-Para-ASCII.svg?style=social)](https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/stargazers)
-[![Contribuicoes](https://img.shields.io/badge/contribuicoes-bem--vindas-brightgreen.svg)](https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/issues)
+[![Contribuições](https://img.shields.io/badge/contribuicoes-bem--vindas-brightgreen.svg)](https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/issues)
 
 <div align="center">
 <div style="text-align: center;">
@@ -18,7 +18,7 @@
 ---
 
 ### Descrição
-Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), sistema de temas Dark/Light, efeitos visuais PostFX e modos especiais como Unicode Braille (4x resolucao) e High Fidelity Texture.
+Conversor de vídeo para ASCII art em tempo real com aceleração GPU (CUDA), sistema de temas Dark/Light, efeitos visuais PostFX e modos especiais como Unicode Braille (4x resolução) e High Fidelity Texture.
 
 ---
 
@@ -30,11 +30,11 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 | **Performance** | GPU CUDA (CuPy), Async Streams, 60+ FPS |
 | **Chroma Key** | Calibrador GTK em tempo real, Presets (Studio/Natural/Bright), Auto Seg (MediaPipe) |
 | **Edge Boost** | Realce de bordas para ASCII denso, chars especiais de borda, controle de intensidade |
-| **Temporal Coherence** | Reducao de flickering entre frames, threshold ajustavel |
+| **Temporal Coherence** | Redução de flickering entre frames, threshold ajustável |
 | **Efeitos PostFX** | Bloom Neon, Chromatic Aberration, Scanlines CRT, Glitch Digital |
-| **Matrix Rain** | Sistema de particulas GPU, modos Katakana/Binary/Symbols |
-| **Audio Reactive** | Modulacao por frequencia (Bass/Mids/Treble) |
-| **Optical Flow** | Interpolacao de frames (15 FPS para 60 FPS) |
+| **Matrix Rain** | Sistema de partículas GPU, modos Katakana/Binary/Symbols |
+| **Audio Reactive** | Modulação por frequência (Bass/Mids/Treble) |
+| **Optical Flow** | Interpolação de frames (15 FPS para 60 FPS) |
 | **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado, UI reorganizada |
 | **Exportação** | TXT, MP4, GIF, HTML standalone, PNG |
 | **Deploy** | AppImage, Flatpak, .deb |
@@ -62,7 +62,7 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 #### AppImage (Universal - Recomendado)
 
 ```bash
-# Baixar da pagina de releases
+# Baixar da página de releases
 chmod +x Extase_em_4R73-*.AppImage
 ./Extase_em_4R73-*.AppImage
 ```
@@ -96,7 +96,7 @@ chmod +x install.sh
 
 ### Requisitos
 
-**Obrigatorios:**
+**Obrigatórios:**
 - Python 3.10+
 - GTK 3.0
 - NumPy, OpenCV, Pillow
@@ -110,7 +110,7 @@ chmod +x install.sh
 **Opcionais:**
 - kitty/gnome-terminal (preview ASCII)
 - PortAudio (audio-reactive)
-- MediaPipe (segmentacao automatica)
+- MediaPipe (segmentação automática)
 
 ---
 
@@ -129,7 +129,7 @@ python3 main.py
 ```bash
 source venv/bin/activate
 
-# Diagnostico do sistema
+# Diagnóstico do sistema
 python cli.py info
 
 # Converter video para MP4
@@ -146,17 +146,17 @@ python cli.py config presets
 python cli.py validate --video data_input/video.mp4
 ```
 
-Documentacao completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
+Documentação completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 
 ---
 
 ### Atalhos do Calibrador
 
-| Tecla | Acao |
+| Tecla | Ação |
 |-------|------|
 | A | Auto-detectar verde |
 | R | Resetar valores |
-| S | Salvar configuracao |
+| S | Salvar configuração |
 | T | Abrir terminal externo |
 | Q/ESC | Sair |
 
@@ -164,22 +164,22 @@ Documentacao completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 
 ### Modos de Renderização
 
-| Modo | Descricao |
+| Modo | Descrição |
 |------|-----------|
 | **ASCII Colorido** | Caracteres ASCII com cores ANSI 24-bit |
 | **High Fidelity** | Mapeamento MSE de textura por bloco |
-| **Unicode Braille** | 4x resolucao usando U+2800-U+28FF |
+| **Unicode Braille** | 4x resolução usando U+2800-U+28FF |
 | **Pixel Art** | Paletas retro (GameBoy, NES, C64, PICO-8) |
-| **Matrix Rain** | Particulas com fisica GPU |
+| **Matrix Rain** | Partículas com física GPU |
 
 ---
 
 ### Efeitos PostFX
 
-- **Bloom Neon**: Brilho em areas claras
-- **Chromatic Aberration**: Separacao RGB nas bordas
+- **Bloom Neon**: Brilho em áreas claras
+- **Chromatic Aberration**: Separação RGB nas bordas
 - **Scanlines CRT**: Linhas horizontais estilo monitor antigo
-- **Glitch Digital**: Artefatos aleatorios de corrupcao
+- **Glitch Digital**: Artefatos aleatórios de corrupção
 
 ---
 
@@ -206,26 +206,26 @@ Documentacao completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 Conversor-Video-Para-ASCII/
   main.py              # Entry point (GUI GTK)
   cli.py               # CLI unificado (headless)
-  config.ini           # Configuracoes
-  install.sh           # Instalacao
-  uninstall.sh         # Desinstalacao
-  requirements.txt     # Dependencias Python
+  config.ini           # Configurações
+  install.sh           # Instalação
+  uninstall.sh         # Desinstalação
+  requirements.txt     # Dependências Python
   src/
-    app/               # Aplicacao GTK principal
+    app/               # Aplicação GTK principal
     core/              # Conversores (CPU/GPU)
     gui/               # Arquivos Glade
-  assets/              # Icones e imagens
-  docs/                # Documentacao
+  assets/              # Ícones e imagens
+  docs/                # Documentação
   tests/               # Testes (pytest)
   packaging/           # Scripts de build
 ```
 
 ---
 
-### Documentacao
+### Documentação
 
 - [Guia do CLI](docs/CLI_GUIDE.md)
-- [Referencia de Configuracao](docs/CONFIG_REFERENCE.md)
+- [Referência de Configuração](docs/CONFIG_REFERENCE.md)
 - [Guia de Presets](docs/PRESETS_REFERENCE.md)
 - [Guia de Testes](docs/TESTING_GUIDE.md)
 
@@ -233,10 +233,10 @@ Conversor-Video-Para-ASCII/
 
 ### Contribuindo
 
-Contribuicoes sao bem-vindas. Veja [CONTRIBUTING.md](docs/CONTRIBUTING.md) para detalhes.
+Contribuições são bem-vindas. Veja [CONTRIBUTING.md](docs/CONTRIBUTING.md) para detalhes.
 
 ---
 
-### Licenca
+### Licença
 
 GPLv3 - Veja [LICENSE](LICENSE) para detalhes.
