@@ -1,13 +1,16 @@
+<div align="center">
+  
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![Estrelas](https://img.shields.io/github/stars/AndreBFarias/ArteAsciiConversor.svg?style=social)](https://github.com/AndreBFarias/ArteAsciiConversor/stargazers)
 [![Contribuições](https://img.shields.io/badge/contribuições-bem--vindas-brightgreen.svg)](https://github.com/AndreBFarias/ArteAsciiConversor/issues)
-
+</div>
+<div align="center">
 <div style="text-align: center;">
   <h1 style="font-size: 2em;">Êxtase em Arte ASCII: Conversor de Vídeos para TXT</h1>
   <img src="assets/logo.png" width="200" alt="Logo">
 </div>
-
+</div>
 
 ### Descrição
 Um ritual de magia negra digital que transmuda vídeos em animações ASCII, banindo fundos verdes com chroma key e evocando silhuetas em caracteres que dançam no terminal. Perfeito pra quem anseia por arte crua, onde cada frame é um sussurro fatal de luz e sombra. Processa múltiplos vídeos de uma pasta, salva em TXT, e projeta no terminal com loop eterno se desejado.
