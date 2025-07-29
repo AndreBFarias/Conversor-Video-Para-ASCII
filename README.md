@@ -63,5 +63,5 @@ Cada script é um sussurro de poder, evocando arte das sombras. Aqui, destaque p
 -configparser
 ```
 
-### Licença
-MIT – liberdade total, sem governo, sem propriedade intelectual!
+### Licença GLP
+>Livre para modificar e usar da forma que preferir desde que tudo permaneça livre.
