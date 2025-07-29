@@ -14,7 +14,7 @@ import argparse
 
 LOWER_GREEN = np.array([35, 40, 40])
 UPPER_GREEN = np.array([85, 255, 255])
-
+  
 ASCII_CHARS = "@%#*+=-:. "
 TARGET_WIDTH = 90
 TARGET_HEIGHT = 25
