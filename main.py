@@ -1,41 +1,42 @@
-# # Ritual de Magia Negra Digital: Maestro das Sombras v1.0
-# O coração do pacto, main.py. Orquestra a conversão em massa: lê config, lista todos os vídeos .mp4 na pasta de entrada, chama converter pra cada um. Rode com python3 main.py. (Sem --loop, pois foco na conversão; use player.py separadamente pra projeção.)
+#!/usr/bin/env python3
 
-# #1. Invocações: os, configparser, subprocess.
+"""
+Ponto de entrada principal (Launcher) para a Interface Gráfica (GTK).
 
-# #2. Função de Condução: Chama converter pra o vídeo via subprocess.
+Este script existe para inicializar corretamente o ambiente e executar
+o aplicativo principal a partir do módulo 'src'.
 
-# #3. Círculo Principal: Lê config, lista vídeos, executa conversão pra cada um, trata erros.
+REQUER DEPENDÊNCIAS DO 'requirements_gtk.txt'
+"""
+
 import os
-import configparser
-import subprocess
+import sys
 
-#2
-def conduzir_conversao(video):
-    cmd_converter = ["python3", "converter.py", "--video", video]
-    subprocess.run(cmd_converter, check=True)
-
-#3
 def main():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    pasta_entrada = config['Pastas']['input_dir']
-    if not os.path.exists(pasta_entrada):
-        print(f"Erro: Pasta '{pasta_entrada}' não encontrada.")
-        return
-    videos = [f for f in os.listdir(pasta_entrada) if f.endswith('.mp4')]
-    if not videos:
-        print(f"Nenhum vídeo .mp4 encontrado em '{pasta_entrada}'.")
-        return
-    for video in videos:
-        print(f"Conjurando conversão para '{video}'...")
-        try:
-            conduzir_conversao(video)
-            print(f"Conversão de '{video}' concluída.")
-        except subprocess.CalledProcessError as e:
-            print(f"Conversão falhou para '{video}': {e}")
+    """
+    Configura o ambiente e inicia a aplicação principal.
+    """
+    # Adiciona a raiz do projeto ao sys.path para garantir que 'src' seja importável
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, project_root)
 
-if __name__ == '__main__':
+    try:
+        # Importa e executa a lógica principal da aplicação
+        from src.main import run_app
+        run_app()
+    except ImportError as e:
+        # Erro comum se 'PyGObject' não estiver instalado
+        if "gi" in str(e):
+            print("Erro Crítico: Não foi possível importar 'gi' (PyGObject).", file=sys.stderr)
+            print("Esta interface gráfica é opcional.", file=sys.stderr)
+            print("Execute: pip install -r requirements_gtk.txt", file=sys.stderr)
+            print("(Isso pode exigir dependências de sistema via 'apt')", file=sys.stderr)
+        else:
+            print(f"Erro Crítico: Não foi possível importar o módulo 'src'.\n{e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Erro inesperado no launcher: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
     main()
-
-# "A ordem nasce do caos." - Friedrich Nietzsche, filósofo sombrio, abençoando nosso código aberto.
