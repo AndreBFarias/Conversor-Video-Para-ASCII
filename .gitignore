@@ -1,0 +1,23 @@
+#2
+
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+.env/
+
+# Pastas de Dados (Não rastrear mídia)
+videos_entrada/
+videos_saida/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+
+# Build/Dist
+build/
+dist/
+*.egg-info/
+
+# IDE/Config
+.vscode/

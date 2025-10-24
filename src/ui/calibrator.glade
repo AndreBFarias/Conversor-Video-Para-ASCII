@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkBox" id="calibrator_box">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">6</property>
+    <property name="margin-start">10</property>
+    <property name="margin-end">10</property>
+    <property name="margin-top">10</property>
+    <property name="margin-bottom">10</property>
+    <child>
+      <object class="GtkImage" id="camera_image">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="stock">gtk-missing-image</property>
+        <property name="icon-size">6</property>
+        <property name="width_request">640</property>
+        <property name="height_request">480</property>
+      </object>
+      <packing>
+        <property name="expand">True</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkGrid">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="row-spacing">5</property>
+        <property name="column-spacing">10</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">H Min (Matiz):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">H Max (Matiz):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="h_min">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">179</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="h_max">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">179</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">S Min (Saturação):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="s_min">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">255</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">S Max (Saturação):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="s_max">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">255</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">V Min (Valor/Brilho):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="v_min">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">255</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">V Max (Valor/Brilho):</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScale" id="v_max">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="adjustment">
+              <object class="GtkAdjustment">
+                <property name="upper">255</property>
+                <property name="step-increment">1</property>
+                <property name="page-increment">10</property>
+              </object>
+            </property>
+            <property name="digits">0</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">5</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
+</interface>
