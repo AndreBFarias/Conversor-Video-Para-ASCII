@@ -1,113 +1,97 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
-#1
-Ponto de entrada do Player ASCII (Linha de Comando).
+Ponto de entrada (CLI) para o Player ASCII.
 
-Permite executar o player diretamente do terminal, com loop por padrão.
-Uso "Prático": Se nenhum arquivo for fornecido, ele reproduz
-automaticamente o arquivo .txt mais recente da pasta de saída.
+Este script é chamado pelo 'src/main.py' (GUI) para reproduzir
+um arquivo .txt em um novo terminal.
 """
 
-import argparse
-import sys
 import os
+import sys
+import argparse
 import configparser
+import time # Adicionado para a pausa
 
-# Define a raiz do projeto (um nível acima de onde este script está, se ele estivesse em 'src')
-# Mas como ele está na raiz, o BASE_DIR é o diretório atual.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.ini")
+# Adiciona a raiz do projeto ao sys.path para encontrar 'src'
+project_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, project_root)
 
-# #2. Função find_latest_file (Nova)
-def find_latest_file(config):
-    """
-    Encontra o arquivo .txt modificado mais recentemente na pasta de saída.
-    """
-    try:
-        output_dir = config.get('Pastas', 'output_dir')
-    except Exception:
-        print("Erro: 'output_dir' não encontrado no config.ini.", file=sys.stderr)
-        return None
-        
-    output_path = os.path.join(BASE_DIR, output_dir)
-    if not os.path.exists(output_path):
-        print(f"Erro: Pasta de saída '{output_path}' não existe.", file=sys.stderr)
-        return None
-
-    # Encontra todos os arquivos .txt
-    txt_files = [
-        os.path.join(output_path, f) 
-        for f in os.listdir(output_path) 
-        if f.endswith('.txt')
-    ]
-
-    if not txt_files:
-        return None
-
-    # Retorna o arquivo mais recente (baseado no tempo de modificação)
-    latest_file = max(txt_files, key=os.path.getmtime)
-    return latest_file
-
-# #3. Função main (Atualizada)
+try:
+    # AQUI OCORRE O ERRO DE IMPORTAÇÃO INICIAL
+    from src.core.player import iniciar_player
+except ImportError as e:
+    print(f"Erro fatal: Não foi possível importar 'src.core.player'.")
+    print(f"Verifique se 'src/core/player.py' existe. Erro: {e}")
+    # Imprime traceback para mais detalhes
+    import traceback
+    traceback.print_exc()
+    input("Pressione Enter para sair...")
+    sys.exit(1)
+# Restante do código de main_cli.py...
 def main():
-    # Adiciona a raiz do projeto ao sys.path para importar 'src'
-    sys.path.insert(0, BASE_DIR)
+    config = None
+    config_file = None
 
-    parser = argparse.ArgumentParser(description="Player de Animação ASCII Colorida")
-    parser.add_argument(
-        "-f", "--arquivo", 
-        required=False,  # Não é mais obrigatório
-        help="Caminho para o arquivo .txt. Se omitido, toca o arquivo mais recente."
-    )
-    parser.add_argument(
-        "--no-loop", 
-        action="store_true", 
-        help="Executa a animação apenas uma vez (o padrão é loop infinito)."
-    )
+    # --- Leitura dos Argumentos ---
+    parser = argparse.ArgumentParser(description="Player de Vídeo ASCII (CLI)")
+    parser.add_argument('-f', '--file', dest='file_path', default=None,
+                        help="Caminho do arquivo .txt para reproduzir.")
+    parser.add_argument('-l', '--loop', dest='loop', action='store_true',
+                        help="Ativa o loop da animação.")
+    parser.add_argument('--config', dest='config_path', default='config.ini',
+                        help="Caminho para o config.ini (usado para fallbacks).")
     args = parser.parse_args()
 
-    # Importa o core
-    try:
-        from src.core import iniciar_player
-    except ImportError as e:
-        print(f"Erro: Não foi possível importar o módulo 'src'.\nVerifique a estrutura de pastas. Erro: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Erro inesperado na importação: {e}", file=sys.stderr)
-        sys.exit(1)
-        
-    file_to_play = None
+    file_to_play = args.file_path
+    loop = args.loop
 
-    if args.arquivo:
-        # O usuário especificou um arquivo
-        file_to_play = args.arquivo
-    else:
-        # Lógica "Prática": Encontrar o mais recente
-        print("Nenhum arquivo especificado. Procurando o mais recente...")
-        config = configparser.ConfigParser()
-        if not config.read(CONFIG_PATH):
-             print(f"Erro: config.ini não encontrado em '{CONFIG_PATH}'", file=sys.stderr)
-             sys.exit(1)
-        
-        file_to_play = find_latest_file(config)
-        
-        if file_to_play:
-            print(f"Reproduzindo: {os.path.basename(file_to_play)}")
-        else:
-            print(f"Erro: Nenhum arquivo .txt encontrado na pasta de saída definida no config.ini.", file=sys.stderr)
-            sys.exit(1)
+    # --- Lógica de Fallback (se -f não for fornecido) ---
+    if not file_to_play:
+        print("Nenhum arquivo fornecido via -f. Lendo config.ini...")
+        if not os.path.exists(args.config_path):
+            print(f"Erro: Arquivo de configuração não encontrado: {args.config_path}")
+            input("Pressione Enter para sair...")
+            return
 
-    # Execução
+        try:
+            # --- #1. CORREÇÃO DE INTERPOLAÇÃO ---
+            config = configparser.ConfigParser(interpolation=None)
+            config.read(args.config_path, encoding='utf-8')
+
+            file_to_play = config.get('Player', 'arquivo', fallback=None)
+            if not file_to_play:
+                print("Erro: 'arquivo' não definido em [Player] no config.ini.")
+                input("Pressione Enter para sair...")
+                return
+
+            # Se o loop não foi ativado via flag, checa o config
+            if not loop:
+                loop = config.getboolean('Player', 'loop', fallback=False)
+
+        except Exception as e:
+            print(f"Erro ao ler config.ini: {e}")
+            input("Pressione Enter para sair...")
+            return
+
+    # --- Execução ---
+    if not os.path.exists(file_to_play):
+        print(f"Erro: Arquivo não encontrado: {file_to_play}")
+        input("Pressione Enter para sair...")
+        return
+
+    print(f"Reproduzindo: {file_to_play} (Loop: {loop})")
+    print("Pressione Ctrl+C para parar.")
+    time.sleep(1.5) # Pausa para o usuário ler a mensagem
+
     try:
-        # Chama o player. O loop é 'True' a menos que --no-loop seja usado.
-        iniciar_player(arquivo_path=file_to_play, loop=(not args.no_loop))
-    except FileNotFoundError:
-        print(f"Erro: Arquivo não encontrado em '{file_to_play}'", file=sys.stderr)
-    except KeyboardInterrupt:
-        print("\nPlayer finalizado pelo usuário.")
+        iniciar_player(file_to_play, loop)
     except Exception as e:
-        print(f"Erro durante a execução do player: {e}", file=sys.stderr)
+        print(f"\n--- ERRO NA REPRODUÇÃO ---")
+        print(e)
+        print("----------------------------")
+        input("Pressione Enter para sair...")
 
 if __name__ == "__main__":
     main()

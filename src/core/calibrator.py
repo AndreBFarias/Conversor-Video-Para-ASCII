@@ -1,92 +1,300 @@
-# #3. (CORRIGIDO) Importações voltam para o topo
+# -*- coding: utf-8 -*-
 import cv2
 import numpy as np
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
-import os
 import configparser
-# import argparse # Não mais necessário
-# import sys # Não mais necessário
-# import time # Não mais necessário
+import argparse
+import sys
+import os
+import time
 
-# Definição de caminhos
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UI_FILE = os.path.join(os.path.dirname(BASE_DIR), "ui", "calibrator.glade")
+# --- #1. LÓGICA IMPORTADA DO 'realtime_ascii.py' ---
 
-class CalibratorWindow(Gtk.Dialog):
-    def __init__(self, parent, config, config_path, video_path=None):
-        # (REMOVIDO) Importações atrasadas removidas daqui
+ANSI_RESET = "\033[0m"
+ANSI_CLEAR_AND_HOME = "\033[2J\033[H" 
 
-        Gtk.Dialog.__init__(self, title="Calibrador de Chroma Key", transient_for=parent, flags=0)
-        # ... (Restante do __init__ igual, usando cv2 e np diretamente) ...
-        self.config = config; self.config_path = config_path
-        self.builder = Gtk.Builder()
-        try: self.builder.add_from_file(UI_FILE)
-        except GLib.Error as e: print(f"Erro UI: {e}"); self.destroy(); return
-        self.content_area = self.get_content_area(); self.main_box = self.builder.get_object("calibrator_box")
-        self.content_area.add(self.main_box); self.builder.connect_signals(self)
-        self.add_button("Salvar e Fechar", Gtk.ResponseType.OK); self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-        self.connect("response", self.on_dialog_response)
-        self.is_video_file = video_path is not None
-        capture_source = video_path if self.is_video_file else 0
-        self.cap = cv2.VideoCapture(capture_source)
-        if not self.cap.isOpened():
-            print(f"Erro: Não abriu: {capture_source}")
-            error_dialog = Gtk.MessageDialog(transient_for=parent, flags=0, message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.CANCEL, text="Erro Vídeo/Webcam")
-            error_dialog.format_secondary_text(f"Não foi possível acessar:\n{capture_source}"); error_dialog.run(); error_dialog.destroy()
-            GLib.idle_add(self.destroy); return # Usamos idle_add para destruir após __init__ completar
-        self.image_widget = self.builder.get_object("camera_image")
-        self.sliders = {'h_min': self.builder.get_object("h_min"), 'h_max': self.builder.get_object("h_max"), 's_min': self.builder.get_object("s_min"), 's_max': self.builder.get_object("s_max"), 'v_min': self.builder.get_object("v_min"), 'v_max': self.builder.get_object("v_max")}
-        self.load_initial_values()
-        self.update_timer = GLib.timeout_add(100, self.update_frame)
-        # self.show_all() # Não é necessário, o .run() no main.py cuida disso
+def rgb_to_ansi256(r, g, b):
+    """ Converte RGB para código ANSI 256. """
+    if r == g == b: # Escala de Cinza
+        if r < 8: return 16
+        if r > 248: return 231
+        return 232 + int(((r - 8) / 247) * 23)
+    # Cubo de Cores 6x6x6
+    ansi_r = int(r / 255 * 5); ansi_g = int(g / 255 * 5); ansi_b = int(b / 255 * 5)
+    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
 
-    def load_initial_values(self):
-        # ... (sem alterações) ...
-        try:
-            self.sliders['h_min'].set_value(self.config.getint('ChromaKey', 'h_min')); self.sliders['h_max'].set_value(self.config.getint('ChromaKey', 'h_max'))
-            self.sliders['s_min'].set_value(self.config.getint('ChromaKey', 's_min')); self.sliders['s_max'].set_value(self.config.getint('ChromaKey', 's_max'))
-            self.sliders['v_min'].set_value(self.config.getint('ChromaKey', 'v_min')); self.sliders['v_max'].set_value(self.config.getint('ChromaKey', 'v_max'))
-        except Exception as e: print(f"Aviso Config: {e}"); self.sliders['h_min'].set_value(35); self.sliders['h_max'].set_value(85); self.sliders['s_min'].set_value(40); self.sliders['s_max'].set_value(255); self.sliders['v_min'].set_value(40); self.sliders['v_max'].set_value(255)
+def frame_para_ascii_calibrador(gray_frame, color_frame, mask, magnitude_frame, angle_frame, sobel_threshold, luminance_ramp):
+    """
+    Função híbrida: Lógica do 'realtime_ascii.py' 
+    fundida com a lógica de máscara do 'converter.py'.
+    """
+    height, width = gray_frame.shape
+    output_buffer = []
+    
+    for y in range(height):
+        line_buffer = []
+        for x in range(width):
+            
+            # --- #2. LÓGICA DE MÁSCARA ADICIONADA ---
+            # Prioridade 0: Máscara de Chroma Key
+            if mask[y, x] == 255:
+                char = " "
+                ansi_code = 232 # Um cinza escuro/preto para o "fundo"
+            
+            # Prioridade 1: Bordas (Sobel)
+            elif magnitude_frame[y, x] > sobel_threshold:
+                angle = angle_frame[y, x]
+                if (angle > 67.5 and angle <= 112.5): char = "|"
+                elif (angle > 112.5 and angle <= 157.5): char = "/"
+                elif (angle > 157.5 or angle <= 22.5): char = "-"
+                else: char = "\\"
+                b, g, r = color_frame[y, x]
+                ansi_code = rgb_to_ansi256(r, g, b)
 
-    def update_frame(self):
-        # (REMOVIDO) Importações atrasadas removidas daqui
-        # ... (Restante do update_frame igual) ...
-        if not self.cap or not self.cap.isOpened(): return False
-        ret, frame = self.cap.read()
+            # Prioridade 2: Superfície (Luminância)
+            else:
+                pixel_brightness = gray_frame[y, x]
+                char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
+                char = luminance_ramp[char_index]
+                b, g, r = color_frame[y, x]
+                ansi_code = rgb_to_ansi256(r, g, b)
+
+            # Monta string ANSI diretamente
+            if char:
+                 line_buffer.append(f"\033[38;5;{ansi_code}m{char}")
+            else:
+                 line_buffer.append(" ") 
+                 
+        output_buffer.append("".join(line_buffer))
+        
+    # Retorna string completa com reset no final
+    return "\n".join(output_buffer) + ANSI_RESET
+
+# --- Fim da lógica importada ---
+
+
+# Variáveis globais para os trackbars
+config_global = None
+config_path_global = None
+
+# Nomes das Janelas
+WINDOW_ORIGINAL = "Janela 1: Original (Webcam)"
+WINDOW_RESULT = "Janela 2: Filtro Chroma ('s' Salva, 'q' Sai)"
+WINDOW_CONTROLS = "Controles"
+# Janela 3 é o próprio terminal
+
+def load_config(config_path):
+    """ Lê o arquivo de configuração. """
+    if not os.path.exists(config_path):
+        print(f"Erro: config.ini não encontrado em: {config_path}", file=sys.stderr)
+        return None
+        
+    # --- #A CORREÇÃO ESTÁ AQUI ---
+    # Desliga a "mágica" do '%' (interpolação)
+    config = configparser.ConfigParser(interpolation=None)
+    
+    try:
+        # Adiciona padrões seguros
+        config.add_section('Conversor')
+        config.set('Conversor', 'LUMINANCE_RAMP', "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ")
+        
+        config.read(config_path, encoding='utf-8')
+        return config
+    except Exception as e:
+        print(f"Erro ao ler config.ini: {e}", file=sys.stderr)
+        return None
+
+def get_initial_values(config):
+    """ Busca os valores H, S, V do config, ou retorna padrões. """
+    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255}
+    if 'ChromaKey' not in config:
+        print("Seção [ChromaKey] não encontrada, usando padrões.")
+        return defaults
+    try:
+        return {
+            'h_min': config.getint('ChromaKey', 'h_min', fallback=defaults['h_min']),
+            'h_max': config.getint('ChromaKey', 'h_max', fallback=defaults['h_max']),
+            's_min': config.getint('ChromaKey', 's_min', fallback=defaults['s_min']),
+            's_max': config.getint('ChromaKey', 's_max', fallback=defaults['s_max']),
+            'v_min': config.getint('ChromaKey', 'v_min', fallback=defaults['v_min']),
+            'v_max': config.getint('ChromaKey', 'v_max', fallback=defaults['v_max'])
+        }
+    except Exception as e:
+        print(f"Erro ao ler valores [ChromaKey]: {e}. Usando padrões.")
+        return defaults
+
+def on_trackbar(val):
+    pass
+
+def save_values(trackbar_values):
+    """ Salva os valores atuais no config.ini """
+    global config_global, config_path_global
+    if config_global is None or config_path_global is None: return
+
+    print("\nSalvando valores...") # Adiciona \n para não sobrepor o ASCII
+    try:
+        if 'ChromaKey' not in config_global:
+            config_global.add_section('ChromaKey')
+        config_global.set('ChromaKey', 'h_min', str(trackbar_values['h_min']))
+        config_global.set('ChromaKey', 'h_max', str(trackbar_values['h_max']))
+        config_global.set('ChromaKey', 's_min', str(trackbar_values['s_min']))
+        config_global.set('ChromaKey', 's_max', str(trackbar_values['s_max']))
+        config_global.set('ChromaKey', 'v_min', str(trackbar_values['v_min']))
+        config_global.set('ChromaKey', 'v_max', str(trackbar_values['v_max']))
+        with open(config_path_global, 'w', encoding='utf-8') as configfile:
+            config_global.write(configfile)
+        print(f"Valores salvos com sucesso em {config_path_global}")
+    except Exception as e:
+        print(f"Erro fatal ao salvar config: {e}", file=sys.stderr)
+
+def main():
+    global config_global, config_path_global
+    
+    parser = argparse.ArgumentParser(description="Calibrador de Chroma Key (OpenCV)")
+    parser.add_argument('--config', required=True, help="Caminho para o config.ini")
+    parser.add_argument('--video', required=False, default=None, help="Caminho opcional para um vídeo")
+    args = parser.parse_args()
+
+    config_path_global = args.config
+    config_global = load_config(config_path_global)
+    if config_global is None:
+        sys.exit(1)
+        
+    initial_values = get_initial_values(config_global)
+
+    # --- #3. LÊ AS CONFIGS DE CONVERSÃO (do realtime_ascii.py) ---
+    try:
+        target_width = config_global.getint('Conversor', 'target_width', fallback=80)
+        char_aspect_ratio = config_global.getfloat('Conversor', 'char_aspect_ratio', fallback=0.45)
+        sobel_threshold = config_global.getint('Conversor', 'sobel_threshold', fallback=50)
+        luminance_ramp = config_global.get('Conversor', 'LUMINANCE_RAMP') 
+    except Exception as e:
+        print(f"Aviso: Erro ao ler [Conversor] do config: {e}. Usando padrões.")
+        target_width = 80; char_aspect_ratio = 0.45; sobel_threshold = 50
+        luminance_ramp = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+
+    is_video_file = args.video is not None
+    capture_source = args.video if is_video_file else 0
+    cap = cv2.VideoCapture(capture_source)
+    if not cap.isOpened():
+        print(f"Erro: Não foi possível abrir a fonte de vídeo: {capture_source}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Fonte de vídeo aberta: {capture_source}")
+
+    # --- #4. CALCULA AS DIMENSÕES DO ASCII ---
+    target_dimensions = (target_width, 25) # Padrão
+    try:
+        ret, frame_teste = cap.read()
+        if not ret or frame_teste is None:
+             raise ValueError("Não foi possível ler o primeiro frame.")
+        source_height, source_width, _ = frame_teste.shape
+        target_height = int((target_width * source_height * char_aspect_ratio) / source_width)
+        if target_height <= 0: target_height = int(target_width * (9/16) * char_aspect_ratio)
+        target_dimensions = (target_width, target_height)
+        print(f"Dimensões ASCII calculadas: {target_width}x{target_height} chars.")
+    except Exception as e:
+        print(f"Aviso: Erro ao calcular dimensões ASCII: {e}. Usando {target_dimensions}.")
+
+    # Cria as 3 janelas
+    cv2.namedWindow(WINDOW_ORIGINAL)
+    cv2.namedWindow(WINDOW_RESULT)
+    cv2.namedWindow(WINDOW_CONTROLS, cv2.WINDOW_AUTOSIZE)
+    cv2.moveWindow(WINDOW_ORIGINAL, 50, 50)
+    cv2.moveWindow(WINDOW_RESULT, 700, 50)
+    cv2.moveWindow(WINDOW_CONTROLS, 50, 550)
+
+    # Cria os 6 trackbars
+    cv2.createTrackbar("H Min", WINDOW_CONTROLS, initial_values['h_min'], 179, on_trackbar)
+    cv2.createTrackbar("H Max", WINDOW_CONTROLS, initial_values['h_max'], 179, on_trackbar)
+    cv2.createTrackbar("S Min", WINDOW_CONTROLS, initial_values['s_min'], 255, on_trackbar)
+    cv2.createTrackbar("S Max", WINDOW_CONTROLS, initial_values['s_max'], 255, on_trackbar)
+    cv2.createTrackbar("V Min", WINDOW_CONTROLS, initial_values['v_min'], 255, on_trackbar)
+    cv2.createTrackbar("V Max", WINDOW_CONTROLS, initial_values['v_max'], 255, on_trackbar)
+
+    print("Controles criados. Loop iniciado. 's' para salvar, 'q' para sair.")
+    os.system('cls' if os.name == 'nt' else 'clear') # Limpa o terminal para o ASCII
+
+    while True:
+        ret, frame = cap.read()
         if not ret:
-            if self.is_video_file: self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0); return True
-            else: print("Erro webcam?"); GLib.source_remove(self.update_timer); self.update_timer = None; return False # Para o timer
-        if frame is None or frame.size == 0: return True
-        h_min=int(self.sliders['h_min'].get_value()); h_max=int(self.sliders['h_max'].get_value()); s_min=int(self.sliders['s_min'].get_value()); s_max=int(self.sliders['s_max'].get_value()); v_min=int(self.sliders['v_min'].get_value()); v_max=int(self.sliders['v_max'].get_value())
-        lower = np.array([h_min, s_min, v_min]); upper = np.array([h_max, s_max, v_max])
+            if is_video_file:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0); continue
+            else:
+                print("Erro ao ler frame da webcam.", file=sys.stderr); break
+        
+        if not is_video_file: frame = cv2.flip(frame, 1)
+
+        # --- JANELA 2 (FILTRO) ---
+        h_min = cv2.getTrackbarPos("H Min", WINDOW_CONTROLS)
+        h_max = cv2.getTrackbarPos("H Max", WINDOW_CONTROLS)
+        s_min = cv2.getTrackbarPos("S Min", WINDOW_CONTROLS)
+        s_max = cv2.getTrackbarPos("S Max", WINDOW_CONTROLS)
+        v_min = cv2.getTrackbarPos("V Min", WINDOW_CONTROLS)
+        v_max = cv2.getTrackbarPos("V Max", WINDOW_CONTROLS)
+        
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        lower = np.array([h_min, s_min, v_min])
+        upper = np.array([h_max, s_max, v_max])
+        mask_original_size = cv2.inRange(hsv, lower, upper)
+        result = cv2.bitwise_and(frame, frame, mask=mask_original_size)
+
+        # --- JANELA 3 (ASCII - Processamento) ---
+        # Processamento (similar ao realtime_ascii.py)
+        grayscale_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_AREA)
+        resized_color = cv2.resize(frame, target_dimensions, interpolation=cv2.INTER_AREA)
+        # Redimensiona a máscara que acabamos de calcular
+        resized_mask = cv2.resize(mask_original_size, target_dimensions, interpolation=cv2.INTER_NEAREST)
+
+        sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)
+        magnitude = np.hypot(sobel_x, sobel_y)
+        angle = np.arctan2(sobel_y, sobel_x) * (180 / np.pi)
+        angle = (angle + 180) % 180
+        magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+
+        frame_ascii = frame_para_ascii_calibrador(
+            resized_gray, resized_color, resized_mask, # Passa a máscara
+            magnitude_norm, angle, 
+            sobel_threshold, luminance_ramp
+        )
+
+        # --- MOSTRA AS 3 JANELAS ---
+        cv2.imshow(WINDOW_ORIGINAL, frame)   # Janela 1
+        cv2.imshow(WINDOW_RESULT, result) # Janela 2
+        
+        # Janela 3 (Terminal)
+        sys.stdout.write(ANSI_CLEAR_AND_HOME + frame_ascii)
+        sys.stdout.flush()
+
+        # Checa os controles
+        key = cv2.waitKey(30) & 0xFF
+        
+        if key == ord('q'): 
+            print("Tecla 'q' pressionada. Saindo sem salvar.")
+            break
+            
+        if key == ord('s'): 
+            print("Tecla 's' pressionada. Salvando...")
+            current_values = {'h_min': h_min, 'h_max': h_max, 's_min': s_min, 's_max': s_max, 'v_min': v_min, 'v_max': v_max}
+            save_values(current_values)
+            
         try:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV); mask = cv2.inRange(hsv, lower, upper)
-            result = cv2.bitwise_and(frame, frame, mask=mask); result_rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-            h, w, c = result_rgb.shape
-            if w > 0 and h > 0:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_data(result_rgb.tobytes(), GdkPixbuf.Colorspace.RGB, False, 8, w, h, w * c)
-                alloc = self.image_widget.get_allocation(); scaled_pixbuf = pixbuf.scale_simple(alloc.width, alloc.height, GdkPixbuf.InterpType.BILINEAR)
-                self.image_widget.set_from_pixbuf(scaled_pixbuf)
-        except cv2.error as e: print(f"Erro OpenCV: {e}")
-        except Exception as e: print(f"Erro update_frame: {e}"); return False
-        return True
+            if cv2.getWindowProperty(WINDOW_ORIGINAL, cv2.WND_PROP_VISIBLE) < 1: break
+            if cv2.getWindowProperty(WINDOW_RESULT, cv2.WND_PROP_VISIBLE) < 1: break
+            if cv2.getWindowProperty(WINDOW_CONTROLS, cv2.WND_PROP_VISIBLE) < 1: break
+        except cv2.error:
+            break
 
-    def on_dialog_response(self, widget, response_id):
-        # ... (sem alterações) ...
-        if self.update_timer: GLib.source_remove(self.update_timer); self.update_timer = None
-        if self.cap and self.cap.isOpened(): self.cap.release(); self.cap = None
-        if response_id == Gtk.ResponseType.OK:
-            try:
-                self.config.set('ChromaKey','h_min',str(int(self.sliders['h_min'].get_value()))); self.config.set('ChromaKey','h_max',str(int(self.sliders['h_max'].get_value())))
-                self.config.set('ChromaKey','s_min',str(int(self.sliders['s_min'].get_value()))); self.config.set('ChromaKey','s_max',str(int(self.sliders['s_max'].get_value())))
-                self.config.set('ChromaKey','v_min',str(int(self.sliders['v_min'].get_value()))); self.config.set('ChromaKey','v_max',str(int(self.sliders['v_max'].get_value())))
-                with open(self.config_path, 'w') as configfile: self.config.write(configfile)
-                print(f"ChromaKey salvo em {self.config_path}")
-            except Exception as e: print(f"Erro ao salvar config: {e}")
-        self.destroy() # Destroi o diálogo
+    # Limpeza
+    print("\nFinalizando...")
+    cap.release()
+    cv2.destroyAllWindows()
+    # Limpa o terminal ao sair
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(ANSI_RESET) 
+    sys.exit(0)
 
-    # O método run() é chamado pelo src/main.py
 
-# #3. (REMOVIDO) Bloco if __name__ == "__main__" removido
+if __name__ == "__main__":
+    main()
