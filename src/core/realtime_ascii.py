@@ -10,7 +10,8 @@ import time
 # Constantes (Reutilizadas do player e converter)
 ANSI_RESET = "\033[0m"
 COLOR_SEPARATOR = "§" 
-ANSI_CLEAR_AND_HOME = "\033[2J\033[H" 
+ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
+LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. " # '%' removido
 
 # --- Funções Reutilizadas (Adaptadas) ---
 
@@ -65,10 +66,13 @@ def run_realtime_ascii(config_path):
     """Executa a conversão da webcam em tempo real."""
 
     # --- Leitura da Configuração ---
-    config = configparser.ConfigParser()
-    # Adiciona uma rampa padrão caso o config.ini não a tenha (improvável, mas seguro)
+    
+    # --- #CORREÇÃO DE INTERPOLAÇÃO ---
+    config = configparser.ConfigParser(interpolation=None)
+    
+    # Adiciona uma rampa padrão caso o config.ini não a tenha
     config.add_section('Conversor') 
-    config.set('Conversor', 'LUMINANCE_RAMP', "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ") 
+    config.set('Conversor', 'LUMINANCE_RAMP', LUMINANCE_RAMP_DEFAULT) 
     
     if not config.read(config_path):
         print(f"Erro fatal: config.ini não encontrado em {config_path}")
@@ -83,7 +87,7 @@ def run_realtime_ascii(config_path):
     except Exception as e:
         print(f"Erro ao ler config.ini: {e}. Usando valores padrão.")
         target_width = 80; char_aspect_ratio = 0.45; sobel_threshold = 50
-        luminance_ramp = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+        luminance_ramp = LUMINANCE_RAMP_DEFAULT
 
 
     # --- Abertura da Webcam ---

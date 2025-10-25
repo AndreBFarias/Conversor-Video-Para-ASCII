@@ -4,10 +4,10 @@ import os
 import sys
 import numpy as np
 import configparser
-import argparse # <- Adicionado
+import argparse 
 
 # Constantes Globais
-LUMINANCE_RAMP = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+LUMINANCE_RAMP = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. " # '%' removido
 COLOR_SEPARATOR = "§" 
 
 def rgb_to_ansi256(r, g, b):
@@ -135,8 +135,16 @@ if __name__ == "__main__":
         print(f"Erro fatal: config.ini não encontrado em {args.config}")
         sys.exit(1)
 
-    config = configparser.ConfigParser()
+    # --- #CORREÇÃO DE INTERPOLAÇÃO ---
+    config = configparser.ConfigParser(interpolation=None)
     config.read(args.config)
+    
+    # Adiciona a rampa padrão caso esteja faltando
+    if not config.has_option('Conversor', 'LUMINANCE_RAMP'):
+        if not config.has_section('Conversor'):
+            config.add_section('Conversor')
+        config.set('Conversor', 'LUMINANCE_RAMP', LUMINANCE_RAMP)
+        
     output_dir = config['Pastas']['output_dir']
 
     try:
