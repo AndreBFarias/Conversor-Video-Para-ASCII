@@ -13,27 +13,45 @@
 </div>
 </div></div>
 
-### Descrição
-Um ritual de magia negra digital que transmuda vídeos em animações ASCII, banindo fundos verdes com chroma key e evocando silhuetas em caracteres que dançam no terminal. Perfeito pra quem anseia por arte crua, onde cada frame é um sussurro fatal de luz e sombra. Processa múltiplos vídeos de uma pasta, salva em TXT, e projeta no terminal com loop eterno se desejado.
+### Funcionalidades da Interface
 
-### Foco nos Rituais
-Cada script é um sussurro de poder, evocando arte das sombras. Aqui, destaque pra cada um, com visão que hipnotiza.
+O grimório principal é invocado com `python3 main.py`, abrindo o Altar de Transmutação (GUI).
 
-> #### `main.py`: O Alquimista Principal
-> ![Main](assets/main.png)
 
-> Este é o coração pulsante, que devora vídeos da pasta entrada, remove fundos com chroma key e transmuta em TXT ASCII. Rápido, brutal, processa múltiplos de uma vez, salvando silhuetas que dançam eternas. Invoque com `python3 main.py` pra ver o caos se render à forma.
 
-> #### `calibrator.py`: O Guardião do Chroma Key
-> ![Calibrator](assets/calibrator.png)
+> #### `main.py`: O Altar Principal
+> ![Main](src/assets/main.png)
 
-> Pra banir fundos verdes com precisão fatal, este calibre o chroma key, ajustando tons como quem acaricia uma lâmina. Use `python3 calibrator.py [--video nome.mp4]` pra testar e refinar, garantindo silhuetas puras, sem resquícios de luz indesejada.
+A partir daqui, os seguintes rituais estão disponíveis:
 
-> #### `player.py`: O Projetor de Sombras
-> ![Player](assets/player.png)
+1.  **Seleção (Arquivo ou Pasta):**
+    * **Selecionar Arquivo:** Marca um único vídeo para sacrifício.
+    * **Selecionar Pasta:** Marca um diretório inteiro. Todos os vídeos `.mp4`, `.mkv`, etc., dentro dele serão processados.
 
-> Evoca os TXT no terminal, fazendo caracteres dançarem com loop infinito se desejado. Projete um com `python3 player.py --arquivo videos_saida/seu_video.txt [--loop sim]`, ou todos em sequência com `python3 player.py` – um ballet sombrio que hipnotiza o olhar.
+2.  **A Transmutação (Conversão):**
+    * **Converter Selecionado:** Inicia a conversão apenas do arquivo selecionado.
+    * **Converter Pasta Inteira:** Inicia um ritual em lote, convertendo todos os vídeos da pasta selecionada (ou da `input_dir` padrão). O processo utiliza todos os núcleos da sua máquina para banir o *chroma key* e selar a essência do vídeo em arquivos `.txt`.
 
+> #### `main_cli.py` / `player.py`: O Projetor de Sombras
+> ![Player](src/assets/player.png)
+
+3.  **A Projeção (Playback):**
+    * **Reproduzir (no Terminal):** Invoca um novo terminal e projeta a arte ASCII (`.txt`) correspondente ao vídeo selecionado.
+
+> #### `calibrator.py`: O Triptych (O Oráculo)
+> ![Calibrator](src/assets/calibrator.png)
+
+4.  **A Calibração (O Triptych):**
+    * **Calibrar Chroma Key:** O ritual mais complexo. Abre três portais simultâneos:
+        * **Janela 1 (Vídeo):** A realidade crua (sua webcam ou vídeo).
+        * **Janela 2 (Vídeo):** O resultado do filtro chroma key.
+        * **Janela 3 (Terminal):** A transmutação ASCII *em tempo real* do resultado.
+    * Use os controles deslizantes para ajustar o filtro e pressione `s` para selar (salvar) os valores no `config.ini`.
+
+5.  **Abertura de Portais (Utilitários):**
+    * **Abrir Vídeo Original:** Abre o arquivo de vídeo selecionado no seu player padrão.
+    * **Abrir Pasta de Saída:** Abre o diretório `output_dir` onde os arquivos `.txt` repousam.
+    
 ### Instalação
 - Clone o repositório: 
   > git clone [https://github.com/AndreBFarias/Extase-em-Arte-ASCII](https://github.com/AndreBFarias/Extase-em-Arte-ASCII) 
