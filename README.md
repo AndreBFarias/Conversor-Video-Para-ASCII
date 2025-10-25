@@ -117,7 +117,7 @@ v_min = 40
 v_max = 255
 Dependências
 Python 3.8+
-```
+
 - Bibliotecas Python (instaladas via pip no venv):
 
 opencv-python
@@ -133,6 +133,6 @@ python3-opencv (Interface OpenCV do sistema)
 python3-gi, python3-gi-cairo, gir1.2-gtk-3.0 (Para a interface GTK)
 
 desktop-file-utils, imagemagick (Para integração com o desktop)
-
+```
 Licença
 Este projeto está sob a licença GPLv3. Livre para usar, modificar e distribuir, desde que a liberdade seja mantida.
