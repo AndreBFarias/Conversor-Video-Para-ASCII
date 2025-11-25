@@ -132,19 +132,40 @@ def save_values(trackbar_values):
 
     print("\nSalvando valores...") # Adiciona \n para não sobrepor o ASCII
     try:
+        # Recarrega o config para garantir que temos a versão mais recente (caso algo tenha mudado)
+        # Mas mantemos a instância config_global para preservar comentários se possível?
+        # ConfigParser do Python não preserva comentários por padrão.
+        # Vamos apenas garantir que a seção existe e escrever.
+        
         if 'ChromaKey' not in config_global:
             config_global.add_section('ChromaKey')
+            
         config_global.set('ChromaKey', 'h_min', str(trackbar_values['h_min']))
         config_global.set('ChromaKey', 'h_max', str(trackbar_values['h_max']))
         config_global.set('ChromaKey', 's_min', str(trackbar_values['s_min']))
         config_global.set('ChromaKey', 's_max', str(trackbar_values['s_max']))
         config_global.set('ChromaKey', 'v_min', str(trackbar_values['v_min']))
         config_global.set('ChromaKey', 'v_max', str(trackbar_values['v_max']))
+        
         with open(config_path_global, 'w', encoding='utf-8') as configfile:
             config_global.write(configfile)
         print(f"Valores salvos com sucesso em {config_path_global}")
+        print(f"H: {trackbar_values['h_min']}-{trackbar_values['h_max']}, S: {trackbar_values['s_min']}-{trackbar_values['s_max']}, V: {trackbar_values['v_min']}-{trackbar_values['v_max']}")
+        
     except Exception as e:
         print(f"Erro fatal ao salvar config: {e}", file=sys.stderr)
+
+def reset_defaults():
+    """ Reseta os trackbars para os valores padrão. """
+    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255}
+    print("\nResetando para os valores padrão...")
+    cv2.setTrackbarPos("H Min", WINDOW_CONTROLS, defaults['h_min'])
+    cv2.setTrackbarPos("H Max", WINDOW_CONTROLS, defaults['h_max'])
+    cv2.setTrackbarPos("S Min", WINDOW_CONTROLS, defaults['s_min'])
+    cv2.setTrackbarPos("S Max", WINDOW_CONTROLS, defaults['s_max'])
+    cv2.setTrackbarPos("V Min", WINDOW_CONTROLS, defaults['v_min'])
+    cv2.setTrackbarPos("V Max", WINDOW_CONTROLS, defaults['v_max'])
+    print("Valores resetados. Pressione 's' para salvar se desejar.")
 
 def main():
     global config_global, config_path_global
@@ -210,7 +231,12 @@ def main():
     cv2.createTrackbar("V Min", WINDOW_CONTROLS, initial_values['v_min'], 255, on_trackbar)
     cv2.createTrackbar("V Max", WINDOW_CONTROLS, initial_values['v_max'], 255, on_trackbar)
 
-    print("Controles criados. Loop iniciado. 's' para salvar, 'q' para sair.")
+    print("Controles criados. Loop iniciado.")
+    print("COMANDOS:")
+    print("  's' : Salvar configurações no config.ini")
+    print("  'r' : Resetar para valores padrão")
+    print("  'q' : Sair")
+    
     os.system('cls' if os.name == 'nt' else 'clear') # Limpa o terminal para o ASCII
 
     while True:
@@ -278,6 +304,9 @@ def main():
             print("Tecla 's' pressionada. Salvando...")
             current_values = {'h_min': h_min, 'h_max': h_max, 's_min': s_min, 's_max': s_max, 'v_min': v_min, 'v_max': v_max}
             save_values(current_values)
+            
+        if key == ord('r'):
+            reset_defaults()
             
         try:
             if cv2.getWindowProperty(WINDOW_ORIGINAL, cv2.WND_PROP_VISIBLE) < 1: break

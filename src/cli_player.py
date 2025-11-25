@@ -15,11 +15,12 @@ import configparser
 import time # Adicionado para a pausa
 
 # Adiciona a raiz do projeto ao sys.path para encontrar 'src'
-project_root = os.path.dirname(os.path.abspath(__file__))
+# Como este arquivo está em src/, a raiz é o diretório pai
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
 sys.path.insert(0, project_root)
 
 try:
-    # AQUI OCORRE O ERRO DE IMPORTAÇÃO INICIAL
     from src.core.player import iniciar_player
 except ImportError as e:
     print(f"Erro fatal: Não foi possível importar 'src.core.player'.")
@@ -29,7 +30,7 @@ except ImportError as e:
     traceback.print_exc()
     input("Pressione Enter para sair...")
     sys.exit(1)
-# Restante do código de main_cli.py...
+
 def main():
     config = None
     config_file = None
@@ -68,7 +69,8 @@ def main():
 
             # Se o loop não foi ativado via flag, checa o config
             if not loop:
-                loop = config.getboolean('Player', 'loop', fallback=False)
+                loop_val = config.get('Player', 'loop', fallback='nao').lower()
+                loop = loop_val in ['sim', 'yes', 'true', '1', 'on']
 
         except Exception as e:
             print(f"Erro ao ler config.ini: {e}")
