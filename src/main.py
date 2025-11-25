@@ -29,7 +29,7 @@ try:
     # Caminhos para scripts (usando ROOT_DIR e BASE_DIR)
     # Usa sys.executable para garantir que o Python correto seja usado (do venv se ativo)
     PYTHON_EXEC = sys.executable
-    PLAYER_SCRIPT = os.path.join(ROOT_DIR, "main_cli.py")
+    PLAYER_SCRIPT = os.path.join(BASE_DIR, "cli_player.py")
     CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "converter.py")
     CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "calibrator.py")
 
@@ -114,9 +114,30 @@ class App:
             self.open_video_button = self.builder.get_object("open_video_button")
             self.open_folder_button = self.builder.get_object("open_folder_button")
             self.calibrate_button = self.builder.get_object("calibrate_button")
+            self.open_webcam_button = self.builder.get_object("open_webcam_button")
+            self.select_ascii_button = self.builder.get_object("select_ascii_button")
+            self.play_ascii_button = self.builder.get_object("play_ascii_button")
+            self.options_button = self.builder.get_object("options_button")
+            
+            # Widgets do Dialog de Opções
+            self.options_dialog = self.builder.get_object("options_dialog")
+            self.opt_loop_check = self.builder.get_object("opt_loop_check")
+            self.opt_width_spin = self.builder.get_object("opt_width_spin")
+            self.opt_sobel_spin = self.builder.get_object("opt_sobel_spin")
+            self.opt_aspect_spin = self.builder.get_object("opt_aspect_spin")
+            self.opt_luminance_entry = self.builder.get_object("opt_luminance_entry")
+            self.opt_h_min_spin = self.builder.get_object("opt_h_min_spin")
+            self.opt_h_max_spin = self.builder.get_object("opt_h_max_spin")
+            self.opt_s_min_spin = self.builder.get_object("opt_s_min_spin")
+            self.opt_s_max_spin = self.builder.get_object("opt_s_max_spin")
+            self.opt_v_min_spin = self.builder.get_object("opt_v_min_spin")
+            self.opt_v_max_spin = self.builder.get_object("opt_v_max_spin")
+
             if None in [self.status_label, self.selected_path_label, self.convert_button,
                          self.convert_all_button, self.play_button, self.open_video_button,
-                         self.open_folder_button, self.calibrate_button]:
+                         self.open_folder_button, self.calibrate_button, self.open_webcam_button,
+                         self.select_ascii_button, self.play_ascii_button, self.options_button,
+                         self.options_dialog, self.opt_loop_check, self.opt_width_spin]:
                 raise TypeError("Um ou mais widgets essenciais não foram encontrados no arquivo .glade.")
         except Exception as e:
              self._show_init_error("Erro Crítico de UI", f"Falha ao obter componentes da interface:\n{e}\n\nVerifique 'src/ui/main.glade'.")
@@ -124,6 +145,7 @@ class App:
 
         self.selected_file_path = None
         self.selected_folder_path = None
+        self.selected_ascii_path = None # Novo atributo para o arquivo ASCII selecionado
         self.conversion_lock = threading.Lock()
         self.update_button_states()
         self.window.show_all()
@@ -186,6 +208,24 @@ class App:
         dialog.destroy()
         self.update_button_states()
 
+    def on_select_ascii_button_clicked(self, widget):
+        dialog = Gtk.FileChooserDialog(title="Selecione um arquivo ASCII (.txt)", parent=self.window, action=Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        filter_text = Gtk.FileFilter(); filter_text.set_name("Arquivos de Texto"); filter_text.add_mime_type("text/plain"); filter_text.add_pattern("*.txt"); dialog.add_filter(filter_text)
+        filter_any = Gtk.FileFilter(); filter_any.set_name("Todos"); filter_any.add_pattern("*"); dialog.add_filter(filter_any)
+        
+        try:
+            if os.path.isdir(self.output_dir): dialog.set_current_folder(self.output_dir)
+        except Exception: pass
+        
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.selected_ascii_path = dialog.get_filename()
+            print(f"Arquivo ASCII selecionado: {self.selected_ascii_path}")
+            # Opcional: Atualizar label ou mostrar popup? Por enquanto só habilita o botão
+        dialog.destroy()
+        self.update_button_states()
+
     def update_button_states(self):
          if not hasattr(self, 'convert_button') or not self.convert_button: return
          file_selected = self.selected_file_path is not None and os.path.exists(self.selected_file_path)
@@ -196,6 +236,8 @@ class App:
          self.open_video_button.set_sensitive(file_selected)
          self.convert_all_button.set_sensitive(folder_selected or default_folder_exists)
          self.calibrate_button.set_sensitive(True)
+         self.open_webcam_button.set_sensitive(True)
+         self.play_ascii_button.set_sensitive(self.selected_ascii_path is not None and os.path.exists(self.selected_ascii_path))
 
     # --- Handlers de Ação ---
     def on_convert_button_clicked(self, widget):
@@ -305,6 +347,34 @@ class App:
                 print(f"Erro ao abrir gnome-terminal: {e_gnome}")
                 self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (gnome-terminal):\n{e_gnome}")
 
+    def on_play_ascii_button_clicked(self, widget):
+        if self.selected_ascii_path and os.path.exists(self.selected_ascii_path):
+            self._launch_player_in_terminal(self.selected_ascii_path)
+        else:
+            self.show_error_dialog("Erro", "Nenhum arquivo ASCII válido selecionado.")
+
+    def _launch_player_in_terminal(self, file_path):
+        """Lança o player.py em um terminal externo para o arquivo especificado."""
+        python_executable = self._get_python_executable()
+        cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
+
+        try:
+            cmd = ['gnome-terminal', '--'] + cmd_base
+            print(f"Executando player (ASCII): {shlex.join(cmd)}")
+            subprocess.Popen(cmd)
+        except FileNotFoundError:
+            print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
+            try:
+                cmd = ['xterm', '-hold', '-e'] + cmd_base 
+                print(f"Executando player (xterm): {shlex.join(cmd)}")
+                subprocess.Popen(cmd)
+            except FileNotFoundError:
+                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível (gnome-terminal ou xterm -hold) encontrado.")
+            except Exception as e_xterm:
+                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (xterm):\n{e_xterm}")
+        except Exception as e_gnome:
+            self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (gnome-terminal):\n{e_gnome}")
+
     def on_open_video_clicked(self, widget):
          if self.selected_file_path:
              if not os.path.exists(self.selected_file_path):
@@ -335,28 +405,44 @@ class App:
 
     def on_calibrate_button_clicked(self, widget):
         video_to_calibrate = self.selected_file_path
-        python_executable = self._get_python_executable()
-        cmd_list = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path]
-        video_arg = None
+        cmd_args = []
         if video_to_calibrate and os.path.exists(video_to_calibrate):
-            video_arg = video_to_calibrate
-            cmd_list.extend(["--video", video_arg])
-            print(f"Calibrador usará o vídeo: {os.path.basename(video_arg)}")
+            cmd_args = ["--video", video_to_calibrate]
+            print(f"Calibrador usará o vídeo: {os.path.basename(video_to_calibrate)}")
         else:
             if video_to_calibrate: print(f"Aviso: Vídeo selecionado '{video_to_calibrate}' não encontrado.")
             print("Nenhum vídeo válido selecionado. Calibrador usará webcam (fonte 0).")
+        
+        self._launch_calibrator_in_terminal(cmd_args)
 
-        print(f"Executando calibrador (Processo Separado): {shlex.join(cmd_list)}")
+    def on_open_webcam_button_clicked(self, widget):
+        """Abre o calibrador forçando o uso da webcam (sem argumento --video)."""
+        print("Abrindo Webcam (Calibrador)...")
+        self._launch_calibrator_in_terminal([])
+
+    def _launch_calibrator_in_terminal(self, extra_args):
+        """Lança o calibrator.py em um terminal externo para garantir cores corretas."""
+        python_executable = self._get_python_executable()
+        cmd_base = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path] + extra_args
+
         try:
-            process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace')
-            stdout_thread = threading.Thread(target=self._read_pipe, args=(process.stdout, sys.stdout)); stderr_thread = threading.Thread(target=self._read_pipe, args=(process.stderr, sys.stderr))
-            stdout_thread.daemon = True; stderr_thread.daemon = True
-            stdout_thread.start(); stderr_thread.start()
+            # Tenta gnome-terminal
+            cmd = ['gnome-terminal', '--'] + cmd_base
+            print(f"Executando calibrador (Terminal): {shlex.join(cmd)}")
+            subprocess.Popen(cmd)
         except FileNotFoundError:
-             error_msg = f"ERRO: Script '{CALIBRATOR_SCRIPT}' ou Python '{python_executable}' não encontrado."
-             print(error_msg); self.show_error_dialog("Erro Calibrador", error_msg)
+            print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
+            try:
+                # Tenta xterm
+                cmd = ['xterm', '-e'] + cmd_base # xterm fecha ao sair, o que é ok pro calibrador
+                print(f"Executando calibrador (xterm): {shlex.join(cmd)}")
+                subprocess.Popen(cmd)
+            except FileNotFoundError:
+                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível (gnome-terminal ou xterm) encontrado.")
+            except Exception as e:
+                 self.show_error_dialog("Erro Calibrador", f"Erro ao lançar xterm: {e}")
         except Exception as e:
-            error_msg = f"Erro ao lançar calibrador: {e}"; print(error_msg); self.show_error_dialog("Erro Calibrador", error_msg)
+             self.show_error_dialog("Erro Calibrador", f"Erro ao lançar gnome-terminal: {e}")
 
     def _read_pipe(self, pipe, output_stream):
         try:
@@ -370,6 +456,107 @@ class App:
     def on_quit_button_clicked(self, widget):
         print("Botão Sair pressionado. Encerrando GTK...")
         Gtk.main_quit()
+
+    def on_options_button_clicked(self, widget):
+        """Abre a janela de opções e carrega os valores atuais."""
+        # Carrega valores do config
+        try:
+            # Player
+            loop_val_str = self.config.get('Player', 'loop', fallback='nao').lower()
+            loop_val = loop_val_str in ['sim', 'yes', 'true', '1', 'on']
+            self.opt_loop_check.set_active(loop_val)
+            
+            # Conversor
+            width_val = self.config.getint('Conversor', 'target_width', fallback=120)
+            sobel_val = self.config.getint('Conversor', 'sobel_threshold', fallback=100)
+            aspect_val = self.config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.95)
+            
+            self.opt_width_spin.set_value(width_val)
+            self.opt_sobel_spin.set_value(sobel_val)
+            self.opt_aspect_spin.set_value(aspect_val)
+            
+            # Luminance Ramp
+            default_ramp = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+            luminance_val = self.config.get('Conversor', 'LUMINANCE_RAMP', fallback=default_ramp)
+            self.opt_luminance_entry.set_text(luminance_val)
+
+            # Chroma Key
+            h_min = self.config.getint('ChromaKey', 'h_min', fallback=35)
+            h_max = self.config.getint('ChromaKey', 'h_max', fallback=85)
+            s_min = self.config.getint('ChromaKey', 's_min', fallback=40)
+            s_max = self.config.getint('ChromaKey', 's_max', fallback=255)
+            v_min = self.config.getint('ChromaKey', 'v_min', fallback=40)
+            v_max = self.config.getint('ChromaKey', 'v_max', fallback=255)
+
+            self.opt_h_min_spin.set_value(h_min)
+            self.opt_h_max_spin.set_value(h_max)
+            self.opt_s_min_spin.set_value(s_min)
+            self.opt_s_max_spin.set_value(s_max)
+            self.opt_v_min_spin.set_value(v_min)
+            self.opt_v_max_spin.set_value(v_max)
+            
+        except Exception as e:
+            print(f"Erro ao carregar opções: {e}")
+            
+        self.options_dialog.show_all()
+
+    def on_options_cancel_clicked(self, widget):
+        self.options_dialog.hide()
+
+    def on_options_restore_clicked(self, widget):
+        """Restaura os valores padrão nos widgets (não salva automaticamente)."""
+        # Player
+        self.opt_loop_check.set_active(False) # Default loop = nao
+        
+        # Conversor
+        self.opt_width_spin.set_value(120)
+        self.opt_sobel_spin.set_value(100)
+        self.opt_aspect_spin.set_value(0.95) # Ajustado conforme pedido do usuário (era 0.45 no código antigo, mas user pediu 0.95)
+        
+        default_ramp = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+        self.opt_luminance_entry.set_text(default_ramp)
+
+        # Chroma Key (Valores padrão do user request)
+        self.opt_h_min_spin.set_value(35)
+        self.opt_h_max_spin.set_value(85)
+        self.opt_s_min_spin.set_value(40)
+        self.opt_s_max_spin.set_value(255)
+        self.opt_v_min_spin.set_value(40)
+        self.opt_v_max_spin.set_value(255)
+        
+        print("Valores padrão restaurados na interface (clique em OK para salvar).")
+
+    def on_options_save_clicked(self, widget):
+        # Salva valores
+        try:
+            # Player
+            if 'Player' not in self.config: self.config.add_section('Player')
+            self.config.set('Player', 'loop', 'sim' if self.opt_loop_check.get_active() else 'nao')
+            
+            # Conversor
+            if 'Conversor' not in self.config: self.config.add_section('Conversor')
+            self.config.set('Conversor', 'target_width', str(int(self.opt_width_spin.get_value())))
+            self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
+            self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
+            self.config.set('Conversor', 'LUMINANCE_RAMP', self.opt_luminance_entry.get_text())
+
+            # Chroma Key
+            if 'ChromaKey' not in self.config: self.config.add_section('ChromaKey')
+            self.config.set('ChromaKey', 'h_min', str(int(self.opt_h_min_spin.get_value())))
+            self.config.set('ChromaKey', 'h_max', str(int(self.opt_h_max_spin.get_value())))
+            self.config.set('ChromaKey', 's_min', str(int(self.opt_s_min_spin.get_value())))
+            self.config.set('ChromaKey', 's_max', str(int(self.opt_s_max_spin.get_value())))
+            self.config.set('ChromaKey', 'v_min', str(int(self.opt_v_min_spin.get_value())))
+            self.config.set('ChromaKey', 'v_max', str(int(self.opt_v_max_spin.get_value())))
+            
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                self.config.write(f)
+            print("Configurações salvas com sucesso.")
+            
+        except Exception as e:
+            self.show_error_dialog("Erro ao Salvar", f"Não foi possível salvar as configurações:\n{e}")
+        
+        self.options_dialog.hide()
 
     def show_error_dialog(self, title, text):
         # Garante execução na thread principal do GTK

@@ -44,7 +44,8 @@ sudo apt update || { echo "ERRO: Falha ao atualizar repositórios apt."; exit 1;
 # 2. Instalar dependências do sistema
 echo "[2/7] Invocando dependências (Python3, PIP, GTK, OpenCV)..."
 # Garante python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, e ImageMagick para redimensionar ícone
-sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 desktop-file-utils imagemagick || { echo "ERRO: Falha ao instalar dependências do sistema."; exit 1; }
+# Adicionado libgirepository1.0-dev e libcairo2-dev para compilação do PyGObject via pip se necessário
+sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev || { echo "ERRO: Falha ao instalar dependências do sistema."; exit 1; }
 
 # 3. Criar ambiente virtual COM ACESSO AOS PACOTES DO SISTEMA
 echo "[3/7] Desenhando círculo de proteção (venv --system-site-packages)..."
