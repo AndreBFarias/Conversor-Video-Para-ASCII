@@ -1,7 +1,4 @@
 #!/bin/bash
-#
-# RITUAL DE CONSAGRAÇÃO: Êxtase em 4R73
-#
 
 echo "=== Iniciando o Ritual de Instalação (Êxtase em 4R73) ==="
 # SCRIPT_DIR agora aponta para o diretório onde o script está localizado
