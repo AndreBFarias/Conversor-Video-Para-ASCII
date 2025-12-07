@@ -182,16 +182,16 @@ class App:
     def on_select_file_button_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(title="Selecione um arquivo de mídia (Vídeo ou Imagem)", parent=self.window, action=Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        filter_media = Gtk.FileFilter(); filter_media.set_name("Mídia (Vídeos e Imagens)")
+        filter_media = Gtk.FileFilter(); filter_media.set_name("Mídia (mp4, avi, mkv, mov, webm, png, jpg, jpeg, bmp, webp)")
         for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm', '*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_media.add_pattern(ext)
         dialog.add_filter(filter_media)
-        filter_video = Gtk.FileFilter(); filter_video.set_name("Apenas Vídeos")
+        filter_video = Gtk.FileFilter(); filter_video.set_name("Apenas Vídeos (mp4, avi, mkv, mov, webm)")
         for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm']: filter_video.add_pattern(ext)
         dialog.add_filter(filter_video)
-        filter_image = Gtk.FileFilter(); filter_image.set_name("Apenas Imagens")
+        filter_image = Gtk.FileFilter(); filter_image.set_name("Apenas Imagens (png, jpg, jpeg, bmp, webp)")
         for ext in ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_image.add_pattern(ext)
         dialog.add_filter(filter_image)
-        filter_any = Gtk.FileFilter(); filter_any.set_name("Todos"); filter_any.add_pattern("*"); dialog.add_filter(filter_any)
+        filter_any = Gtk.FileFilter(); filter_any.set_name("Todos (*.*)"); filter_any.add_pattern("*"); dialog.add_filter(filter_any)
         try:
             if os.path.isdir(self.input_dir): dialog.set_current_folder(self.input_dir)
         except Exception: pass
