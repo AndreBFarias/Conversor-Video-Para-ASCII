@@ -1,4 +1,4 @@
-#2
+# Êxtase em 4R73 - Gitignore
 
 # Ambientes Virtuais
 venv/
@@ -13,11 +13,25 @@ videos_saida/
 # Cache Python
 __pycache__/
 *.py[cod]
+*$py.class
 
 # Build/Dist
 build/
 dist/
 *.egg-info/
+*.egg
 
 # IDE/Config
 .vscode/
+.idea/
+*.sublime-*
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
