@@ -10,6 +10,7 @@ import subprocess
 import threading
 import platform
 import shlex
+import traceback
 
 # --- Definição de Caminhos MAIS ROBUSTA ---
 try:
@@ -124,6 +125,7 @@ class App:
             self.options_dialog = self.builder.get_object("options_dialog")
             self.opt_loop_check = self.builder.get_object("opt_loop_check")
             self.opt_width_spin = self.builder.get_object("opt_width_spin")
+            self.opt_height_spin = self.builder.get_object("opt_height_spin")
             self.opt_sobel_spin = self.builder.get_object("opt_sobel_spin")
             self.opt_aspect_spin = self.builder.get_object("opt_aspect_spin")
             self.opt_luminance_entry = self.builder.get_object("opt_luminance_entry")
@@ -347,6 +349,10 @@ class App:
 
             python_executable = self._get_python_executable()
             cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
+            
+            loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
+            if loop_enabled:
+                cmd_base.append('-l')
 
             try:
                 cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
@@ -378,6 +384,10 @@ class App:
         """Lança o player.py em um terminal externo maximizado para o arquivo especificado."""
         python_executable = self._get_python_executable()
         cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
+        
+        loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
+        if loop_enabled:
+            cmd_base.append('-l')
 
         try:
             cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
@@ -487,10 +497,12 @@ class App:
             
             # Conversor
             width_val = self.config.getint('Conversor', 'target_width', fallback=120)
+            height_val = self.config.getint('Conversor', 'target_height', fallback=0)
             sobel_val = self.config.getint('Conversor', 'sobel_threshold', fallback=100)
             aspect_val = self.config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.95)
             
             self.opt_width_spin.set_value(width_val)
+            self.opt_height_spin.set_value(height_val)
             self.opt_sobel_spin.set_value(sobel_val)
             self.opt_aspect_spin.set_value(aspect_val)
             
@@ -529,6 +541,7 @@ class App:
         
         # Conversor
         self.opt_width_spin.set_value(120)
+        self.opt_height_spin.set_value(0)  # 0 = auto
         self.opt_sobel_spin.set_value(100)
         self.opt_aspect_spin.set_value(0.95) # Ajustado conforme pedido do usuário (era 0.45 no código antigo, mas user pediu 0.95)
         
@@ -555,6 +568,7 @@ class App:
             # Conversor
             if 'Conversor' not in self.config: self.config.add_section('Conversor')
             self.config.set('Conversor', 'target_width', str(int(self.opt_width_spin.get_value())))
+            self.config.set('Conversor', 'target_height', str(int(self.opt_height_spin.get_value())))
             self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
             self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
             self.config.set('Conversor', 'LUMINANCE_RAMP', self.opt_luminance_entry.get_text())
@@ -576,6 +590,63 @@ class App:
             self.show_error_dialog("Erro ao Salvar", f"Não foi possível salvar as configurações:\n{e}")
         
         self.options_dialog.hide()
+
+    def on_test_converter_clicked(self, widget):
+        """Abre preview das configurações do conversor em tempo real."""
+        # Primeiro salva as configurações atuais temporariamente
+        try:
+            if 'Conversor' not in self.config: self.config.add_section('Conversor')
+            self.config.set('Conversor', 'target_width', str(int(self.opt_width_spin.get_value())))
+            self.config.set('Conversor', 'target_height', str(int(self.opt_height_spin.get_value())))
+            self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
+            self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
+            self.config.set('Conversor', 'LUMINANCE_RAMP', self.opt_luminance_entry.get_text())
+            
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                self.config.write(f)
+            print("Configurações salvas temporariamente para preview.")
+        except Exception as e:
+            print(f"Erro ao salvar configurações para teste: {e}")
+        
+        # Lança o calibrador com o vídeo selecionado (ou webcam se nenhum)
+        video_to_test = self.selected_file_path
+        cmd_args = []
+        if video_to_test and os.path.exists(video_to_test) and self._is_video_file(video_to_test):
+            cmd_args = ["--video", video_to_test]
+            print(f"Preview usará o vídeo: {os.path.basename(video_to_test)}")
+        else:
+            print("Nenhum vídeo válido selecionado. Preview usará webcam.")
+        
+        self._launch_calibrator_in_terminal(cmd_args)
+
+    def on_test_chroma_clicked(self, widget):
+        """Abre preview das configurações de chroma key em tempo real."""
+        # Primeiro salva as configurações de chroma key
+        try:
+            if 'ChromaKey' not in self.config: self.config.add_section('ChromaKey')
+            self.config.set('ChromaKey', 'h_min', str(int(self.opt_h_min_spin.get_value())))
+            self.config.set('ChromaKey', 'h_max', str(int(self.opt_h_max_spin.get_value())))
+            self.config.set('ChromaKey', 's_min', str(int(self.opt_s_min_spin.get_value())))
+            self.config.set('ChromaKey', 's_max', str(int(self.opt_s_max_spin.get_value())))
+            self.config.set('ChromaKey', 'v_min', str(int(self.opt_v_min_spin.get_value())))
+            self.config.set('ChromaKey', 'v_max', str(int(self.opt_v_max_spin.get_value())))
+            
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                self.config.write(f)
+            print("Configurações de Chroma Key salvas temporariamente para preview.")
+        except Exception as e:
+            print(f"Erro ao salvar configurações de chroma para teste: {e}")
+        
+        # Lança o calibrador com o vídeo selecionado (ou webcam se nenhum)
+        video_to_test = self.selected_file_path
+        cmd_args = []
+        if video_to_test and os.path.exists(video_to_test) and self._is_video_file(video_to_test):
+            cmd_args = ["--video", video_to_test]
+            print(f"Preview Chroma usará o vídeo: {os.path.basename(video_to_test)}")
+        else:
+            print("Nenhum vídeo válido selecionado. Preview Chroma usará webcam.")
+        
+        self._launch_calibrator_in_terminal(cmd_args)
 
     def show_error_dialog(self, title, text):
         # Garante execução na thread principal do GTK
