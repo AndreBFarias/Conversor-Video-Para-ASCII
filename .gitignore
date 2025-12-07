@@ -5,6 +5,11 @@ venv/
 .venv/
 env/
 .env/
+videos_entrada/
+videos_saida/
+.git/
+
+
 
 # Pastas de Dados (Não rastrear mídia)
 videos_entrada/
