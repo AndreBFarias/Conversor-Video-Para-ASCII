@@ -31,6 +31,7 @@ try:
     PYTHON_EXEC = sys.executable
     PLAYER_SCRIPT = os.path.join(BASE_DIR, "cli_player.py")
     CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "converter.py")
+    IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "image_converter.py")
     CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "calibrator.py")
 
 except Exception as e:
@@ -177,9 +178,17 @@ class App:
 
     # --- Funções de Seleção ---
     def on_select_file_button_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Selecione um arquivo de vídeo", parent=self.window, action=Gtk.FileChooserAction.OPEN)
+        dialog = Gtk.FileChooserDialog(title="Selecione um arquivo de mídia (Vídeo ou Imagem)", parent=self.window, action=Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        filter_video = Gtk.FileFilter(); filter_video.set_name("Vídeos"); filter_video.add_mime_type("video/*"); filter_video.add_pattern("*.mp4"); filter_video.add_pattern("*.avi"); filter_video.add_pattern("*.mkv"); filter_video.add_pattern("*.mov"); filter_video.add_pattern("*.webm"); dialog.add_filter(filter_video)
+        filter_media = Gtk.FileFilter(); filter_media.set_name("Mídia (Vídeos e Imagens)")
+        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm', '*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_media.add_pattern(ext)
+        dialog.add_filter(filter_media)
+        filter_video = Gtk.FileFilter(); filter_video.set_name("Apenas Vídeos")
+        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm']: filter_video.add_pattern(ext)
+        dialog.add_filter(filter_video)
+        filter_image = Gtk.FileFilter(); filter_image.set_name("Apenas Imagens")
+        for ext in ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_image.add_pattern(ext)
+        dialog.add_filter(filter_image)
         filter_any = Gtk.FileFilter(); filter_any.set_name("Todos"); filter_any.add_pattern("*"); dialog.add_filter(filter_any)
         try:
             if os.path.isdir(self.input_dir): dialog.set_current_folder(self.input_dir)
@@ -261,41 +270,53 @@ class App:
         thread.daemon = True
         thread.start()
 
-    def run_conversion(self, video_paths):
+    def _is_image_file(self, file_path):
+        return file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.webp'))
+
+    def _is_video_file(self, file_path):
+        return file_path.lower().endswith(('.mp4', '.avi', '.mkv', '.mov', '.webm'))
+
+    def run_conversion(self, file_paths):
         python_executable = self._get_python_executable()
 
         if not self.conversion_lock.acquire(blocking=False):
             GLib.idle_add(self.on_conversion_update, "Outra conversão já está em andamento...")
             return
 
-        total = len(video_paths); output_files = []
-        GLib.idle_add(self.on_conversion_update, f"Iniciando conversão de {total} vídeo(s)...")
+        total = len(file_paths); output_files = []
+        GLib.idle_add(self.on_conversion_update, f"Iniciando conversão de {total} arquivo(s)...")
 
-        for i, video_path in enumerate(video_paths):
-            video_name = os.path.basename(video_path)
-            output_filename = os.path.splitext(video_name)[0] + ".txt"
+        for i, file_path in enumerate(file_paths):
+            file_name = os.path.basename(file_path)
+            output_filename = os.path.splitext(file_name)[0] + ".txt"
             output_filepath = os.path.join(self.output_dir, output_filename)
-            GLib.idle_add(self.on_conversion_update, f"({i+1}/{total}): Convertendo {video_name}...")
-            cmd = [python_executable, CONVERTER_SCRIPT, "--video", video_path, "--config", self.config_path]
+            GLib.idle_add(self.on_conversion_update, f"({i+1}/{total}): Convertendo {file_name}...")
+
+            if self._is_image_file(file_path):
+                cmd = [python_executable, IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
+                script_name = IMAGE_CONVERTER_SCRIPT
+            else:
+                cmd = [python_executable, CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
+                script_name = CONVERTER_SCRIPT
 
             try:
                 print(f"Executando: {shlex.join(cmd)}")
                 result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding='utf-8', errors='replace')
-                print(f"--- Saída ({video_name}) ---\n{result.stdout.strip()}")
-                if result.stderr.strip(): print(f"--- Erros ({video_name}) ---\n{result.stderr.strip()}")
-                print("-" * (len(video_name) + 24))
-                GLib.idle_add(self.on_conversion_update, f"OK ({i+1}/{total}): {video_name} convertido.")
+                print(f"--- Saída ({file_name}) ---\n{result.stdout.strip()}")
+                if result.stderr.strip(): print(f"--- Erros ({file_name}) ---\n{result.stderr.strip()}")
+                print("-" * (len(file_name) + 24))
+                GLib.idle_add(self.on_conversion_update, f"OK ({i+1}/{total}): {file_name} convertido.")
                 output_files.append(output_filepath)
             except subprocess.CalledProcessError as e:
                 error_output = e.stderr or e.stdout or 'Erro desconhecido'
-                error_msg = f"ERRO ({i+1}/{total}) {video_name}:\n{error_output.strip()}"
+                error_msg = f"ERRO ({i+1}/{total}) {file_name}:\n{error_output.strip()}"
                 print(error_msg)
                 GLib.idle_add(self.on_conversion_update, error_msg.split('\n')[0])
             except FileNotFoundError:
-                 error_msg = f"ERRO: Script '{CONVERTER_SCRIPT}' ou Python '{python_executable}' não encontrado."
+                 error_msg = f"ERRO: Script '{script_name}' ou Python '{python_executable}' não encontrado."
                  print(error_msg); GLib.idle_add(self.on_conversion_update, error_msg); break
             except Exception as e:
-                error_msg = f"ERRO FATAL {video_name}: {e}"
+                error_msg = f"ERRO FATAL {file_name}: {e}"
                 print(error_msg); GLib.idle_add(self.on_conversion_update, error_msg)
 
         final_message = f"Conversão em lote finalizada ({len(output_files)}/{total} sucesso)."
@@ -319,33 +340,33 @@ class App:
 
     def on_play_button_clicked(self, widget):
         if self.selected_file_path:
-            video_name = os.path.splitext(os.path.basename(self.selected_file_path))[0] + ".txt"
-            file_path = os.path.join(self.output_dir, video_name)
+            media_name = os.path.splitext(os.path.basename(self.selected_file_path))[0] + ".txt"
+            file_path = os.path.join(self.output_dir, media_name)
             if not os.path.exists(file_path):
-                self.show_error_dialog("Erro", f"Arquivo ASCII '{os.path.basename(file_path)}' não encontrado.\nConverta o vídeo primeiro."); return
+                self.show_error_dialog("Erro", f"Arquivo ASCII '{os.path.basename(file_path)}' não encontrado.\nConverta o arquivo primeiro."); return
 
             python_executable = self._get_python_executable()
             cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
 
             try:
-                cmd = ['gnome-terminal', '--'] + cmd_base
+                cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
                 print(f"Executando player: {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
                 print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
                 try:
-                    cmd = ['xterm', '-hold', '-e'] + cmd_base # Adicionado -hold para manter a janela aberta
+                    cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
                     print(f"Executando player (xterm): {shlex.join(cmd)}")
                     subprocess.Popen(cmd)
                 except FileNotFoundError:
                     print("ERRO: xterm também não encontrado.")
-                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível (gnome-terminal ou xterm -hold) encontrado.")
+                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
                 except Exception as e_xterm:
                     print(f"Erro ao abrir xterm: {e_xterm}")
-                    self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (xterm):\n{e_xterm}")
+                    self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_xterm}")
             except Exception as e_gnome:
                 print(f"Erro ao abrir gnome-terminal: {e_gnome}")
-                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (gnome-terminal):\n{e_gnome}")
+                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_gnome}")
 
     def on_play_ascii_button_clicked(self, widget):
         if self.selected_ascii_path and os.path.exists(self.selected_ascii_path):
@@ -354,26 +375,26 @@ class App:
             self.show_error_dialog("Erro", "Nenhum arquivo ASCII válido selecionado.")
 
     def _launch_player_in_terminal(self, file_path):
-        """Lança o player.py em um terminal externo para o arquivo especificado."""
+        """Lança o player.py em um terminal externo maximizado para o arquivo especificado."""
         python_executable = self._get_python_executable()
         cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
 
         try:
-            cmd = ['gnome-terminal', '--'] + cmd_base
+            cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
             print(f"Executando player (ASCII): {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
             print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
             try:
-                cmd = ['xterm', '-hold', '-e'] + cmd_base 
+                cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
                 print(f"Executando player (xterm): {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
-                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível (gnome-terminal ou xterm -hold) encontrado.")
+                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
             except Exception as e_xterm:
-                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (xterm):\n{e_xterm}")
+                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_xterm}")
         except Exception as e_gnome:
-            self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal (gnome-terminal):\n{e_gnome}")
+            self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_gnome}")
 
     def on_open_video_clicked(self, widget):
          if self.selected_file_path:
@@ -421,24 +442,22 @@ class App:
         self._launch_calibrator_in_terminal([])
 
     def _launch_calibrator_in_terminal(self, extra_args):
-        """Lança o calibrator.py em um terminal externo para garantir cores corretas."""
+        """Lança o calibrator.py em um terminal externo maximizado."""
         python_executable = self._get_python_executable()
         cmd_base = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path] + extra_args
 
         try:
-            # Tenta gnome-terminal
-            cmd = ['gnome-terminal', '--'] + cmd_base
+            cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Calibrador', '--class=extase-em-4r73', '--'] + cmd_base
             print(f"Executando calibrador (Terminal): {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
             print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
             try:
-                # Tenta xterm
-                cmd = ['xterm', '-e'] + cmd_base # xterm fecha ao sair, o que é ok pro calibrador
+                cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Calibrador', '-e'] + cmd_base
                 print(f"Executando calibrador (xterm): {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
-                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível (gnome-terminal ou xterm) encontrado.")
+                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
             except Exception as e:
                  self.show_error_dialog("Erro Calibrador", f"Erro ao lançar xterm: {e}")
         except Exception as e:

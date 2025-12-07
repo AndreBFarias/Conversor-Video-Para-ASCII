@@ -41,57 +41,51 @@ def iniciar_player(arquivo_path, loop=False):
         raise FileNotFoundError(f"Arquivo ASCII '{arquivo_path}' não encontrado.")
 
     try:
-        # Garante UTF-8 na leitura
         with open(arquivo_path, 'r', encoding='utf-8') as f:
             content = f.read()
     except Exception as e:
         raise IOError(f"Erro ao ler o arquivo '{arquivo_path}': {e}")
 
-    # Separa FPS da primeira linha, resto é conteúdo
     parts = content.split('\n', 1)
     if len(parts) < 2:
-        raise ValueError("Formato de arquivo inválido: FPS ou [FRAME] não encontrado.")
+        raise ValueError("Formato de arquivo inválido: FPS ou conteúdo não encontrado.")
 
-    # Valida FPS
     try:
         fps = float(parts[0].strip())
-        if fps <= 0: raise ValueError("FPS deve ser um número positivo.")
-        delay = 1.0 / fps
     except ValueError as e:
         raise ValueError(f"FPS inválido na primeira linha ('{parts[0].strip()}'): {e}")
 
-    # Processa os frames
     frame_content = parts[1]
-    # Remove qualquer [FRAME] inicial extra de forma segura
     if frame_content.startswith("[FRAME]\n"): frame_content = frame_content[len("[FRAME]\n"):]
     frames = frame_content.split("[FRAME]\n")
 
-    # Verifica se há frames válidos após o split
-    # 'all(not f.strip() for f in frames)' checa se todos os frames estão vazios
     if not frames or all(not f.strip() for f in frames):
          raise ValueError("Nenhum frame válido encontrado no arquivo após o FPS.")
 
-    # Limpa a tela uma vez antes de começar
     os.system('cls' if os.name == 'nt' else 'clear')
 
+    is_static_image = (fps == 0)
+
     try:
-        # Loop principal de reprodução
-        while True:
-            for frame_data in frames:
-                # Pula frames vazios que podem resultar do split (ex: linha em branco no final)
-                if not frame_data.strip(): continue
-                # Limpa terminal e posiciona cursor no topo
+        if is_static_image:
+            frame_data = frames[0]
+            if frame_data.strip():
                 sys.stdout.write(ANSI_CLEAR_AND_HOME)
-                # Imprime o frame ASCII colorido
                 imprimir_frame_colorido(frame_data)
-                # Pausa entre frames
-                time.sleep(delay)
-            # Sai do loop while se não for para repetir
-            if not loop: break
+                print("\n\n[Imagem Estática - Pressione Enter para sair]")
+                input()
+        else:
+            delay = 1.0 / fps
+            while True:
+                for frame_data in frames:
+                    if not frame_data.strip(): continue
+                    sys.stdout.write(ANSI_CLEAR_AND_HOME)
+                    imprimir_frame_colorido(frame_data)
+                    time.sleep(delay)
+                if not loop: break
     except KeyboardInterrupt:
         print("\nPlayer interrompido pelo usuário.")
     finally:
-        # Garante limpeza da formatação e da tela ao sair
         print(ANSI_RESET)
         os.system('cls' if os.name == 'nt' else 'clear')
 

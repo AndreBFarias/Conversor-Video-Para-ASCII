@@ -64,7 +64,7 @@
             <property name="spacing">10</property>
             <child>
               <object class="GtkButton" id="select_file_button">
-                <property name="label" translatable="yes">Selecionar Arquivo de Vídeo</property>
+                <property name="label" translatable="yes">Selecionar Arquivo</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
