@@ -134,5 +134,6 @@ python3-gi, python3-gi-cairo, gir1.2-gtk-3.0 (Para a interface GTK)
 
 desktop-file-utils, imagemagick (Para integração com o desktop)
 ```
-Licença
+### Licença
+
 Este projeto está sob a licença GPLv3. Livre para usar, modificar e distribuir, desde que a liberdade seja mantida.
