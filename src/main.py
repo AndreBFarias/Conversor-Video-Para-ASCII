@@ -33,6 +33,8 @@ try:
     PLAYER_SCRIPT = os.path.join(BASE_DIR, "cli_player.py")
     CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "converter.py")
     IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "image_converter.py")
+    PIXEL_ART_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_converter.py")
+    PIXEL_ART_IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_image_converter.py")
     CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "calibrator.py")
 
 except Exception as e:
@@ -123,6 +125,7 @@ class App:
             
             # Widgets do Dialog de Opções
             self.options_dialog = self.builder.get_object("options_dialog")
+            self.options_notebook = self.builder.get_object("options_notebook")  # IMPORTANTE: Notebook do Glade
             self.opt_loop_check = self.builder.get_object("opt_loop_check")
             self.opt_width_spin = self.builder.get_object("opt_width_spin")
             self.opt_height_spin = self.builder.get_object("opt_height_spin")
@@ -135,12 +138,19 @@ class App:
             self.opt_s_max_spin = self.builder.get_object("opt_s_max_spin")
             self.opt_v_min_spin = self.builder.get_object("opt_v_min_spin")
             self.opt_v_max_spin = self.builder.get_object("opt_v_max_spin")
+            
+            # Create mode selection widgets programmatically (not in glade)
+            self.opt_mode_ascii_radio = None
+            self.opt_mode_pixelart_radio = None
+            self.opt_pixel_size_spin = None
+            self.opt_palette_size_spin = None
+            self.opt_fixed_palette_check = None
 
             if None in [self.status_label, self.selected_path_label, self.convert_button,
                          self.convert_all_button, self.play_button, self.open_video_button,
                          self.open_folder_button, self.calibrate_button, self.open_webcam_button,
                          self.select_ascii_button, self.play_ascii_button, self.options_button,
-                         self.options_dialog, self.opt_loop_check, self.opt_width_spin]:
+                         self.options_dialog, self.options_notebook, self.opt_loop_check, self.opt_width_spin]:
                 raise TypeError("Um ou mais widgets essenciais não foram encontrados no arquivo .glade.")
         except Exception as e:
              self._show_init_error("Erro Crítico de UI", f"Falha ao obter componentes da interface:\n{e}\n\nVerifique 'src/ui/main.glade'.")
@@ -150,6 +160,10 @@ class App:
         self.selected_folder_path = None
         self.selected_ascii_path = None # Novo atributo para o arquivo ASCII selecionado
         self.conversion_lock = threading.Lock()
+        
+        # Criar ComboBox de presets de qualidade
+        self._create_quality_preset_combo()
+        
         self.update_button_states()
         self.window.show_all()
 
@@ -177,6 +191,263 @@ class App:
         # Marca falha para run_app() saber
         self.initialization_failed = True
         Gtk.main_quit() # Tenta sair do loop GTK se ele já tiver iniciado
+
+    def _create_mode_widgets(self):
+        """Cria programaticamente os widgets de seleção de modo e Pixel Art"""
+        try:
+            # Usa o Notebook que já foi carregado do Glade
+            if not hasattr(self, 'options_notebook') or not self.options_notebook:
+                print("Erro: options_notebook não existe")
+                return
+            
+            notebook = self.options_notebook
+            
+            # Cria página para configurações de modo
+            mode_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+            mode_page.set_margin_start(15)
+            mode_page.set_margin_end(15)
+            mode_page.set_margin_top(15)
+            mode_page.set_margin_bottom(15)
+            
+            # Frame de seleção de modo
+            mode_frame = Gtk.Frame(label="Modo de Conversão")
+            mode_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            mode_box.set_margin_start(10)
+            mode_box.set_margin_end(10)
+            mode_box.set_margin_top(10)
+            mode_box.set_margin_bottom(10)
+            
+            # Radio buttons
+            self.opt_mode_ascii_radio = Gtk.RadioButton.new_with_label_from_widget(None, "ASCII Art")
+            self.opt_mode_pixelart_radio = Gtk.RadioButton.new_with_label_from_widget(self.opt_mode_ascii_radio, "Pixel Art")
+            
+            mode_box.pack_start(self.opt_mode_ascii_radio, False, False, 0)
+            mode_box.pack_start(self.opt_mode_pixelart_radio, False, False, 0)
+            mode_frame.add(mode_box)
+            
+            # Frame de configurações Pixel Art
+            pixelart_frame = Gtk.Frame(label="Configurações Pixel Art")
+            pixelart_grid = Gtk.Grid()
+            pixelart_grid.set_column_spacing(10)
+            pixelart_grid.set_row_spacing(5)
+            pixelart_grid.set_margin_start(10)
+            pixelart_grid.set_margin_end(10)
+            pixelart_grid.set_margin_top(10)
+            pixelart_grid.set_margin_bottom(10)
+            
+            # Pixel size
+            pixel_size_label = Gtk.Label(label="Tamanho do Pixel:")
+            pixel_size_label.set_halign(Gtk.Align.START)
+            self.opt_pixel_size_spin = Gtk.SpinButton()
+            self.opt_pixel_size_spin.set_range(1, 16)
+            self.opt_pixel_size_spin.set_increments(1, 1)
+            self.opt_pixel_size_spin.set_value(2)
+            
+            # Palette size
+            palette_size_label = Gtk.Label(label="Tamanho da Paleta:")
+            palette_size_label.set_halign(Gtk.Align.START)
+            self.opt_palette_size_spin = Gtk.SpinButton()
+            self.opt_palette_size_spin.set_range(2, 256)
+            self.opt_palette_size_spin.set_increments(1, 8)
+            self.opt_pixel_size_spin.set_value(16)
+            
+            # Fixed palette checkbox
+            self.opt_fixed_palette_check = Gtk.CheckButton.new_with_label("Usar Paleta Fixa (Retro)")
+            
+            pixelart_grid.attach(pixel_size_label, 0, 0, 1, 1)
+            pixelart_grid.attach(self.opt_pixel_size_spin, 1, 0, 1, 1)
+            pixelart_grid.attach(palette_size_label, 0, 1, 1, 1)
+            pixelart_grid.attach(self.opt_palette_size_spin, 1, 1, 1, 1)
+            pixelart_grid.attach(self.opt_fixed_palette_check, 0, 2, 2, 1)
+            
+            pixelart_frame.add(pixelart_grid)
+            
+            # Adiciona frames à página
+            mode_page.pack_start(mode_frame, False, False, 0)
+            mode_page.pack_start(pixelart_frame, False, False, 0)
+            
+            # Adiciona nova aba ao notebook
+            tab_label = Gtk.Label(label="Modo")
+            notebook.append_page(mode_page, tab_label)
+            
+            # Mostra todos os novos widgets
+            mode_page.show_all()
+            
+            self._mode_widgets_created = True
+            print("✓ Widgets de Pixel Art criados com sucesso na aba 'Modo'")
+            
+        except Exception as e:
+            import traceback
+            print(f"Erro ao criar widgets de modo: {e}")
+            traceback.print_exc()
+
+    def _create_quality_preset_combo(self):
+        """Cria ComboBox de presets de qualidade na janela principal"""
+        try:
+            # Encontra o Box principal (primeiro filho da window)
+            main_box = None
+            for child in self.window.get_children():
+                if isinstance(child, Gtk.Box):
+                    main_box = child
+                    break
+            
+            if not main_box:
+                print("Aviso: Não foi possível encontrar Box principal para adicionar preset combo")
+                return
+            
+            # Cria um Box horizontal para label + combo
+            preset_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            preset_box.set_margin_start(10)
+            preset_box.set_margin_end(10)
+            preset_box.set_margin_top(5)
+            preset_box.set_margin_bottom(10)
+            
+            # Label
+            preset_label = Gtk.Label(label="Qualidade:")
+            preset_label.set_halign(Gtk.Align.START)
+            
+            # ComboBox
+            self.quality_preset_combo = Gtk.ComboBoxText()
+            
+            # Detecta modo atual para mostrar labels apropriados
+            conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
+            
+            if conversion_mode == 'pixelart':
+                # Labels para Pixel Art
+                self.quality_preset_combo.append("8bit_low", "8-bit Low (100x25, 16 cores)")
+                self.quality_preset_combo.append("8bit_high", "8-bit High (120x30, 16 cores)")
+                self.quality_preset_combo.append("16bit_low", "16-bit Low (150x38, 64 cores)")
+                self.quality_preset_combo.append("16bit_high", "16-bit High (180x45, 64 cores)")
+                self.quality_preset_combo.append("32bit", "32-bit (240x60, 128 cores)")
+                self.quality_preset_combo.append("64bit", "64-bit (300x75, 256 cores)")
+                self.quality_preset_combo.append("custom", "Custom (Manual)")
+                
+                # Carrega preset atual ou usa padrão 16bit_high
+                current_preset = self.config.get('Quality', 'preset', fallback='16bit_high')
+            else:
+                # Labels para ASCII
+                self.quality_preset_combo.append("mobile", "Mobile (144p) - 100x25")
+                self.quality_preset_combo.append("low", "Low (360p) - 120x30")
+                self.quality_preset_combo.append("medium", "Medium (480p) - 180x45")
+                self.quality_preset_combo.append("high", "High (540p) - 240x60")
+                self.quality_preset_combo.append("veryhigh", "Very High (720p) - 300x75")
+                self.quality_preset_combo.append("custom", "Custom (Manual)")
+                
+                # Carrega preset atual ou usa padrão medium
+                current_preset = self.config.get('Quality', 'preset', fallback='medium')
+            
+            self.quality_preset_combo.set_active_id(current_preset)
+            
+            # Conecta handler
+            self.quality_preset_combo.connect("changed", self.on_quality_preset_changed)
+            
+            self.quality_preset_combo.set_hexpand(True)
+            
+            # Adiciona ao box horizontal
+            preset_box.pack_start(preset_label, False, False, 0)
+            preset_box.pack_start(self.quality_preset_combo, True, True, 0)
+            
+            # Insere no Box principal logo APÓS o separador (posição 4)
+            # Estrutura: Logo+Título(0), Botões selecionar(1), Label path(2), Separador(3), [NOVO AQUI], Grid conversão(4), ...
+            main_box.pack_start(preset_box, False, False, 0)
+            main_box.reorder_child(preset_box, 4)  # Coloca após o separador
+            
+            preset_box.show_all()
+            
+            print("✓ ComboBox de presets de qualidade criado e inserido")
+            
+        except Exception as e:
+            print(f"Erro ao criar ComboBox de presets: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def on_quality_preset_changed(self, combo):
+        """Handler quando o preset de qualidade é alterado"""
+        preset_id = combo.get_active_id()
+        if not preset_id:
+            return
+        
+        print(f"Preset de qualidade alterado para: {preset_id}")
+        
+        # Detecta modo atual (ASCII ou Pixel Art)
+        conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
+        
+        # Dicionário de presets ASCII (valores ajustados para caber na tela)
+        ascii_presets = {
+            'mobile': {'width': 100, 'height': 25, 'aspect': 0.50},
+            'low': {'width': 120, 'height': 30, 'aspect': 0.50},
+            'medium': {'width': 180, 'height': 45, 'aspect': 0.48},
+            'high': {'width': 240, 'height': 60, 'aspect': 0.45},
+            'veryhigh': {'width': 300, 'height': 75, 'aspect': 0.42},
+        }
+        
+        # Dicionário de presets Pixel Art (baseado em profundidade de cor)
+        pixelart_presets = {
+            '8bit_low': {'width': 100, 'height': 25, 'pixel_size': 6, 'palette_size': 16},
+            '8bit_high': {'width': 120, 'height': 30, 'pixel_size': 5, 'palette_size': 16},
+            '16bit_low': {'width': 150, 'height': 38, 'pixel_size': 4, 'palette_size': 64},
+            '16bit_high': {'width': 180, 'height': 45, 'pixel_size': 3, 'palette_size': 64},
+            '32bit': {'width': 240, 'height': 60, 'pixel_size': 2, 'palette_size': 128},
+            '64bit': {'width': 300, 'height': 75, 'pixel_size': 1, 'palette_size': 256},
+        }
+        
+        if preset_id == 'custom':
+            # Modo custom: não altera valores, deixa usuário configurar manualmente
+            print(f"Modo Custom selecionado ({conversion_mode}) - ajuste manualmente em Opções")
+            return
+        
+        # Aplica preset apropriado baseado no modo
+        preset_applied = False
+        if conversion_mode == 'pixelart' and preset_id in pixelart_presets:
+            # Modo Pixel Art
+            preset = pixelart_presets[preset_id]
+            
+            # Atualiza config em memória
+            if 'Conversor' not in self.config:
+                self.config.add_section('Conversor')
+            if 'PixelArt' not in self.config:
+                self.config.add_section('PixelArt')
+            if 'Quality' not in self.config:
+                self.config.add_section('Quality')
+            
+            self.config.set('Conversor', 'target_width', str(preset['width']))
+            self.config.set('Conversor', 'target_height', str(preset['height']))
+            self.config.set('PixelArt', 'pixel_size', str(preset['pixel_size']))
+            self.config.set('PixelArt', 'palette_size', str(preset['palette_size']))
+            self.config.set('Quality', 'preset', preset_id)
+            
+            print(f"Aplicado preset Pixel Art {preset_id}: {preset['width']}x{preset['height']}, pixel_size={preset['pixel_size']}, {preset['palette_size']} cores")
+            preset_applied = True
+            
+        elif preset_id in ascii_presets:
+            # Modo ASCII (ou preset ASCII em modo Pixel Art)
+            preset = ascii_presets[preset_id]
+            
+            # Atualiza config em memória
+            if 'Conversor' not in self.config:
+                self.config.add_section('Conversor')
+            if 'Quality' not in self.config:
+                self.config.add_section('Quality')
+            
+            self.config.set('Conversor', 'target_width', str(preset['width']))
+            self.config.set('Conversor', 'target_height', str(preset['height']))
+            self.config.set('Conversor', 'char_aspect_ratio', str(preset['aspect']))
+            self.config.set('Quality', 'preset', preset_id)
+            
+            print(f"Aplicado preset ASCII {preset_id}: {preset['width']}x{preset['height']}, aspect={preset['aspect']}")
+            preset_applied = True
+            
+        else:
+            print(f"Aviso: Preset '{preset_id}' não encontrado para modo '{conversion_mode}'")
+        
+        if preset_applied:
+            # Salva no arquivo
+            try:
+                with open(self.config_path, 'w', encoding='utf-8') as f:
+                    self.config.write(f)
+                print(f"✓ Configurações de preset salvas.")
+            except Exception as e:
+                print(f"Erro ao salvar preset: {e}")
 
     # --- Funções de Seleção ---
     def on_select_file_button_clicked(self, widget):
@@ -294,12 +565,23 @@ class App:
             output_filepath = os.path.join(self.output_dir, output_filename)
             GLib.idle_add(self.on_conversion_update, f"({i+1}/{total}): Convertendo {file_name}...")
 
+            # Check conversion mode
+            conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
+            
             if self._is_image_file(file_path):
-                cmd = [python_executable, IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
-                script_name = IMAGE_CONVERTER_SCRIPT
-            else:
-                cmd = [python_executable, CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
-                script_name = CONVERTER_SCRIPT
+                if conversion_mode == 'pixelart':
+                    cmd = [python_executable, PIXEL_ART_IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
+                    script_name = PIXEL_ART_IMAGE_CONVERTER_SCRIPT
+                else:  # ASCII mode
+                    cmd = [python_executable, IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
+                    script_name = IMAGE_CONVERTER_SCRIPT
+            else:  # Video file
+                if conversion_mode == 'pixelart':
+                    cmd = [python_executable, PIXEL_ART_CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
+                    script_name = PIXEL_ART_CONVERTER_SCRIPT
+                else:  # ASCII mode
+                    cmd = [python_executable, CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
+                    script_name = CONVERTER_SCRIPT
 
             try:
                 print(f"Executando: {shlex.join(cmd)}")
@@ -353,16 +635,21 @@ class App:
             loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
             if loop_enabled:
                 cmd_base.append('-l')
+            
+            # Obtém zoom do player do config
+            player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
 
             try:
-                cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
-                print(f"Executando player: {shlex.join(cmd)}")
+                # gnome-terminal com zoom reduzido para caber mais caracteres
+                cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
+                print(f"Executando player com zoom {player_zoom}: {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
                 print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
                 try:
-                    cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
-                    print(f"Executando player (xterm): {shlex.join(cmd)}")
+                    # xterm com fonte pequena (6x10 pixels)
+                    cmd = ['xterm', '-fn', '6x10', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
+                    print(f"Executando player (xterm com fonte pequena): {shlex.join(cmd)}")
                     subprocess.Popen(cmd)
                 except FileNotFoundError:
                     print("ERRO: xterm também não encontrado.")
@@ -388,16 +675,21 @@ class App:
         loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
         if loop_enabled:
             cmd_base.append('-l')
+        
+        # Obtém zoom do player do config
+        player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
 
         try:
-            cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
-            print(f"Executando player (ASCII): {shlex.join(cmd)}")
+            # gnome-terminal com zoom reduzido
+            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
+            print(f"Executando player (ASCII) com zoom {player_zoom}: {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
             print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
             try:
-                cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
-                print(f"Executando player (xterm): {shlex.join(cmd)}")
+                # xterm com fonte pequena
+                cmd = ['xterm', '-fn', '6x10', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
+                print(f"Executando player (xterm com fonte pequena): {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
                 self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
@@ -508,7 +800,7 @@ class App:
             
             # Luminance Ramp
             default_ramp = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-            luminance_val = self.config.get('Conversor', 'LUMINANCE_RAMP', fallback=default_ramp)
+            luminance_val = self.config.get('Conversor', 'luminance_ramp', fallback=default_ramp)
             self.opt_luminance_entry.set_text(luminance_val)
 
             # Chroma Key
@@ -525,6 +817,31 @@ class App:
             self.opt_s_max_spin.set_value(s_max)
             self.opt_v_min_spin.set_value(v_min)
             self.opt_v_max_spin.set_value(v_max)
+            
+            # Mode and Pixel Art settings
+            mode_val = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
+            pixel_size_val = self.config.getint('PixelArt', 'pixel_size', fallback=2)
+            palette_size_val = self.config.getint('PixelArt', 'color_palette_size', fallback=16)
+            fixed_palette_val = self.config.getboolean('PixelArt', 'use_fixed_palette', fallback=False)
+            
+            # Create mode widgets if they don't exist yet
+            if not hasattr(self, '_mode_widgets_created') or not self._mode_widgets_created:
+                self._create_mode_widgets()
+            
+            # Set mode radio buttons (only if widgets were created successfully)
+            if hasattr(self, 'opt_mode_pixelart_radio') and self.opt_mode_pixelart_radio:
+                if mode_val == 'pixelart':
+                    self.opt_mode_pixelart_radio.set_active(True)
+                else:
+                    self.opt_mode_ascii_radio.set_active(True)
+                
+                # Set pixel art values
+                if self.opt_pixel_size_spin:
+                    self.opt_pixel_size_spin.set_value(pixel_size_val)
+                if self.opt_palette_size_spin:
+                    self.opt_palette_size_spin.set_value(palette_size_val)
+                if self.opt_fixed_palette_check:
+                    self.opt_fixed_palette_check.set_active(fixed_palette_val)
             
         except Exception as e:
             print(f"Erro ao carregar opções: {e}")
@@ -571,7 +888,7 @@ class App:
             self.config.set('Conversor', 'target_height', str(int(self.opt_height_spin.get_value())))
             self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
             self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
-            self.config.set('Conversor', 'LUMINANCE_RAMP', self.opt_luminance_entry.get_text())
+            self.config.set('Conversor', 'luminance_ramp', self.opt_luminance_entry.get_text())
 
             # Chroma Key
             if 'ChromaKey' not in self.config: self.config.add_section('ChromaKey')
@@ -581,6 +898,18 @@ class App:
             self.config.set('ChromaKey', 's_max', str(int(self.opt_s_max_spin.get_value())))
             self.config.set('ChromaKey', 'v_min', str(int(self.opt_v_min_spin.get_value())))
             self.config.set('ChromaKey', 'v_max', str(int(self.opt_v_max_spin.get_value())))
+            
+            # Mode and Pixel Art
+            if hasattr(self, 'opt_mode_pixelart_radio') and self.opt_mode_pixelart_radio:
+                if 'Mode' not in self.config: self.config.add_section('Mode')
+                mode_val = 'pixelart' if self.opt_mode_pixelart_radio.get_active() else 'ascii'
+                self.config.set('Mode', 'conversion_mode', mode_val)
+                
+                if 'PixelArt' not in self.config: self.config.add_section('PixelArt')
+                self.config.set('PixelArt', 'pixel_size', str(int(self.opt_pixel_size_spin.get_value())))
+                self.config.set('PixelArt', 'color_palette_size', str(int(self.opt_palette_size_spin.get_value())))
+                self.config.set('PixelArt', 'use_fixed_palette', 'true' if self.opt_fixed_palette_check.get_active() else 'false')
+
             
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
@@ -600,7 +929,7 @@ class App:
             self.config.set('Conversor', 'target_height', str(int(self.opt_height_spin.get_value())))
             self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
             self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
-            self.config.set('Conversor', 'LUMINANCE_RAMP', self.opt_luminance_entry.get_text())
+            self.config.set('Conversor', 'luminance_ramp', self.opt_luminance_entry.get_text())
             
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)

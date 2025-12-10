@@ -8,7 +8,7 @@ import time
 
 ANSI_RESET = "\033[0m"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
-LUMINANCE_RAMP_DEFAULT = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 
 config_global = None
 config_path_global = None
@@ -16,6 +16,84 @@ config_path_global = None
 WINDOW_ORIGINAL = "Janela 1: Original (Webcam)"
 WINDOW_RESULT = "Janela 2: Filtro Chroma ('s' Salva, 'q' Sai)"
 WINDOW_CONTROLS = "Controles"
+
+# Presets de Chroma Key
+CHROMA_PRESETS = {
+    'studio': {'h_min': 35, 'h_max': 85, 's_min': 50, 's_max': 255, 'v_min': 50, 'v_max': 255},  # Verde estúdio profissional
+    'natural': {'h_min': 35, 'h_max': 90, 's_min': 30, 's_max': 255, 'v_min': 30, 'v_max': 255}, # Verde natural (outdoor)
+    'bright': {'h_min': 40, 'h_max': 80, 's_min': 80, 's_max': 255, 'v_min': 80, 'v_max': 255},  # Verde vibrante/brilhante
+}
+
+
+def auto_detect_green(frame):
+    """Detecta automaticamente valores HSV ideais para chroma key verde
+    
+    Args:
+        frame: Frame BGR do OpenCV
+    
+    Returns:
+        dict com keys: h_min, h_max, s_min, s_max, v_min, v_max
+    """
+    # Converte para HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # Define filtro inicial amplo para verdes
+    lower_broad = np.array([30, 40, 40])
+    upper_broad = np.array([90, 255, 255])
+    
+    # Máscara inicial
+    mask_broad = cv2.inRange(hsv, lower_broad, upper_broad)
+    
+    # Pega apenas pixels verdes
+    green_pixels = hsv[mask_broad > 0]
+    
+    if len(green_pixels) == 0:
+        # Sem verde detectado, retorna valores padrão studio
+        print("Aviso: Nenhum verde detectado. Usando preset Studio.")
+        return CHROMA_PRESETS['studio'].copy()
+    
+    # Calcula médias e desvios
+    h_mean = np.mean(green_pixels[:, 0])
+    s_mean = np.mean(green_pixels[:, 1])
+    v_mean = np.mean(green_pixels[:, 2])
+    
+    h_std = np.std(green_pixels[:, 0])
+    s_std = np.std(green_pixels[:, 1])
+    v_std = np.std(green_pixels[:, 2])
+    
+    # Define ranges baseados em média ± 1.5*desvio
+    h_min = max(0, int(h_mean - 1.5 * h_std))
+    h_max = min(179, int(h_mean + 1.5 * h_std))
+    s_min = max(0, int(s_mean - 1.5 * s_std))
+    s_max = 255
+    v_min = max(0, int(v_mean - 1.5 * v_std))
+    v_max = 255
+    
+    print(f"Auto-detectado: H={h_min}-{h_max}, S={s_min}-{s_max}, V={v_min}-{v_max}")
+    
+    return {'h_min': h_min, 'h_max': h_max, 's_min': s_min, 's_max': s_max, 'v_min': v_min, 'v_max': v_max}
+
+
+def apply_morphological_refinement(mask, erode_size=2, dilate_size=2):
+    """Aplica erosão + dilatação morfológica para limpar bordas
+    
+    Args:
+        mask: Máscara binária
+        erode_size: Tamanho do kernel de erosão (0 = desabilitado)
+        dilate_size: Tamanho do kernel de dilatação (0 = desabilitado)
+    
+    Returns:
+        Máscara refinada
+    """
+    if erode_size > 0:
+        kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
+        mask = cv2.erode(mask, kernel_erode, iterations=1)
+    
+    if dilate_size > 0:
+        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size*2+1, dilate_size*2+1))
+        mask = cv2.dilate(mask, kernel_dilate, iterations=1)
+    
+    return mask
 
 
 def rgb_to_ansi256(r, g, b):
@@ -79,7 +157,7 @@ def load_config(config_path):
 
     try:
         config.add_section('Conversor')
-        config.set('Conversor', 'LUMINANCE_RAMP', LUMINANCE_RAMP_DEFAULT)
+        config.set('Conversor', 'luminance_ramp', LUMINANCE_RAMP_DEFAULT)
         config.read(config_path, encoding='utf-8')
         return config
     except Exception as e:
@@ -174,7 +252,7 @@ def main():
                 'target_height': config_global.getint('Conversor', 'target_height', fallback=0),
                 'char_aspect_ratio': config_global.getfloat('Conversor', 'char_aspect_ratio', fallback=0.45),
                 'sobel_threshold': config_global.getint('Conversor', 'sobel_threshold', fallback=50),
-                'luminance_ramp': config_global.get('Conversor', 'LUMINANCE_RAMP', fallback=LUMINANCE_RAMP_DEFAULT)
+                'luminance_ramp': config_global.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT)
             }
         except Exception as e:
             print(f"Aviso: Erro ao ler [Conversor] do config: {e}.")
@@ -232,11 +310,15 @@ def main():
     cv2.createTrackbar("S Max", WINDOW_CONTROLS, initial_values['s_max'], 255, on_trackbar)
     cv2.createTrackbar("V Min", WINDOW_CONTROLS, initial_values['v_min'], 255, on_trackbar)
     cv2.createTrackbar("V Max", WINDOW_CONTROLS, initial_values['v_max'], 255, on_trackbar)
+    cv2.createTrackbar("Erode", WINDOW_CONTROLS, 2, 10, on_trackbar)  # Erosão morfológica (limpa pixels isolados)
+    cv2.createTrackbar("Dilate", WINDOW_CONTROLS, 2, 10, on_trackbar)  # Dilatação morfológica (fecha buracos)
 
     print("Controles criados. Loop iniciado.")
     print("COMANDOS:")
     print("  's' : Salvar configuracoes no config.ini")
     print("  'r' : Resetar para valores padrao")
+    print("  'a' : Auto-detectar verde do frame atual")
+    print("  'p' : Alternar presets (Studio/Natural/Bright/Custom)")
     print("  'g' : Iniciar/Parar GRAVACAO da animacao ASCII")
     print("  'q' : Sair")
 
@@ -245,6 +327,9 @@ def main():
     is_recording = False
     recording_frames = []
     recording_fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    
+    current_preset_index = 0  # Para ciclar entre presets
+    preset_names = ['custom', 'studio', 'natural', 'bright']
 
     last_config_reload = time.time()
     config_reload_interval = 2.0
@@ -279,11 +364,17 @@ def main():
         s_max = cv2.getTrackbarPos("S Max", WINDOW_CONTROLS)
         v_min = cv2.getTrackbarPos("V Min", WINDOW_CONTROLS)
         v_max = cv2.getTrackbarPos("V Max", WINDOW_CONTROLS)
+        erode_size = cv2.getTrackbarPos("Erode", WINDOW_CONTROLS)
+        dilate_size = cv2.getTrackbarPos("Dilate", WINDOW_CONTROLS)
 
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         lower = np.array([h_min, s_min, v_min])
         upper = np.array([h_max, s_max, v_max])
         mask_original_size = cv2.inRange(hsv, lower, upper)
+        
+        # Aplica refinamento morfológico para limpar bordas
+        mask_original_size = apply_morphological_refinement(mask_original_size, erode_size, dilate_size)
+        
         result = cv2.bitwise_and(frame, frame, mask=mask_original_size)
 
         grayscale_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -365,6 +456,36 @@ def main():
 
         if key == ord('r'):
             reset_defaults()
+        
+        if key == ord('a'):
+            # Auto-detect verde do frame atual
+            print("\nAuto-detectando verde do frame atual...")
+            detected_values = auto_detect_green(frame)
+            cv2.setTrackbarPos("H Min", WINDOW_CONTROLS, detected_values['h_min'])
+            cv2.setTrackbarPos("H Max", WINDOW_CONTROLS, detected_values['h_max'])
+            cv2.setTrackbarPos("S Min", WINDOW_CONTROLS, detected_values['s_min'])
+            cv2.setTrackbarPos("S Max", WINDOW_CONTROLS, detected_values['s_max'])
+            cv2.setTrackbarPos("V Min", WINDOW_CONTROLS, detected_values['v_min'])
+            cv2.setTrackbarPos("V Max", WINDOW_CONTROLS, detected_values['v_max'])
+            print(f"Valores aplicados: H={detected_values['h_min']}-{detected_values['h_max']}, S={detected_values['s_min']}-{detected_values['s_max']}, V={detected_values['v_min']}-{detected_values['v_max']}")
+        
+        if key == ord('p'):
+            # Cicla entre presets
+            current_preset_index = (current_preset_index + 1) % len(preset_names)
+            preset_name = preset_names[current_preset_index]
+            
+            if preset_name == 'custom':
+                print("\nPreset: Custom (valores manuais)")
+            else:
+                preset_values = CHROMA_PRESETS[preset_name]
+                print(f"\nPreset: {preset_name.capitalize()}")
+                cv2.setTrackbarPos("H Min", WINDOW_CONTROLS, preset_values['h_min'])
+                cv2.setTrackbarPos("H Max", WINDOW_CONTROLS, preset_values['h_max'])
+                cv2.setTrackbarPos("S Min", WINDOW_CONTROLS, preset_values['s_min'])
+                cv2.setTrackbarPos("S Max", WINDOW_CONTROLS, preset_values['s_max'])
+                cv2.setTrackbarPos("V Min", WINDOW_CONTROLS, preset_values['v_min'])
+                cv2.setTrackbarPos("V Max", WINDOW_CONTROLS, preset_values['v_max'])
+                print(f"Valores aplicados: H={preset_values['h_min']}-{preset_values['h_max']}, S={preset_values['s_min']}-{preset_values['s_max']}, V={preset_values['v_min']}-{preset_values['v_max']}")
 
         if key == ord('g'):
             if not is_recording:

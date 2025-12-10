@@ -65,7 +65,7 @@ def run_realtime_ascii(config_path):
     config = configparser.ConfigParser(interpolation=None)
 
     config.add_section('Conversor')
-    config.set('Conversor', 'LUMINANCE_RAMP', LUMINANCE_RAMP_DEFAULT)
+    config.set('Conversor', 'luminance_ramp', LUMINANCE_RAMP_DEFAULT)
 
     if not config.read(config_path):
         print(f"Erro fatal: config.ini nao encontrado em {config_path}")
@@ -75,7 +75,7 @@ def run_realtime_ascii(config_path):
         target_width = config.getint('Conversor', 'target_width', fallback=80)
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.45)
         sobel_threshold = config.getint('Conversor', 'sobel_threshold', fallback=50)
-        luminance_ramp = config.get('Conversor', 'LUMINANCE_RAMP')
+        luminance_ramp = config.get('Conversor', 'luminance_ramp')
     except Exception as e:
         print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
         target_width = 80

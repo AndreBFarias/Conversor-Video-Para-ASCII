@@ -9,6 +9,28 @@ LUMINANCE_RAMP = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;
 COLOR_SEPARATOR = "§"
 
 
+def sharpen_frame(frame, sharpen_amount=0.5):
+    """Aplica filtro de nitidez (sharpen) no frame
+    
+    Args:
+        frame: Frame BGR
+        sharpen_amount: Intensidade do sharpen (0.0 = sem efeito, 1.0 = máximo)
+    
+    Returns:
+        Frame com sharpen aplicado
+    """
+    if sharpen_amount <= 0:
+        return frame
+    
+    # Blur gaussiano
+    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
+    
+    # Unsharp mask: imagem + sharpen_amount * (imagem - blur)
+    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
+    
+    return sharpened
+
+
 def rgb_to_ansi256(r, g, b):
     if r == g == b:
         if r < 8:
@@ -59,6 +81,10 @@ def iniciar_conversao(video_path, output_dir, config):
         target_width = config.getint('Conversor', 'target_width')
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
+        
+        # Melhorias de nitidez
+        sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
+        sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
         lower_green = np.array([
             config.getint('ChromaKey', 'h_min'),
             config.getint('ChromaKey', 's_min'),
@@ -108,11 +134,18 @@ def iniciar_conversao(video_path, output_dir, config):
         sucesso, frame_colorido = captura.read()
         if not sucesso:
             break
+        
+        # Aplica sharpen ANTES de redimensionar (melhor resultado)
+        if sharpen_enabled:
+            frame_colorido = sharpen_frame(frame_colorido, sharpen_amount)
+        
         hsv_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_frame, lower_green, upper_green)
         grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
-        resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_AREA)
-        resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
+        
+        # Usa INTER_LANCZOS4 para melhor qualidade de redimensionamento
+        resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
+        resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
         resized_mask = cv2.resize(mask, target_dimensions, interpolation=cv2.INTER_NEAREST)
         sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
         sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)
@@ -148,10 +181,10 @@ if __name__ == "__main__":
     config = configparser.ConfigParser(interpolation=None)
     config.read(args.config)
 
-    if not config.has_option('Conversor', 'LUMINANCE_RAMP'):
+    if not config.has_option('Conversor', 'luminance_ramp'):
         if not config.has_section('Conversor'):
             config.add_section('Conversor')
-        config.set('Conversor', 'LUMINANCE_RAMP', LUMINANCE_RAMP)
+        config.set('Conversor', 'luminance_ramp', LUMINANCE_RAMP)
 
     output_dir = config['Pastas']['output_dir']
 
