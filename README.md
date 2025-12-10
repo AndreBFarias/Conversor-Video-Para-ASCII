@@ -10,6 +10,23 @@
 </div>
 </div></div>
 
+---
+
+## 👥 Créditos
+
+**Projeto Original:** [AndreBFarias](https://github.com/AndreBFarias/Conversor-Video-Para-ASCII)  
+ Desenvolvedor original do conceito e implementação base do conversor ASCII.
+
+**Novas Funcionalidades (2025):** [@vitoriamaria](https://github.com/vitoriamaria)
+- ✨ **Sistema de Presets de Qualidade** - Presets dinâmicos (Mobile, Low, Medium, High, Very High) com detecção automática de modo
+- 🎨 **Modo Pixel Art Completo** - Conversão para Pixel Art com 6 níveis de qualidade (8-bit a 64-bit), controle de pixel_size e palette_size
+- 🖼️ **Melhorias de Nitidez** - Sharpen filter (Unsharp Mask) e interpolação Lanczos para maior preservação de detalhes
+- 🤖 **Calibrador Automático de Chroma Key** - Auto-detecção de verde, presets prontos (Studio/Natural/Bright) e refinamento morfológico de bordas
+- 🎯 **Otimização de Zoom** - Player com zoom isolado (0.6) para melhor visualização sem afetar sistema
+- 📐 **Controle de Aspect Ratio** - Range expandido (0.01 a 2.0) para melhor ajuste de proporções
+
+---
+
 ### Descrição
 Um ritual de magia digital que transmuda vídeos em animações ASCII coloridas, banindo fundos indesejados (como *chroma key*) e evocando silhuetas em caracteres que dançam no terminal. Perfeito para quem anseia por arte crua, onde cada frame é um sussurro de luz e sombra. Processa múltiplos vídeos de uma pasta, salva em formato `.txt` otimizado, e projeta no terminal com loop eterno se desejado.
 
