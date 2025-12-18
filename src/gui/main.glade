@@ -176,16 +176,59 @@
         </child>
 
         <child>
-          <object class="GtkButton" id="play_button">
-            <property name="label" translatable="yes">Reproduzir (no Terminal)</property>
+          <object class="GtkGrid">
             <property name="visible">True</property>
-            <property name="sensitive">False</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Reproduz o arquivo .txt correspondente 
-ao vídeo selecionado</property>
+            <property name="can-focus">False</property>
+            <property name="column-spacing">10</property>
             <property name="margin-top">5</property>
-            <signal name="clicked" handler="on_play_button_clicked" swapped="no"/>
+            <child>
+              <object class="GtkButton" id="play_terminal_button">
+                <property name="label" translatable="yes">🖥️ Terminal</property>
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Reproduz no terminal com ANSI 256 cores</property>
+                <property name="hexpand">True</property>
+                <signal name="clicked" handler="on_play_terminal_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="play_window_button">
+                <property name="label" translatable="yes">🪟 Janela</property>
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Reproduz em janela OpenCV com controle de zoom</property>
+                <property name="hexpand">True</property>
+                <signal name="clicked" handler="on_play_window_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="play_both_button">
+                <property name="label" translatable="yes">🔀 Híbrido</property>
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Reproduz em terminal + janela simultaneamente</property>
+                <property name="hexpand">True</property>
+                <signal name="clicked" handler="on_play_both_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">2</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -366,6 +409,49 @@ o arquivo de vídeo original selecionado</property>
             <property name="position">12</property>
           </packing>
         </child>
+
+
+        <!-- GTK v2: Integrated Preview Widget - DISABLED -->
+        <!--
+        <child>
+          <object class="GtkFrame" id="preview_frame">
+            <property name="visible">False</property>
+            <property name="can-focus">False</property>
+            <property name="label-xalign">0</property>
+            <property name="shadow-type">in</property>
+            <property name="margin-top">10</property>
+            <child>
+              <object class="GtkAspectFrame" id="preview_aspect_frame">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
+                <property name="ratio">1.0</property>
+                <property name="obey-child">False</property>
+                <child>
+                  <object class="GtkImage" id="preview_image">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="stock">gtk-missing-image</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">📺 Preview</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">13</property>
+          </packing>
+        </child>
+        -->
       </object>
     </child>
   </object>

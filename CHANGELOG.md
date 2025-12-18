@@ -2,7 +2,18 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-## [2.0.0] - 2025-12-10
+## [2.0.0] - 2025-12-17
+
+### 🛡️ Compliance & Estrutura (LEI MARCIAL v3.0)
+- **Reestruturação Completa de Diretórios:**
+  - `src/ui` -> `src/gui`
+  - `src/assets` -> `assets/` (Root)
+  - Novos diretórios padronizados: `data_input/`, `data_output/`, `logs/`, `Dev_log/`
+- **Protocolo de Logging:**
+  - Substituição de `print` por `logger` rotacionado em `logs/system.log`
+- **Documentação:**
+  - README estritamente formatado conforme template visual
+  - Scripts de lifecycle (`install.sh`, `uninstall.sh`) atualizados
 
 ### ✨ Novas Funcionalidades
 

@@ -60,8 +60,10 @@ if $NEED_ICON_UPDATE ; then
      if [[ -d "$ICON_BASE_DIR_SYSTEM" ]]; then $SUDO_CMD gtk-update-icon-cache "$ICON_BASE_DIR_SYSTEM" -f -t >/dev/null 2>&1; fi
 fi
 
-echo "[4/4] Limpando cache Python..."
+echo "[4/4] Limpando cache Python e Logs..."
 find "${SCRIPT_DIR}" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+rm -rf "${SCRIPT_DIR}/logs" 2>/dev/null
+rm -rf "${SCRIPT_DIR}/Dev_log" 2>/dev/null
 
 echo "=== Banimento Concluido ==="
 echo "As dependencias do sistema (GTK, OpenCV) foram mantidas."

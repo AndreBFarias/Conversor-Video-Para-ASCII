@@ -8,7 +8,24 @@ import time
 
 ANSI_RESET = "\033[0m"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
-LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+
+config_global = None
+config_path_global = None
+
+WINDOW_ORIGINAL = "Janela 1: Original (Webcam)"
+WINDOW_RESULT = "Janela 2: Filtro Chroma ('s' Salva, 'q' Sai)"
+WINDOW_CONTROLS = "Controles"
+
+
+def sharpen_frame(frame, sharpen_amount=0.5):
+    if sharpen_amount <= 0:
+        return frame
+    
+    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
+    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
+    
+    return sharpened
 
 config_global = None
 config_path_global = None
@@ -246,23 +263,41 @@ def main():
         config_global = load_config(config_path_global)
         if config_global is None:
             return None
+        
+        # Detectar tamanho do terminal
+        try:
+            term_size = os.get_terminal_size()
+            target_width = term_size.columns - 2
+            target_height = term_size.lines - 5
+        except OSError:
+            # Fallback para config.ini
+            try:
+                target_width = config_global.getint('Conversor', 'target_width')
+                target_height = config_global.getint('Conversor', 'target_height')
+            except:
+                target_width = 180
+                target_height = 45
+        
         try:
             return {
-                'target_width': config_global.getint('Conversor', 'target_width', fallback=80),
-                'target_height': config_global.getint('Conversor', 'target_height', fallback=0),
-                'char_aspect_ratio': config_global.getfloat('Conversor', 'char_aspect_ratio', fallback=0.45),
-                'sobel_threshold': config_global.getint('Conversor', 'sobel_threshold', fallback=50),
-                'luminance_ramp': config_global.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT)
+                'target_width': target_width,
+                'target_height': target_height,
+                'char_aspect_ratio': 0.48,
+                'sobel_threshold': config_global.getint('Conversor', 'sobel_threshold'),
+                'luminance_ramp': config_global.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT),
+                'sharpen_enabled': config_global.getboolean('Conversor', 'sharpen_enabled', fallback=True),
+                'sharpen_amount': config_global.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
             }
-        except Exception as e:
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
             print(f"Aviso: Erro ao ler [Conversor] do config: {e}.")
             return None
 
     converter_config = reload_converter_config()
     if converter_config is None:
         converter_config = {
-            'target_width': 80, 'target_height': 0, 'char_aspect_ratio': 0.45,
-            'sobel_threshold': 50, 'luminance_ramp': LUMINANCE_RAMP_DEFAULT
+            'target_width': 180, 'target_height': 0, 'char_aspect_ratio': 0.48,
+            'sobel_threshold': 70, 'luminance_ramp': LUMINANCE_RAMP_DEFAULT,
+            'sharpen_enabled': True, 'sharpen_amount': 0.5
         }
 
     is_video_file = args.video is not None
@@ -347,6 +382,9 @@ def main():
         if not is_video_file:
             frame = cv2.flip(frame, 1)
 
+        if converter_config.get('sharpen_enabled', True):
+            frame = sharpen_frame(frame, converter_config.get('sharpen_amount', 0.5))
+
         current_time = time.time()
         if current_time - last_config_reload > config_reload_interval:
             new_config = reload_converter_config()
@@ -379,8 +417,8 @@ def main():
 
         grayscale_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_AREA)
-        resized_color = cv2.resize(frame, target_dimensions, interpolation=cv2.INTER_AREA)
+        resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
+        resized_color = cv2.resize(frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
         resized_mask = cv2.resize(mask_original_size, target_dimensions, interpolation=cv2.INTER_NEAREST)
 
         sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)

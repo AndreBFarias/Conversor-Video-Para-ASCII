@@ -9,7 +9,17 @@ import time
 ANSI_RESET = "\033[0m"
 COLOR_SEPARATOR = "§"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
-LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+
+
+def sharpen_frame(frame, sharpen_amount=0.5):
+    if sharpen_amount <= 0:
+        return frame
+    
+    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
+    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
+    
+    return sharpened
 
 
 def rgb_to_ansi256(r, g, b):
@@ -71,16 +81,40 @@ def run_realtime_ascii(config_path):
         print(f"Erro fatal: config.ini nao encontrado em {config_path}")
         return
 
+    # Detectar tamanho do terminal
     try:
-        target_width = config.getint('Conversor', 'target_width', fallback=80)
-        char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.45)
-        sobel_threshold = config.getint('Conversor', 'sobel_threshold', fallback=50)
+        term_size = os.get_terminal_size()
+        terminal_cols = term_size.columns
+        terminal_lines = term_size.lines
+        print(f"Terminal detectado: {terminal_cols}x{terminal_lines}")
+        
+        # Usar TODO o espaço disponível, com margem de segurança
+        target_width = terminal_cols - 2
+        target_height = terminal_lines - 5
+        char_aspect_ratio = 0.48
+        
+        print(f"Usando resolucao maxima: {target_width}x{target_height}")
+    except OSError:
+        print("Aviso: Nao foi possivel detectar tamanho do terminal. Usando config.ini")
+        try:
+            target_width = config.getint('Conversor', 'target_width')
+            char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            print(f"Erro ao ler config.ini: {e}. Usando valores padrão médios.")
+            target_width = 180
+            char_aspect_ratio = 0.48
+    
+    try:
+        sobel_threshold = config.getint('Conversor', 'sobel_threshold')
         luminance_ramp = config.get('Conversor', 'luminance_ramp')
-    except Exception as e:
-        print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
-        target_width = 80
-        char_aspect_ratio = 0.45
-        sobel_threshold = 50
+        
+        sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
+        sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        print(f"Erro ao ler config.ini: {e}. Usando valores padrão médios.")
+        target_width = 180
+        char_aspect_ratio = 0.48
+        sobel_threshold = 70
         luminance_ramp = LUMINANCE_RAMP_DEFAULT
 
     cap = cv2.VideoCapture(0)
@@ -93,9 +127,14 @@ def run_realtime_ascii(config_path):
         if not ret or frame_teste is None:
             raise ValueError("Nao foi possivel ler o primeiro frame da webcam.")
         source_height, source_width, _ = frame_teste.shape
-        target_height = int((target_width * source_height * char_aspect_ratio) / source_width)
-        if target_height <= 0:
-            target_height = int(target_width * (9/16) * char_aspect_ratio)
+        
+        # Se usamos detecção de terminal, target_height já foi calculado
+        # Senão, calculamos baseado em aspect ratio
+        if 'target_height' not in locals() or target_height <= 0:
+            target_height = int((target_width * source_height * char_aspect_ratio) / source_width)
+            if target_height <= 0:
+                target_height = int(target_width * (9/16) * char_aspect_ratio)
+        
         target_dimensions = (target_width, target_height)
         print(f"Webcam detectada: {source_width}x{source_height}. Convertendo para: {target_width}x{target_height} chars.")
         print("Pressione Ctrl+C para sair.")
@@ -113,10 +152,13 @@ def run_realtime_ascii(config_path):
 
             frame_colorido = cv2.flip(frame_colorido, 1)
 
+            if sharpen_enabled:
+                frame_colorido = sharpen_frame(frame_colorido, sharpen_amount)
+
             grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
-            resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_AREA)
-            resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
+            resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
+            resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
 
             sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
             sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)

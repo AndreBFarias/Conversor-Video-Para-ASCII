@@ -53,20 +53,15 @@ def converter_imagem_para_ascii(gray_frame, color_frame, mask, magnitude_frame, 
             if mask[y, x] == 255:
                 char = " "
                 ansi_code = 232
-            elif magnitude_frame[y, x] > sobel_threshold:
-                angle = angle_frame[y, x]
-                if (angle > 67.5 and angle <= 112.5):
-                    char = "|"
-                elif (angle > 112.5 and angle <= 157.5):
-                    char = "/"
-                elif (angle > 157.5 or angle <= 22.5):
-                    char = "-"
-                else:
-                    char = "\\"
-                b, g, r = color_frame[y, x]
-                ansi_code = rgb_to_ansi256(r, g, b)
             else:
+                # USA APENAS RAMPA PERSONALIZADA (bordas também!)
                 pixel_brightness = gray_frame[y, x]
+                
+                # Se tem borda detectada, aumenta brilho para pegar caracteres do fim da rampa
+                if magnitude_frame[y, x] > sobel_threshold:
+                    # Bordas ficam mais claras (characters do final da rampa)
+                    pixel_brightness = min(255, pixel_brightness + 100)
+                
                 char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
                 char = luminance_ramp[char_index]
                 b, g, r = color_frame[y, x]
@@ -82,6 +77,7 @@ def iniciar_conversao_imagem(image_path, output_dir, config):
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
         luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP)
+        print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
         
         # Melhorias de nitidez
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
