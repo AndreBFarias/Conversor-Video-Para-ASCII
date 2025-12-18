@@ -9,7 +9,7 @@
 <div align="center">
 <div style="text-align: center;">
   <h1 style="font-size: 2.2em;">Êxtase em 4R73</h1>
-  <img src="assets/icon.png" width="120" alt="Logo Êxtase em 4R73">
+  <img src="assets/logo.png" width="120" alt="Logo Extase em 4R73">
 </div>
 </div>
 </div>
