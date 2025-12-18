@@ -5,7 +5,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 APP_NAME="extase-em-4r73"
 APP_DISPLAY_NAME="Extase em 4R73"
 ICON_NAME="${APP_NAME}"
-ICON_SOURCE_PATH="${SCRIPT_DIR}/src/assets/logo.png"
+ICON_SOURCE_PATH="${SCRIPT_DIR}/assets/logo.png"
 
 DESKTOP_ENTRY_DIR_USER="${HOME}/.local/share/applications"
 ICON_INSTALL_SIZE_DIR_USER="${HOME}/.local/share/icons/hicolor/64x64/apps"
@@ -53,9 +53,9 @@ fi
 "${SCRIPT_DIR}/venv/bin/pip" install --upgrade pip || echo "Aviso: Falha ao atualizar pip."
 "${SCRIPT_DIR}/venv/bin/pip" install -r "${SCRIPT_DIR}/requirements.txt" || { echo "ERRO: Falha ao instalar pacotes Python do requirements.txt."; exit 1; }
 
-echo "[5/7] Preparando os altares ('videos_entrada' e 'videos_saida')..."
-mkdir -p "${SCRIPT_DIR}/videos_entrada" || echo "Aviso: Falha ao criar videos_entrada."
-mkdir -p "${SCRIPT_DIR}/videos_saida" || echo "Aviso: Falha ao criar videos_saida."
+echo "[5/7] Preparando os altares ('data_input' e 'data_output')..."
+mkdir -p "${SCRIPT_DIR}/data_input" || echo "Aviso: Falha ao criar data_input."
+mkdir -p "${SCRIPT_DIR}/data_output" || echo "Aviso: Falha ao criar data_output."
 
 echo "[6/7] Consagrando o icone em ${ICON_INSTALL_DIR}..."
 if [ ! -f "${ICON_SOURCE_PATH}" ]; then
@@ -89,7 +89,7 @@ EXEC_COMMAND="\"${PYTHON_VENV_PATH}\" \"${MAIN_SCRIPT_PATH}\""
 
 CATEGORIES="AudioVideo;Video;Graphics;"
 
-$SUDO_CMD printf "[Desktop Entry]\nVersion=1.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nPath=%s\n" \
+$SUDO_CMD printf "[Desktop Entry]\nVersion=2.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nPath=%s\n" \
     "${APP_DISPLAY_NAME}" \
     "${EXEC_COMMAND}" \
     "${ICON_NAME}" \

@@ -11,6 +11,17 @@ import threading
 import platform
 import shlex
 import traceback
+from src.utils.logger import setup_logger
+
+logger = setup_logger()
+
+# Import player for in-process playback (GTK compatible)
+try:
+    from src.core.player import iniciar_player
+    PLAYER_AVAILABLE = True
+except ImportError:
+    PLAYER_AVAILABLE = False
+    logger.warning("Player module not available, falling back to subprocess")
 
 # --- Definição de Caminhos MAIS ROBUSTA ---
 try:
@@ -23,8 +34,8 @@ try:
     if ROOT_DIR not in sys.path:
         sys.path.insert(0, ROOT_DIR)
 
-    UI_FILE = os.path.join(BASE_DIR, "ui", "main.glade")
-    LOGO_FILE = os.path.join(BASE_DIR, "assets", "logo.png")
+    UI_FILE = os.path.join(BASE_DIR, "gui", "main.glade")
+    LOGO_FILE = os.path.join(ROOT_DIR, "assets", "logo.png")
     CONFIG_PATH = os.path.join(ROOT_DIR, "config.ini")
 
     # Caminhos para scripts (usando ROOT_DIR e BASE_DIR)
@@ -36,9 +47,10 @@ try:
     PIXEL_ART_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_converter.py")
     PIXEL_ART_IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_image_converter.py")
     CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "calibrator.py")
+    REALTIME_SCRIPT = os.path.join(BASE_DIR, "core", "realtime_ascii.py")
 
 except Exception as e:
-    print(f"Erro Crítico ao definir caminhos iniciais: {e}")
+    logger.critical(f"Erro Crítico ao definir caminhos iniciais: {e}")
     # Tenta mostrar erro GTK simples
     try:
         error_dialog = Gtk.MessageDialog(message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.CLOSE, text="Erro Crítico de Inicialização")
@@ -111,10 +123,13 @@ class App:
         # Obtenção segura dos widgets restantes
         try:
             self.status_label = self.builder.get_object("status_label")
+            
             self.selected_path_label = self.builder.get_object("selected_path_label")
             self.convert_button = self.builder.get_object("convert_button")
             self.convert_all_button = self.builder.get_object("convert_all_button")
-            self.play_button = self.builder.get_object("play_button")
+            self.play_terminal_button = self.builder.get_object("play_terminal_button")
+            self.play_window_button = self.builder.get_object("play_window_button")
+            self.play_both_button = self.builder.get_object("play_both_button")
             self.open_video_button = self.builder.get_object("open_video_button")
             self.open_folder_button = self.builder.get_object("open_folder_button")
             self.calibrate_button = self.builder.get_object("calibrate_button")
@@ -147,7 +162,8 @@ class App:
             self.opt_fixed_palette_check = None
 
             if None in [self.status_label, self.selected_path_label, self.convert_button,
-                         self.convert_all_button, self.play_button, self.open_video_button,
+                         self.convert_all_button, self.play_terminal_button, self.play_window_button, 
+                         self.play_both_button, self.open_video_button,
                          self.open_folder_button, self.calibrate_button, self.open_webcam_button,
                          self.select_ascii_button, self.play_ascii_button, self.options_button,
                          self.options_dialog, self.options_notebook, self.opt_loop_check, self.opt_width_spin]:
@@ -235,7 +251,18 @@ class App:
             pixelart_grid.set_margin_top(10)
             pixelart_grid.set_margin_bottom(10)
             
-            # Pixel size
+            bit_preset_label = Gtk.Label(label="Preset de Bits:")
+            bit_preset_label.set_halign(Gtk.Align.START)
+            self.opt_bit_preset_combo = Gtk.ComboBoxText()
+            self.opt_bit_preset_combo.append("8bit_low", "8-bit Low (16 cores, px:6)")
+            self.opt_bit_preset_combo.append("8bit_high", "8-bit High (16 cores, px:5)")
+            self.opt_bit_preset_combo.append("16bit_low", "16-bit Low (128 cores, px:3)")
+            self.opt_bit_preset_combo.append("16bit_high", "16-bit High (128 cores, px:2)")
+            self.opt_bit_preset_combo.append("32bit", "32-bit (256 cores, px:2)")
+            self.opt_bit_preset_combo.append("64bit", "64-bit (256 cores, px:1)")
+            self.opt_bit_preset_combo.append("custom", "Custom (Manual)")
+            self.opt_bit_preset_combo.connect("changed", self.on_bit_preset_changed)
+            
             pixel_size_label = Gtk.Label(label="Tamanho do Pixel:")
             pixel_size_label.set_halign(Gtk.Align.START)
             self.opt_pixel_size_spin = Gtk.SpinButton()
@@ -243,22 +270,22 @@ class App:
             self.opt_pixel_size_spin.set_increments(1, 1)
             self.opt_pixel_size_spin.set_value(2)
             
-            # Palette size
             palette_size_label = Gtk.Label(label="Tamanho da Paleta:")
             palette_size_label.set_halign(Gtk.Align.START)
             self.opt_palette_size_spin = Gtk.SpinButton()
             self.opt_palette_size_spin.set_range(2, 256)
             self.opt_palette_size_spin.set_increments(1, 8)
-            self.opt_pixel_size_spin.set_value(16)
+            self.opt_palette_size_spin.set_value(16)
             
-            # Fixed palette checkbox
             self.opt_fixed_palette_check = Gtk.CheckButton.new_with_label("Usar Paleta Fixa (Retro)")
             
-            pixelart_grid.attach(pixel_size_label, 0, 0, 1, 1)
-            pixelart_grid.attach(self.opt_pixel_size_spin, 1, 0, 1, 1)
-            pixelart_grid.attach(palette_size_label, 0, 1, 1, 1)
-            pixelart_grid.attach(self.opt_palette_size_spin, 1, 1, 1, 1)
-            pixelart_grid.attach(self.opt_fixed_palette_check, 0, 2, 2, 1)
+            pixelart_grid.attach(bit_preset_label, 0, 0, 1, 1)
+            pixelart_grid.attach(self.opt_bit_preset_combo, 1, 0, 1, 1)
+            pixelart_grid.attach(pixel_size_label, 0, 1, 1, 1)
+            pixelart_grid.attach(self.opt_pixel_size_spin, 1, 1, 1, 1)
+            pixelart_grid.attach(palette_size_label, 0, 2, 1, 1)
+            pixelart_grid.attach(self.opt_palette_size_spin, 1, 2, 1, 1)
+            pixelart_grid.attach(self.opt_fixed_palette_check, 0, 3, 2, 1)
             
             pixelart_frame.add(pixelart_grid)
             
@@ -309,32 +336,15 @@ class App:
             # ComboBox
             self.quality_preset_combo = Gtk.ComboBoxText()
             
-            # Detecta modo atual para mostrar labels apropriados
-            conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
+            self.quality_preset_combo.append("mobile", "Mobile (144p) - 100x25")
+            self.quality_preset_combo.append("low", "Low (360p) - 120x30")
+            self.quality_preset_combo.append("medium", "Medium (480p) - 180x45")
+            self.quality_preset_combo.append("high", "High (540p) - 240x60")
+            self.quality_preset_combo.append("veryhigh", "Very High (720p) - 300x75")
+            self.quality_preset_combo.append("custom", "Custom (Manual)")
             
-            if conversion_mode == 'pixelart':
-                # Labels para Pixel Art
-                self.quality_preset_combo.append("8bit_low", "8-bit Low (100x25, 16 cores)")
-                self.quality_preset_combo.append("8bit_high", "8-bit High (120x30, 16 cores)")
-                self.quality_preset_combo.append("16bit_low", "16-bit Low (150x38, 64 cores)")
-                self.quality_preset_combo.append("16bit_high", "16-bit High (180x45, 64 cores)")
-                self.quality_preset_combo.append("32bit", "32-bit (240x60, 128 cores)")
-                self.quality_preset_combo.append("64bit", "64-bit (300x75, 256 cores)")
-                self.quality_preset_combo.append("custom", "Custom (Manual)")
-                
-                # Carrega preset atual ou usa padrão 16bit_high
-                current_preset = self.config.get('Quality', 'preset', fallback='16bit_high')
-            else:
-                # Labels para ASCII
-                self.quality_preset_combo.append("mobile", "Mobile (144p) - 100x25")
-                self.quality_preset_combo.append("low", "Low (360p) - 120x30")
-                self.quality_preset_combo.append("medium", "Medium (480p) - 180x45")
-                self.quality_preset_combo.append("high", "High (540p) - 240x60")
-                self.quality_preset_combo.append("veryhigh", "Very High (720p) - 300x75")
-                self.quality_preset_combo.append("custom", "Custom (Manual)")
-                
-                # Carrega preset atual ou usa padrão medium
-                current_preset = self.config.get('Quality', 'preset', fallback='medium')
+            # Carrega preset atual ou usa padrão medium
+            current_preset = self.config.get('Quality', 'preset', fallback='medium')
             
             self.quality_preset_combo.set_active_id(current_preset)
             
@@ -362,102 +372,68 @@ class App:
             traceback.print_exc()
     
     def on_quality_preset_changed(self, combo):
-        """Handler quando o preset de qualidade é alterado"""
         preset_id = combo.get_active_id()
-        if not preset_id:
+        if not preset_id or preset_id == 'custom':
             return
         
-        print(f"Preset de qualidade alterado para: {preset_id}")
-        
-        # Detecta modo atual (ASCII ou Pixel Art)
-        conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
-        
-        # Dicionário de presets ASCII (valores ajustados para caber na tela)
-        ascii_presets = {
-            'mobile': {'width': 100, 'height': 25, 'aspect': 0.50},
-            'low': {'width': 120, 'height': 30, 'aspect': 0.50},
-            'medium': {'width': 180, 'height': 45, 'aspect': 0.48},
-            'high': {'width': 240, 'height': 60, 'aspect': 0.45},
-            'veryhigh': {'width': 300, 'height': 75, 'aspect': 0.42},
-        }
-        
-        # Dicionário de presets Pixel Art (baseado em profundidade de cor)
-        pixelart_presets = {
-            '8bit_low': {'width': 100, 'height': 25, 'pixel_size': 6, 'palette_size': 16},
-            '8bit_high': {'width': 120, 'height': 30, 'pixel_size': 5, 'palette_size': 16},
-            '16bit_low': {'width': 150, 'height': 38, 'pixel_size': 4, 'palette_size': 64},
-            '16bit_high': {'width': 180, 'height': 45, 'pixel_size': 3, 'palette_size': 64},
-            '32bit': {'width': 240, 'height': 60, 'pixel_size': 2, 'palette_size': 128},
-            '64bit': {'width': 300, 'height': 75, 'pixel_size': 1, 'palette_size': 256},
-        }
-        
-        if preset_id == 'custom':
-            # Modo custom: não altera valores, deixa usuário configurar manualmente
-            print(f"Modo Custom selecionado ({conversion_mode}) - ajuste manualmente em Opções")
+        try:
+            resolution_presets = {
+                'mobile': {'width': 100, 'height': 25, 'aspect': 0.50, 'zoom': 1.0},
+                'low': {'width': 120, 'height': 30, 'aspect': 0.50, 'zoom': 0.9},
+                'medium': {'width': 180, 'height': 45, 'aspect': 0.48, 'zoom': 0.7},
+                'high': {'width': 240, 'height': 60, 'aspect': 0.45, 'zoom': 0.6},
+                'veryhigh': {'width': 300, 'height': 75, 'aspect': 0.42, 'zoom': 0.5},
+            }
+            
+            if preset_id in resolution_presets:
+                preset = resolution_presets[preset_id]
+                self.config.set('Conversor', 'target_width', str(preset['width']))
+                self.config.set('Conversor', 'target_height', str(preset['height']))
+                self.config.set('Conversor', 'char_aspect_ratio', str(preset['aspect']))
+                self.config.set('Quality', 'preset', preset_id)
+                self.config.set('Quality', 'player_zoom', str(preset['zoom']))
+                self.save_config()
+                print(f"Preset '{preset_id}' aplicado: {preset['width']}x{preset['height']}, zoom={preset['zoom']}")
+        except Exception as e:
+            print(f"Erro ao salvar preset: {e}")
+    
+    def on_bit_preset_changed(self, combo):
+        preset_id = combo.get_active_id()
+        if not preset_id or preset_id == 'custom':
             return
         
-        # Aplica preset apropriado baseado no modo
-        preset_applied = False
-        if conversion_mode == 'pixelart' and preset_id in pixelart_presets:
-            # Modo Pixel Art
-            preset = pixelart_presets[preset_id]
-            
-            # Atualiza config em memória
-            if 'Conversor' not in self.config:
-                self.config.add_section('Conversor')
-            if 'PixelArt' not in self.config:
-                self.config.add_section('PixelArt')
-            if 'Quality' not in self.config:
-                self.config.add_section('Quality')
-            
-            self.config.set('Conversor', 'target_width', str(preset['width']))
-            self.config.set('Conversor', 'target_height', str(preset['height']))
-            self.config.set('PixelArt', 'pixel_size', str(preset['pixel_size']))
-            self.config.set('PixelArt', 'palette_size', str(preset['palette_size']))
-            self.config.set('Quality', 'preset', preset_id)
-            
-            print(f"Aplicado preset Pixel Art {preset_id}: {preset['width']}x{preset['height']}, pixel_size={preset['pixel_size']}, {preset['palette_size']} cores")
-            preset_applied = True
-            
-        elif preset_id in ascii_presets:
-            # Modo ASCII (ou preset ASCII em modo Pixel Art)
-            preset = ascii_presets[preset_id]
-            
-            # Atualiza config em memória
-            if 'Conversor' not in self.config:
-                self.config.add_section('Conversor')
-            if 'Quality' not in self.config:
-                self.config.add_section('Quality')
-            
-            self.config.set('Conversor', 'target_width', str(preset['width']))
-            self.config.set('Conversor', 'target_height', str(preset['height']))
-            self.config.set('Conversor', 'char_aspect_ratio', str(preset['aspect']))
-            self.config.set('Quality', 'preset', preset_id)
-            
-            print(f"Aplicado preset ASCII {preset_id}: {preset['width']}x{preset['height']}, aspect={preset['aspect']}")
-            preset_applied = True
-            
-        else:
-            print(f"Aviso: Preset '{preset_id}' não encontrado para modo '{conversion_mode}'")
+        bit_presets = {
+            '8bit_low': {'pixel_size': 6, 'palette_size': 16},
+            '8bit_high': {'pixel_size': 5, 'palette_size': 16},
+            '16bit_low': {'pixel_size': 3, 'palette_size': 128},
+            '16bit_high': {'pixel_size': 2, 'palette_size': 128},
+            '32bit': {'pixel_size': 2, 'palette_size': 256},
+            '64bit': {'pixel_size': 1, 'palette_size': 256},
+        }
         
-        if preset_applied:
-            # Salva no arquivo
-            try:
-                with open(self.config_path, 'w', encoding='utf-8') as f:
-                    self.config.write(f)
-                print(f"✓ Configurações de preset salvas.")
-            except Exception as e:
-                print(f"Erro ao salvar preset: {e}")
+        if preset_id not in bit_presets:
+            return
+        
+        preset = bit_presets[preset_id]
+        
+        if hasattr(self, 'opt_pixel_size_spin') and self.opt_pixel_size_spin:
+            self.opt_pixel_size_spin.set_value(preset['pixel_size'])
+        
+        if hasattr(self, 'opt_palette_size_spin') and self.opt_palette_size_spin:
+            self.opt_palette_size_spin.set_value(preset['palette_size'])
+        
+        print(f"Aplicado preset de bits {preset_id}: pixel_size={preset['pixel_size']}, palette_size={preset['palette_size']}")
+
 
     # --- Funções de Seleção ---
     def on_select_file_button_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(title="Selecione um arquivo de mídia (Vídeo ou Imagem)", parent=self.window, action=Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        filter_media = Gtk.FileFilter(); filter_media.set_name("Mídia (mp4, avi, mkv, mov, webm, png, jpg, jpeg, bmp, webp)")
-        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm', '*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_media.add_pattern(ext)
+        filter_media = Gtk.FileFilter(); filter_media.set_name("Mídia (mp4, avi, mkv, mov, webm, gif, png, jpg, jpeg, bmp, webp)")
+        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm', '*.gif', '*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_media.add_pattern(ext)
         dialog.add_filter(filter_media)
-        filter_video = Gtk.FileFilter(); filter_video.set_name("Apenas Vídeos (mp4, avi, mkv, mov, webm)")
-        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm']: filter_video.add_pattern(ext)
+        filter_video = Gtk.FileFilter(); filter_video.set_name("Apenas Vídeos (mp4, avi, mkv, mov, webm, gif)")
+        for ext in ['*.mp4', '*.avi', '*.mkv', '*.mov', '*.webm', '*.gif']: filter_video.add_pattern(ext)
         dialog.add_filter(filter_video)
         filter_image = Gtk.FileFilter(); filter_image.set_name("Apenas Imagens (png, jpg, jpeg, bmp, webp)")
         for ext in ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.webp']: filter_image.add_pattern(ext)
@@ -474,6 +450,7 @@ class App:
             print(f"Arquivo selecionado: {self.selected_file_path}")
         dialog.destroy()
         self.update_button_states()
+
 
     def on_select_folder_button_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(title="Selecione uma pasta com vídeos", parent=self.window, action=Gtk.FileChooserAction.SELECT_FOLDER)
@@ -514,7 +491,9 @@ class App:
          folder_selected = self.selected_folder_path is not None and os.path.isdir(self.selected_folder_path)
          default_folder_exists = self.input_dir is not None and os.path.isdir(self.input_dir)
          self.convert_button.set_sensitive(file_selected)
-         self.play_button.set_sensitive(file_selected)
+         self.play_terminal_button.set_sensitive(file_selected)
+         self.play_window_button.set_sensitive(file_selected)
+         self.play_both_button.set_sensitive(file_selected)
          self.open_video_button.set_sensitive(file_selected)
          self.convert_all_button.set_sensitive(folder_selected or default_folder_exists)
          self.calibrate_button.set_sensitive(True)
@@ -622,44 +601,65 @@ class App:
          dialog.show_all()
          return False
 
-    def on_play_button_clicked(self, widget):
-        if self.selected_file_path:
-            media_name = os.path.splitext(os.path.basename(self.selected_file_path))[0] + ".txt"
-            file_path = os.path.join(self.output_dir, media_name)
-            if not os.path.exists(file_path):
-                self.show_error_dialog("Erro", f"Arquivo ASCII '{os.path.basename(file_path)}' não encontrado.\nConverta o arquivo primeiro."); return
-
-            python_executable = self._get_python_executable()
-            cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', self.config_path]
+    def on_play_terminal_button_clicked(self, widget):
+        """Reproduz em modo terminal (ANSI)"""
+        self._play_with_mode('terminal')
+    
+    def on_play_window_button_clicked(self, widget):
+        """Reproduz em modo window (GTK/OpenCV)"""
+        self._play_with_mode('window')
+    
+    def on_play_both_button_clicked(self, widget):
+        """Reproduz em modo both (Terminal + Window)"""
+        self._play_with_mode('both')
+    
+    def _play_with_mode(self, display_mode):
+        """Helper method to play video with specified display mode"""
+        if not self.selected_file_path:
+            return
             
-            loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
-            if loop_enabled:
-                cmd_base.append('-l')
-            
-            # Obtém zoom do player do config
-            player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
+        media_name = os.path.splitext(os.path.basename(self.selected_file_path))[0] + ".txt"
+        file_path = os.path.join(self.output_dir, media_name)
+        if not os.path.exists(file_path):
+            self.show_error_dialog("Erro", f"Arquivo ASCII '{os.path.basename(file_path)}' não encontrado.\nConverta o arquivo primeiro.")
+            return
 
+        # Create config with display_mode override
+        temp_config = configparser.ConfigParser(interpolation=None)
+        temp_config.read_dict(self.config)  # Copy current config
+        
+        # Set the display mode for this playback
+        if not temp_config.has_section('Geral'):
+            temp_config.add_section('Geral')
+        temp_config.set('Geral', 'display_mode', display_mode)
+        
+        loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
+        
+        # Always use subprocess mode to avoid GTK main loop conflicts
+        print(f"▶️  Launching player ({display_mode}) in subprocess mode")
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False, encoding='utf-8') as tmp_config_file:
+            temp_config.write(tmp_config_file)
+            temp_config_path = tmp_config_file.name
+        
+        python_executable = self._get_python_executable()
+        cmd_base = [python_executable, PLAYER_SCRIPT, '-f', file_path, '--config', temp_config_path]
+        
+        if loop_enabled:
+            cmd_base.append('-l')
+        
+        player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
+
+        try:
+            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', 
+                   '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
+            subprocess.Popen(cmd)
+        except FileNotFoundError:
             try:
-                # gnome-terminal com zoom reduzido para caber mais caracteres
-                cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', '--title=Êxtase em 4R73 - Player', '--class=extase-em-4r73', '--'] + cmd_base
-                print(f"Executando player com zoom {player_zoom}: {shlex.join(cmd)}")
+                cmd = ['xterm', '-fn', '6x10', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
                 subprocess.Popen(cmd)
-            except FileNotFoundError:
-                print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
-                try:
-                    # xterm com fonte pequena (6x10 pixels)
-                    cmd = ['xterm', '-fn', '6x10', '-maximized', '-title', 'Êxtase em 4R73 - Player', '-hold', '-e'] + cmd_base
-                    print(f"Executando player (xterm com fonte pequena): {shlex.join(cmd)}")
-                    subprocess.Popen(cmd)
-                except FileNotFoundError:
-                    print("ERRO: xterm também não encontrado.")
-                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
-                except Exception as e_xterm:
-                    print(f"Erro ao abrir xterm: {e_xterm}")
-                    self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_xterm}")
-            except Exception as e_gnome:
-                print(f"Erro ao abrir gnome-terminal: {e_gnome}")
-                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_gnome}")
+            except Exception as e:
+                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e}")
 
     def on_play_ascii_button_clicked(self, widget):
         if self.selected_ascii_path and os.path.exists(self.selected_ascii_path):
@@ -739,24 +739,55 @@ class App:
         self._launch_calibrator_in_terminal(cmd_args)
 
     def on_open_webcam_button_clicked(self, widget):
-        """Abre o calibrador forçando o uso da webcam (sem argumento --video)."""
-        print("Abrindo Webcam (Calibrador)...")
-        self._launch_calibrator_in_terminal([])
+        """Abre a webcam otimizada em tempo real."""
+        print("Abrindo Webcam Otimizada (Real-Time ASCII)...")
+        self._launch_webcam_in_terminal()
 
-    def _launch_calibrator_in_terminal(self, extra_args):
-        """Lança o calibrator.py em um terminal externo maximizado."""
+    def _launch_webcam_in_terminal(self):
+        """Lança o realtime_ascii.py (webcam otimizada) em um terminal externo maximizado."""
         python_executable = self._get_python_executable()
-        cmd_base = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path] + extra_args
+        cmd_base = [python_executable, REALTIME_SCRIPT, "--config", self.config_path]
+        
+        # Obtém zoom do config para otimizar visualização
+        player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
 
         try:
-            cmd = ['gnome-terminal', '--maximize', '--title=Êxtase em 4R73 - Calibrador', '--class=extase-em-4r73', '--'] + cmd_base
-            print(f"Executando calibrador (Terminal): {shlex.join(cmd)}")
+            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', 
+                   '--title=Êxtase em 4R73 - Webcam Real-Time', 
+                   '--class=extase-em-4r73', '--'] + cmd_base
+            print(f"Executando webcam otimizada com zoom {player_zoom}: {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
             print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
             try:
-                cmd = ['xterm', '-maximized', '-title', 'Êxtase em 4R73 - Calibrador', '-e'] + cmd_base
-                print(f"Executando calibrador (xterm): {shlex.join(cmd)}")
+                cmd = ['xterm', '-fn', '6x10', '-maximized', 
+                       '-title', 'Êxtase em 4R73 - Webcam', '-e'] + cmd_base
+                print(f"Executando webcam (xterm com fonte pequena): {shlex.join(cmd)}")
+                subprocess.Popen(cmd)
+            except FileNotFoundError:
+                self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
+            except Exception as e_xterm:
+                self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_xterm}")
+        except Exception as e_gnome:
+            self.show_error_dialog("Erro Terminal", f"Não foi possível abrir o terminal:\n{e_gnome}")
+
+    def _launch_calibrator_in_terminal(self, extra_args):
+        python_executable = self._get_python_executable()
+        cmd_base = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path] + extra_args
+        
+        player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
+
+        try:
+            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize', '--title=Êxtase em 4R73 - Calibrador', '--class=extase-em-4r73', '--'] + cmd_base
+            print(f"Executando calibrador com zoom {player_zoom}: {shlex.join(cmd)}")
+            subprocess.Popen(cmd)
+        except FileNotFoundError:
+            print("Aviso: gnome-terminal não encontrado. Tentando xterm...")
+            try:
+                base_font_size = 12
+                font_size = int(base_font_size * player_zoom)
+                cmd = ['xterm', '-fa', f'Mono-{font_size}', '-maximized', '-title', 'Êxtase em 4R73 - Calibrador', '-e'] + cmd_base
+                print(f"Executando calibrador (xterm) com fonte {font_size}: {shlex.join(cmd)}")
                 subprocess.Popen(cmd)
             except FileNotFoundError:
                 self.show_error_dialog("Erro Terminal", "Nenhum terminal compatível encontrado.")
@@ -1010,12 +1041,12 @@ def run_app():
 
     app = None
     try:
-        print("Instanciando a classe App...")
+        logger.info("Instanciando a classe App...")
         app = App()
         if hasattr(app, 'initialization_failed') and app.initialization_failed:
              print("Inicialização da App falhou (detalhes acima). Encerrando sem Gtk.main().")
              sys.exit(1) # Sai se __init__ marcou falha
-        print("Instanciação da App concluída.")
+        logger.info("Instanciação da App concluída.")
 
     except Exception as e:
          print(f"Erro Crítico durante instanciação da App: {e}")
@@ -1034,9 +1065,9 @@ def run_app():
     # Verifica se app e app.window foram criados com sucesso
     if app and hasattr(app, 'window') and app.window:
         try:
-            print("Iniciando loop principal GTK (Gtk.main())...")
+            logger.info("Iniciando loop principal GTK (Gtk.main())...")
             Gtk.main()
-            print("Loop principal GTK finalizado.")
+            logger.info("Loop principal GTK finalizado.")
         except KeyboardInterrupt:
             print("\nEncerrando via Ctrl+C (KeyboardInterrupt).")
             Gtk.main_quit()
