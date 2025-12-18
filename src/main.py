@@ -301,7 +301,7 @@ class App:
             mode_page.show_all()
             
             self._mode_widgets_created = True
-            print("✓ Widgets de Pixel Art criados com sucesso na aba 'Modo'")
+            print("Widgets de Pixel Art criados com sucesso na aba 'Modo'")
             
         except Exception as e:
             import traceback
@@ -364,7 +364,7 @@ class App:
             
             preset_box.show_all()
             
-            print("✓ ComboBox de presets de qualidade criado e inserido")
+            print("ComboBox de presets de qualidade criado e inserido")
             
         except Exception as e:
             print(f"Erro ao criar ComboBox de presets: {e}")
@@ -636,7 +636,7 @@ class App:
         loop_enabled = self.config.get('Player', 'loop', fallback='nao').lower() in ['sim', 'yes', 'true', '1', 'on']
         
         # Always use subprocess mode to avoid GTK main loop conflicts
-        print(f"▶️  Launching player ({display_mode}) in subprocess mode")
+        print(f"Launching player ({display_mode}) in subprocess mode")
         import tempfile
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False, encoding='utf-8') as tmp_config_file:
             temp_config.write(tmp_config_file)

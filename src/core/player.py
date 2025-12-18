@@ -93,15 +93,15 @@ def iniciar_player(arquivo_path, loop=False, config=None):
     # Show controls for window mode
     if display_mode in ['window', 'both']:
         if use_gtk:
-            print("🎮 Controles GTK:")
+            print("Controles GTK:")
             print("  [Arrastar bordas] - Redimensionar livremente (aspect ratio preservado!)")
             print("  [q] ou [ESC] - Sair")
-            print("  ✨ Player GTK - Miniatura a fullscreen sem distorção!")
+            print("  Player GTK - Miniatura a fullscreen sem distorcao")
         else:
-            print("🎮 Controles OpenCV:")
+            print("Controles OpenCV:")
             print("  [Arrastar bordas] - Redimensionar janela")
             print("  [q] ou [ESC] - Sair")
-            print("  ⚠️  OpenCV tem limitações de aspect ratio")
+            print("  AVISO: OpenCV tem limitacoes de aspect ratio")
         print("")
 
     try:
