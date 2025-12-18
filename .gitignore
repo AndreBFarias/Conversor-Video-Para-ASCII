@@ -1,23 +1,20 @@
-# Êxtase em 4R73 - Gitignore
+# Extase em 4R73 - Gitignore
 
 # Ambientes Virtuais
 venv/
 .venv/
 env/
 .env/
-videos_entrada/
-videos_saida/
-.git/
 
-
-
-# Pastas de Dados (Não rastrear mídia)
+# Pastas de Dados (Nao rastrear midia)
 videos_entrada/
 videos_saida/
 data_input/
 data_output/
-Dev_log/
+
+# Logs e Dev
 logs/
+src/dev_log/
 
 # Cache Python
 __pycache__/
@@ -34,6 +31,7 @@ dist/
 .vscode/
 .idea/
 *.sublime-*
+.gemini/
 
 # Sistema
 .DS_Store
@@ -42,5 +40,5 @@ Thumbs.db
 *.swo
 *~
 
-# Logs
+# Logs de execucao
 *.log
