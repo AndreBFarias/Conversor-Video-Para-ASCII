@@ -36,14 +36,14 @@ python3 main.py
 ```bash
 source venv/bin/activate
 python3 src/core/pixel_art_converter.py \
-  --video videos_entrada/SEU_VIDEO.mp4 \
+  --video data_input/SEU_VIDEO.mp4 \
   --config config.ini
 ```
 
 #### Converter imagem para Pixel Art:
 ```bash
 python3 src/core/pixel_art_image_converter.py \
-  --image videos_entrada/SUA_IMAGEM.png \
+  --image data_input/SUA_IMAGEM.png \
   --config config.ini
 ```
 
@@ -63,7 +63,7 @@ Para ver a diferença entre ASCII e Pixel Art com o mesmo vídeo:
 
 ## 📁 Arquivos de Saída
 
-Outputs são salvos em: `/home/vitoriamaria/Desenvolvimento/Conversor-Video-Para-ASCII/videos_saida/`
+Outputs são salvos em: `/home/vitoriamaria/Desenvolvimento/Conversor-Video-Para-ASCII/data_output/`
 
 Formato: `nome_do_video.txt` ou `nome_da_imagem.txt`
 
