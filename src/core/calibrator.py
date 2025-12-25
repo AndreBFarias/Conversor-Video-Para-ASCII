@@ -27,12 +27,6 @@ def sharpen_frame(frame, sharpen_amount=0.5):
     
     return sharpened
 
-config_global = None
-config_path_global = None
-
-WINDOW_ORIGINAL = "Janela 1: Original (Webcam)"
-WINDOW_RESULT = "Janela 2: Filtro Chroma ('s' Salva, 'q' Sai)"
-WINDOW_CONTROLS = "Controles"
 
 # Presets de Chroma Key
 CHROMA_PRESETS = {
@@ -183,7 +177,7 @@ def load_config(config_path):
 
 
 def get_initial_values(config):
-    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255}
+    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255, 'erode': 2, 'dilate': 2}
     if 'ChromaKey' not in config:
         print("Secao [ChromaKey] nao encontrada, usando padroes.")
         return defaults
@@ -194,7 +188,9 @@ def get_initial_values(config):
             's_min': config.getint('ChromaKey', 's_min', fallback=defaults['s_min']),
             's_max': config.getint('ChromaKey', 's_max', fallback=defaults['s_max']),
             'v_min': config.getint('ChromaKey', 'v_min', fallback=defaults['v_min']),
-            'v_max': config.getint('ChromaKey', 'v_max', fallback=defaults['v_max'])
+            'v_max': config.getint('ChromaKey', 'v_max', fallback=defaults['v_max']),
+            'erode': config.getint('ChromaKey', 'erode', fallback=defaults['erode']),
+            'dilate': config.getint('ChromaKey', 'dilate', fallback=defaults['dilate'])
         }
     except Exception as e:
         print(f"Erro ao ler valores [ChromaKey]: {e}. Usando padroes.")
@@ -221,18 +217,21 @@ def save_values(trackbar_values):
         config_global.set('ChromaKey', 's_max', str(trackbar_values['s_max']))
         config_global.set('ChromaKey', 'v_min', str(trackbar_values['v_min']))
         config_global.set('ChromaKey', 'v_max', str(trackbar_values['v_max']))
+        config_global.set('ChromaKey', 'erode', str(trackbar_values.get('erode', 2)))
+        config_global.set('ChromaKey', 'dilate', str(trackbar_values.get('dilate', 2)))
 
         with open(config_path_global, 'w', encoding='utf-8') as configfile:
             config_global.write(configfile)
         print(f"Valores salvos com sucesso em {config_path_global}")
         print(f"H: {trackbar_values['h_min']}-{trackbar_values['h_max']}, S: {trackbar_values['s_min']}-{trackbar_values['s_max']}, V: {trackbar_values['v_min']}-{trackbar_values['v_max']}")
+        print(f"Erode: {trackbar_values.get('erode', 2)}, Dilate: {trackbar_values.get('dilate', 2)}")
 
     except Exception as e:
         print(f"Erro fatal ao salvar config: {e}", file=sys.stderr)
 
 
 def reset_defaults():
-    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255}
+    defaults = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255, 'erode': 2, 'dilate': 2}
     print("\nResetando para os valores padrao...")
     cv2.setTrackbarPos("H Min", WINDOW_CONTROLS, defaults['h_min'])
     cv2.setTrackbarPos("H Max", WINDOW_CONTROLS, defaults['h_max'])
@@ -240,6 +239,8 @@ def reset_defaults():
     cv2.setTrackbarPos("S Max", WINDOW_CONTROLS, defaults['s_max'])
     cv2.setTrackbarPos("V Min", WINDOW_CONTROLS, defaults['v_min'])
     cv2.setTrackbarPos("V Max", WINDOW_CONTROLS, defaults['v_max'])
+    cv2.setTrackbarPos("Erode", WINDOW_CONTROLS, defaults['erode'])
+    cv2.setTrackbarPos("Dilate", WINDOW_CONTROLS, defaults['dilate'])
     print("Valores resetados. Pressione 's' para salvar se desejar.")
 
 
@@ -345,8 +346,8 @@ def main():
     cv2.createTrackbar("S Max", WINDOW_CONTROLS, initial_values['s_max'], 255, on_trackbar)
     cv2.createTrackbar("V Min", WINDOW_CONTROLS, initial_values['v_min'], 255, on_trackbar)
     cv2.createTrackbar("V Max", WINDOW_CONTROLS, initial_values['v_max'], 255, on_trackbar)
-    cv2.createTrackbar("Erode", WINDOW_CONTROLS, 2, 10, on_trackbar)  # Erosão morfológica (limpa pixels isolados)
-    cv2.createTrackbar("Dilate", WINDOW_CONTROLS, 2, 10, on_trackbar)  # Dilatação morfológica (fecha buracos)
+    cv2.createTrackbar("Erode", WINDOW_CONTROLS, initial_values.get('erode', 2), 10, on_trackbar)
+    cv2.createTrackbar("Dilate", WINDOW_CONTROLS, initial_values.get('dilate', 2), 10, on_trackbar)
 
     print("Controles criados. Loop iniciado.")
     print("COMANDOS:")
@@ -489,7 +490,12 @@ def main():
 
         if key == ord('s'):
             print("\nTecla 's' pressionada. Salvando...")
-            current_values = {'h_min': h_min, 'h_max': h_max, 's_min': s_min, 's_max': s_max, 'v_min': v_min, 'v_max': v_max}
+            current_values = {
+                'h_min': h_min, 'h_max': h_max,
+                's_min': s_min, 's_max': s_max,
+                'v_min': v_min, 'v_max': v_max,
+                'erode': erode_size, 'dilate': dilate_size
+            }
             save_values(current_values)
 
         if key == ord('r'):
