@@ -9,25 +9,25 @@ LUMINANCE_RAMP = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;
 COLOR_SEPARATOR = "§"
 
 
+def apply_morphological_refinement(mask, erode_size=2, dilate_size=2):
+    if erode_size > 0:
+        kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
+        mask = cv2.erode(mask, kernel_erode, iterations=1)
+
+    if dilate_size > 0:
+        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size*2+1, dilate_size*2+1))
+        mask = cv2.dilate(mask, kernel_dilate, iterations=1)
+
+    return mask
+
+
 def sharpen_frame(frame, sharpen_amount=0.5):
-    """Aplica filtro de nitidez (sharpen) no frame
-    
-    Args:
-        frame: Frame BGR
-        sharpen_amount: Intensidade do sharpen (0.0 = sem efeito, 1.0 = máximo)
-    
-    Returns:
-        Frame com sharpen aplicado
-    """
     if sharpen_amount <= 0:
         return frame
-    
-    # Blur gaussiano
+
     gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
-    
-    # Unsharp mask: imagem + sharpen_amount * (imagem - blur)
     sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-    
+
     return sharpened
 
 
@@ -92,6 +92,8 @@ def iniciar_conversao_imagem(image_path, output_dir, config):
             config.getint('ChromaKey', 's_max'),
             config.getint('ChromaKey', 'v_max')
         ])
+        erode_size = config.getint('ChromaKey', 'erode', fallback=2)
+        dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
     except Exception as e:
         raise ValueError(f"Erro ao ler o config.ini. Erro: {e}")
 
@@ -118,6 +120,7 @@ def iniciar_conversao_imagem(image_path, output_dir, config):
     
     hsv_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv_frame, lower_green, upper_green)
+    mask = apply_morphological_refinement(mask, erode_size, dilate_size)
     grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
     # Usa INTER_LANCZOS4 para melhor qualidade de redimensionamento
