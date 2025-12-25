@@ -176,57 +176,44 @@
         </child>
 
         <child>
-          <object class="GtkGrid">
+          <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="column-spacing">10</property>
+            <property name="spacing">10</property>
             <property name="margin-top">5</property>
             <child>
-              <object class="GtkButton" id="play_terminal_button">
-                <property name="label" translatable="yes">Terminal</property>
+              <object class="GtkComboBoxText" id="play_mode_combo">
                 <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Reproduz no terminal com ANSI 256 cores</property>
+                <property name="can-focus">False</property>
+                <property name="active">0</property>
                 <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_play_terminal_button_clicked" swapped="no"/>
+                <items>
+                  <item id="terminal" translatable="yes">Terminal (ANSI)</item>
+                  <item id="window" translatable="yes">Janela (OpenCV)</item>
+                  <item id="both" translatable="yes">Hibrido (Terminal + Janela)</item>
+                </items>
               </object>
               <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">0</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="play_window_button">
-                <property name="label" translatable="yes">Janela</property>
+              <object class="GtkButton" id="play_button">
+                <property name="label" translatable="yes">Reproduzir</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Reproduz em janela OpenCV com controle de zoom</property>
+                <property name="tooltip-text" translatable="yes">Reproduz o arquivo convertido no modo selecionado</property>
                 <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_play_window_button_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_play_button_clicked" swapped="no"/>
               </object>
               <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="play_both_button">
-                <property name="label" translatable="yes">Hibrido</property>
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Reproduz em terminal + janela simultaneamente</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_play_both_button_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="left-attach">2</property>
-                <property name="top-attach">0</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
@@ -534,6 +521,22 @@ o arquivo de vídeo original selecionado</property>
     <property name="value">255</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
+  </object>
+
+  <object class="GtkAdjustment" id="adjustment_erode">
+    <property name="lower">0</property>
+    <property name="upper">10</property>
+    <property name="value">2</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">1</property>
+  </object>
+
+  <object class="GtkAdjustment" id="adjustment_dilate">
+    <property name="lower">0</property>
+    <property name="upper">10</property>
+    <property name="value">2</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">1</property>
   </object>
 
   <object class="GtkWindow" id="options_dialog">
@@ -847,6 +850,42 @@ o arquivo de vídeo original selecionado</property>
                         <property name="numeric">True</property>
                       </object>
                       <packing><property name="left-attach">3</property><property name="top-attach">2</property></packing>
+                    </child>
+
+                    <!-- Erode/Dilate -->
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Erode:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="opt_erode_spin">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="adjustment">adjustment_erode</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">3</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Dilate:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">2</property><property name="top-attach">3</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="opt_dilate_spin">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="adjustment">adjustment_dilate</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing><property name="left-attach">3</property><property name="top-attach">3</property></packing>
                     </child>
                   </object>
                   <packing>

@@ -127,9 +127,8 @@ class App:
             self.selected_path_label = self.builder.get_object("selected_path_label")
             self.convert_button = self.builder.get_object("convert_button")
             self.convert_all_button = self.builder.get_object("convert_all_button")
-            self.play_terminal_button = self.builder.get_object("play_terminal_button")
-            self.play_window_button = self.builder.get_object("play_window_button")
-            self.play_both_button = self.builder.get_object("play_both_button")
+            self.play_mode_combo = self.builder.get_object("play_mode_combo")
+            self.play_button = self.builder.get_object("play_button")
             self.open_video_button = self.builder.get_object("open_video_button")
             self.open_folder_button = self.builder.get_object("open_folder_button")
             self.calibrate_button = self.builder.get_object("calibrate_button")
@@ -153,6 +152,8 @@ class App:
             self.opt_s_max_spin = self.builder.get_object("opt_s_max_spin")
             self.opt_v_min_spin = self.builder.get_object("opt_v_min_spin")
             self.opt_v_max_spin = self.builder.get_object("opt_v_max_spin")
+            self.opt_erode_spin = self.builder.get_object("opt_erode_spin")
+            self.opt_dilate_spin = self.builder.get_object("opt_dilate_spin")
             
             # Create mode selection widgets programmatically (not in glade)
             self.opt_mode_ascii_radio = None
@@ -162,11 +163,11 @@ class App:
             self.opt_fixed_palette_check = None
 
             if None in [self.status_label, self.selected_path_label, self.convert_button,
-                         self.convert_all_button, self.play_terminal_button, self.play_window_button, 
-                         self.play_both_button, self.open_video_button,
-                         self.open_folder_button, self.calibrate_button, self.open_webcam_button,
-                         self.select_ascii_button, self.play_ascii_button, self.options_button,
-                         self.options_dialog, self.options_notebook, self.opt_loop_check, self.opt_width_spin]:
+                         self.convert_all_button, self.play_mode_combo, self.play_button,
+                         self.open_video_button, self.open_folder_button, self.calibrate_button,
+                         self.open_webcam_button, self.select_ascii_button, self.play_ascii_button,
+                         self.options_button, self.options_dialog, self.options_notebook,
+                         self.opt_loop_check, self.opt_width_spin]:
                 raise TypeError("Um ou mais widgets essenciais não foram encontrados no arquivo .glade.")
         except Exception as e:
              self._show_init_error("Erro Crítico de UI", f"Falha ao obter componentes da interface:\n{e}\n\nVerifique 'src/ui/main.glade'.")
@@ -491,9 +492,7 @@ class App:
          folder_selected = self.selected_folder_path is not None and os.path.isdir(self.selected_folder_path)
          default_folder_exists = self.input_dir is not None and os.path.isdir(self.input_dir)
          self.convert_button.set_sensitive(file_selected)
-         self.play_terminal_button.set_sensitive(file_selected)
-         self.play_window_button.set_sensitive(file_selected)
-         self.play_both_button.set_sensitive(file_selected)
+         self.play_button.set_sensitive(file_selected)
          self.open_video_button.set_sensitive(file_selected)
          self.convert_all_button.set_sensitive(folder_selected or default_folder_exists)
          self.calibrate_button.set_sensitive(True)
@@ -601,17 +600,13 @@ class App:
          dialog.show_all()
          return False
 
-    def on_play_terminal_button_clicked(self, widget):
-        """Reproduz em modo terminal (ANSI)"""
-        self._play_with_mode('terminal')
-    
-    def on_play_window_button_clicked(self, widget):
-        """Reproduz em modo window (GTK/OpenCV)"""
-        self._play_with_mode('window')
-    
-    def on_play_both_button_clicked(self, widget):
-        """Reproduz em modo both (Terminal + Window)"""
-        self._play_with_mode('both')
+    def on_play_button_clicked(self, widget):
+        """Reproduz no modo selecionado no ComboBox"""
+        mode_id = self.play_mode_combo.get_active_id()
+        if mode_id:
+            self._play_with_mode(mode_id)
+        else:
+            self._play_with_mode('terminal')
     
     def _play_with_mode(self, display_mode):
         """Helper method to play video with specified display mode"""
@@ -848,7 +843,12 @@ class App:
             self.opt_s_max_spin.set_value(s_max)
             self.opt_v_min_spin.set_value(v_min)
             self.opt_v_max_spin.set_value(v_max)
-            
+
+            erode = self.config.getint('ChromaKey', 'erode', fallback=2)
+            dilate = self.config.getint('ChromaKey', 'dilate', fallback=2)
+            self.opt_erode_spin.set_value(erode)
+            self.opt_dilate_spin.set_value(dilate)
+
             # Mode and Pixel Art settings
             mode_val = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
             pixel_size_val = self.config.getint('PixelArt', 'pixel_size', fallback=2)
@@ -903,7 +903,9 @@ class App:
         self.opt_s_max_spin.set_value(255)
         self.opt_v_min_spin.set_value(40)
         self.opt_v_max_spin.set_value(255)
-        
+        self.opt_erode_spin.set_value(2)
+        self.opt_dilate_spin.set_value(2)
+
         print("Valores padrão restaurados na interface (clique em OK para salvar).")
 
     def on_options_save_clicked(self, widget):
@@ -929,7 +931,9 @@ class App:
             self.config.set('ChromaKey', 's_max', str(int(self.opt_s_max_spin.get_value())))
             self.config.set('ChromaKey', 'v_min', str(int(self.opt_v_min_spin.get_value())))
             self.config.set('ChromaKey', 'v_max', str(int(self.opt_v_max_spin.get_value())))
-            
+            self.config.set('ChromaKey', 'erode', str(int(self.opt_erode_spin.get_value())))
+            self.config.set('ChromaKey', 'dilate', str(int(self.opt_dilate_spin.get_value())))
+
             # Mode and Pixel Art
             if hasattr(self, 'opt_mode_pixelart_radio') and self.opt_mode_pixelart_radio:
                 if 'Mode' not in self.config: self.config.add_section('Mode')
@@ -981,7 +985,6 @@ class App:
 
     def on_test_chroma_clicked(self, widget):
         """Abre preview das configurações de chroma key em tempo real."""
-        # Primeiro salva as configurações de chroma key
         try:
             if 'ChromaKey' not in self.config: self.config.add_section('ChromaKey')
             self.config.set('ChromaKey', 'h_min', str(int(self.opt_h_min_spin.get_value())))
@@ -990,7 +993,9 @@ class App:
             self.config.set('ChromaKey', 's_max', str(int(self.opt_s_max_spin.get_value())))
             self.config.set('ChromaKey', 'v_min', str(int(self.opt_v_min_spin.get_value())))
             self.config.set('ChromaKey', 'v_max', str(int(self.opt_v_max_spin.get_value())))
-            
+            self.config.set('ChromaKey', 'erode', str(int(self.opt_erode_spin.get_value())))
+            self.config.set('ChromaKey', 'dilate', str(int(self.opt_dilate_spin.get_value())))
+
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
             print("Configurações de Chroma Key salvas temporariamente para preview.")

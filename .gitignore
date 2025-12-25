@@ -6,15 +6,24 @@ venv/
 env/
 .env/
 
-# Pastas de Dados (Nao rastrear midia)
+# Pastas de Dados (Nao rastrear midia, manter placeholders)
+data_input/*
+!data_input/.gitkeep
+data_output/*
+!data_output/.gitkeep
+
+# Pastas legadas (ignorar completamente)
 videos_entrada/
 videos_saida/
-data_input/
-data_output/
 
 # Logs e Dev
-logs/
-src/dev_log/
+logs/*
+!logs/.gitkeep
+Dev_log/
+
+# Instrucoes AI (privado)
+CLAUDE.md
+IMPORTANT.md
 
 # Cache Python
 __pycache__/
@@ -32,6 +41,7 @@ dist/
 .idea/
 *.sublime-*
 .gemini/
+.claude/
 
 # Sistema
 .DS_Store
