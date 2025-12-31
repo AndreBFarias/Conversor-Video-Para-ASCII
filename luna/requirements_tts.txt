@@ -1,0 +1,27 @@
+# ============================================
+# LUNA TTS - Ambiente Isolado (venv_tts/)
+# ============================================
+# INSTALACAO:
+#   python -m venv venv_tts
+#   ./venv_tts/bin/pip install --upgrade pip setuptools wheel
+#   ./venv_tts/bin/pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+#   ./venv_tts/bin/pip install -r requirements_tts.txt
+#
+# IMPORTANTE: NAO misture com a venv principal!
+# Esta venv e usada pelo tts_daemon.py (recomendado) ou wrappers via subprocess
+#
+# DAEMON TTS (recomendado - 4x mais rapido):
+#   ./scripts/tts_daemon.sh start
+#
+# NOTA: PyTorch 2.6+ exige patch para weights_only (ja incluido no daemon)
+# ============================================
+
+# Coqui TTS (XTTS v2, voice cloning)
+TTS>=0.22.0
+
+# Chatterbox TTS (alternativo, ~3GB VRAM)
+chatterbox-tts>=0.1.6
+
+# Audio processing
+soundfile>=0.13.0
+numpy>=1.25.0

@@ -1,0 +1,93 @@
+[project]
+name = "luna"
+version = "5.0.0"
+description = "Assistente de IA multimodal com interface terminal, voz, visao e personalidade propria"
+readme = "README.md"
+license = {text = "GPL-3.0"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Comunidade Luna"}
+]
+keywords = ["ai", "assistant", "tui", "voice", "vision", "terminal"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = [
+    "venv",
+    "venv_tts",
+    ".git",
+    "__pycache__",
+    "src/models",
+    "src/assets",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501",   # line too long
+    "E701",   # multiple statements on one line
+    "E712",   # comparison to True/False
+    "E722",   # bare except
+    "E741",   # ambiguous variable name
+    "W293",   # blank line contains whitespace
+    "F401",   # unused import (usado para verificar disponibilidade)
+    "F811",   # redefinition
+    "F823",   # undefined name (falso positivo com time)
+    "F841",   # unused variable
+    "B007",   # loop variable not used
+    "B008",   # function call in default arg
+    "B023",   # function definition does not bind loop variable
+    "B904",   # raise without from
+    "UP038",  # use X | Y in isinstance (compat python 3.9)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"main.py" = ["E402"]
+"src/tools/*.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+no_error_summary = false
+explicit_package_bases = true
+warn_return_any = false
+warn_unused_ignores = true
+show_error_codes = true
+pretty = true
+exclude = [
+    "venv",
+    "venv_tts",
+    "src/models",
+    "src/tests",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "src.soul.consciencia",
+    "src.data_memory.smart_memory",
+    "src.core.entity_loader",
+    "src.ui.screens",
+    "src.soul.boca",
+]
+check_untyped_defs = true
+disallow_untyped_defs = false
+warn_return_any = true
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"

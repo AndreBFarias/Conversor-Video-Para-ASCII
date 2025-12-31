@@ -1,0 +1,23 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Luna
+GenericName=AI Assistant
+Comment=Assistente IA com interface TUI - Texto, Voz e Visao
+Icon=/home/vitoriamaria/Desenvolvimento/Luna/src/assets/icons/luna_icon.png
+Exec=/home/vitoriamaria/Desenvolvimento/Luna/run_luna.sh --launch
+Path=/home/vitoriamaria/Desenvolvimento/Luna
+Terminal=false
+Categories=Utility;Development;Accessibility;
+Keywords=ai;assistant;luna;voice;chat;gemini;tts;stt;
+StartupNotify=true
+StartupWMClass=Luna
+Actions=voice;text;
+
+[Desktop Action voice]
+Name=Luna (Modo Voz)
+Exec=/home/vitoriamaria/Desenvolvimento/Luna/run_luna.sh --launch --voice
+
+[Desktop Action text]
+Name=Luna (Modo Texto)
+Exec=/home/vitoriamaria/Desenvolvimento/Luna/run_luna.sh --launch --text

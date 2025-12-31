@@ -5,70 +5,13 @@ import numpy as np
 import configparser
 import argparse
 
-LUMINANCE_RAMP = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-COLOR_SEPARATOR = "§"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
-
-def apply_morphological_refinement(mask, erode_size=2, dilate_size=2):
-    if erode_size > 0:
-        kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
-        mask = cv2.erode(mask, kernel_erode, iterations=1)
-
-    if dilate_size > 0:
-        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size*2+1, dilate_size*2+1))
-        mask = cv2.dilate(mask, kernel_dilate, iterations=1)
-
-    return mask
-
-
-def sharpen_frame(frame, sharpen_amount=0.5):
-    if sharpen_amount <= 0:
-        return frame
-
-    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
-    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-
-    return sharpened
-
-
-def rgb_to_ansi256(r, g, b):
-    if r == g == b:
-        if r < 8:
-            return 16
-        if r > 248:
-            return 231
-        return 232 + int(((r - 8) / 247) * 23)
-    ansi_r = int(r / 255 * 5)
-    ansi_g = int(g / 255 * 5)
-    ansi_b = int(b / 255 * 5)
-    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
-
-
-def converter_imagem_para_ascii(gray_frame, color_frame, mask, magnitude_frame, angle_frame, sobel_threshold, luminance_ramp):
-    height, width = gray_frame.shape
-    ascii_str_lines = []
-    for y in range(height):
-        line = ""
-        for x in range(width):
-            if mask[y, x] == 255:
-                char = " "
-                ansi_code = 232
-            else:
-                # USA APENAS RAMPA PERSONALIZADA (bordas também!)
-                pixel_brightness = gray_frame[y, x]
-                
-                # Se tem borda detectada, aumenta brilho para pegar caracteres do fim da rampa
-                if magnitude_frame[y, x] > sobel_threshold:
-                    # Bordas ficam mais claras (characters do final da rampa)
-                    pixel_brightness = min(255, pixel_brightness + 100)
-                
-                char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
-                char = luminance_ramp[char_index]
-                b, g, r = color_frame[y, x]
-                ansi_code = rgb_to_ansi256(r, g, b)
-            line += f"{char}{COLOR_SEPARATOR}{ansi_code}{COLOR_SEPARATOR}"
-        ascii_str_lines.append(line)
-    return "\n".join(ascii_str_lines)
+from src.core.utils.color import rgb_to_ansi256
+from src.core.utils.image import sharpen_frame, apply_morphological_refinement
+from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
 
 
 def iniciar_conversao_imagem(image_path, output_dir, config):
@@ -135,8 +78,9 @@ def iniciar_conversao_imagem(image_path, output_dir, config):
     angle = (angle + 180) % 180
     magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
-    frame_ascii = converter_imagem_para_ascii(
-        resized_gray, resized_color, resized_mask, magnitude_norm, angle, sobel_threshold, luminance_ramp
+    frame_ascii = converter_frame_para_ascii(
+        resized_gray, resized_color, resized_mask, magnitude_norm, angle, sobel_threshold, luminance_ramp,
+        output_format="file"
     )
 
     try:

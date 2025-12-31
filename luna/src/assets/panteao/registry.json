@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-12-25",
+  "entities": {
+    "luna": {
+      "id": "luna",
+      "name": "Luna",
+      "available": true,
+      "gender": "feminine",
+      "archetype": ["engenheira_gotica", "sereia_das_profundezas", "feiticeira_das_palavras"],
+      "config_path": "entities/luna/config.json",
+      "soul_path": "entities/luna/alma.txt",
+      "animations_dir": "entities/luna/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    },
+    "juno": {
+      "id": "juno",
+      "name": "Juno",
+      "available": true,
+      "gender": "feminine",
+      "archetype": ["wildcard", "cool_girl_imperfeita", "namorada_do_caos"],
+      "config_path": "entities/juno/config.json",
+      "soul_path": "entities/juno/alma.txt",
+      "animations_dir": "entities/juno/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    },
+    "eris": {
+      "id": "eris",
+      "name": "Eris",
+      "available": true,
+      "gender": "feminine",
+      "archetype": ["diva_narcisista", "idol_inatingivel", "caos_ludico"],
+      "config_path": "entities/eris/config.json",
+      "soul_path": "entities/eris/alma.txt",
+      "animations_dir": "entities/eris/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    },
+    "mars": {
+      "id": "mars",
+      "name": "Mars",
+      "available": true,
+      "gender": "masculine",
+      "archetype": ["guerreiro", "alpha", "bad_boy_fisico"],
+      "config_path": "entities/mars/config.json",
+      "soul_path": "entities/mars/alma.txt",
+      "animations_dir": "entities/mars/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    },
+    "lars": {
+      "id": "lars",
+      "name": "Lars",
+      "available": true,
+      "gender": "masculine",
+      "archetype": ["intelectual_sombrio", "vampiro_moderno", "bad_boy_sensivel"],
+      "config_path": "entities/lars/config.json",
+      "soul_path": "entities/lars/alma.txt",
+      "animations_dir": "entities/lars/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    },
+    "somn": {
+      "id": "somn",
+      "name": "Somn",
+      "available": true,
+      "gender": "masculine",
+      "archetype": ["soft_boy", "sonhador", "sedutor_onirico"],
+      "config_path": "entities/somn/config.json",
+      "soul_path": "entities/somn/alma.txt",
+      "animations_dir": "entities/somn/animations",
+      "voice_provider": "elevenlabs",
+      "voice_configured": true
+    }
+  },
+  "metadata": {
+    "total_entities": 6,
+    "available_entities": 6,
+    "default_entity": "luna"
+  }
+}

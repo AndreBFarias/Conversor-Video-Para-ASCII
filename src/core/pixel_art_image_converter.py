@@ -8,42 +8,14 @@ import configparser
 import argparse
 from sklearn.cluster import KMeans
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from src.core.utils.color import rgb_to_ansi256
+from src.core.utils.image import sharpen_frame, apply_morphological_refinement
+
 COLOR_SEPARATOR = "§"
-
-
-def apply_morphological_refinement(mask, erode_size=2, dilate_size=2):
-    if erode_size > 0:
-        kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
-        mask = cv2.erode(mask, kernel_erode, iterations=1)
-
-    if dilate_size > 0:
-        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size*2+1, dilate_size*2+1))
-        mask = cv2.dilate(mask, kernel_dilate, iterations=1)
-
-    return mask
-
-
-def sharpen_frame(frame, sharpen_amount=0.5):
-    if sharpen_amount <= 0:
-        return frame
-
-    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
-    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-
-    return sharpened
-
-
-def rgb_to_ansi256(r, g, b):
-    if r == g == b:
-        if r < 8:
-            return 16
-        if r > 248:
-            return 231
-        return 232 + int(((r - 8) / 247) * 23)
-    ansi_r = int(r / 255 * 5)
-    ansi_g = int(g / 255 * 5)
-    ansi_b = int(b / 255 * 5)
-    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
 
 
 def quantize_colors(image, n_colors=16, use_fixed_palette=False):
@@ -104,72 +76,38 @@ def quantize_colors(image, n_colors=16, use_fixed_palette=False):
     return quantized.reshape((h, w, c))
 
 
-def pixelate_frame(frame, pixel_size=2):
-    """
-    Apply pixelation effect by downscaling and upscaling
-    
-    Args:
-        frame: input image
-        pixel_size: size of each "pixel" block
-    
-    Returns:
-        Pixelated image
-    """
-    h, w = frame.shape[:2]
-    
-    # Downscale
-    small_h = max(1, h // pixel_size)
-    small_w = max(1, w // pixel_size)
-    small = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_LINEAR)
-    
-    # Upscale back using nearest neighbor to maintain blocky look
-    pixelated = cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
-    
-    return pixelated
-
-
 def converter_imagem_para_pixelart(frame, mask, pixel_size, n_colors, use_fixed_palette):
-    """
-    Convert a single image to pixel art format with ANSI color codes
-    
-    Args:
-        frame: Input image in BGR format
-        mask: Chroma key mask (255 = transparent areas)
-        pixel_size: Size of pixel blocks
-        n_colors: Number of colors in palette
-        use_fixed_palette: Whether to use fixed or adaptive palette
-    
-    Returns:
-        String representation of the image with characters and ANSI codes
-    """
-    # Apply pixelation effect
-    pixelated = pixelate_frame(frame, pixel_size)
-    
-    # Apply color quantization
-    quantized = quantize_colors(pixelated, n_colors, use_fixed_palette)
-    
+    h, w = frame.shape[:2]
+
+    if pixel_size > 1:
+        small_h = max(1, h // pixel_size)
+        small_w = max(1, w // pixel_size)
+        frame_small = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_AREA)
+        mask_small = cv2.resize(mask, (small_w, small_h), interpolation=cv2.INTER_NEAREST)
+    else:
+        frame_small = frame
+        mask_small = mask
+
+    quantized = quantize_colors(frame_small, n_colors, use_fixed_palette)
+
     height, width = quantized.shape[:2]
     ascii_str_lines = []
-    
-    # Use full block character for solid color blocks
     block_char = "█"
-    
+
     for y in range(height):
         line = ""
         for x in range(width):
-            if mask[y, x] == 255:
-                # Transparent area (chroma keyed)
+            if mask_small[y, x] == 255:
                 char = " "
-                ansi_code = 232  # Dark color for background
+                ansi_code = 232
             else:
-                # Use block character with the quantized color
                 char = block_char
                 b, g, r = quantized[y, x]
                 ansi_code = rgb_to_ansi256(r, g, b)
-            
+
             line += f"{char}{COLOR_SEPARATOR}{ansi_code}{COLOR_SEPARATOR}"
         ascii_str_lines.append(line)
-    
+
     return "\n".join(ascii_str_lines)
 
 
