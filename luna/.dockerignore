@@ -1,0 +1,92 @@
+# Virtual environments
+venv/
+venv_tts/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (template ok, secrets not)
+.env
+.env.local
+.env.*.local
+
+# Logs (will be mounted as volume)
+*.log
+src/logs/
+
+# Models (too large, download separately)
+src/models/
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+
+# Voice models and references (download from release)
+src/assets/panteao/entities/*/voice/coqui/model_final.pt
+src/assets/panteao/entities/*/voice/coqui/speaker_embedding.pt
+src/assets/panteao/entities/*/voice/*/reference*.wav
+src/assets/panteao/entities/*/voice/*/outputs/
+
+# Audio files
+*.wav
+*.mp3
+
+# Test artifacts
+htmlcov/
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Development files
+Dev_log/
+dev-journey/
+IMPORTANT.MD
+CLAUDE.md
+*.md
+!README.md
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Data directories (data files only, keep .py)
+src/data_memory/**/*.json
+src/data_memory/**/*.db
+src/data_memory/**/*.jpg
+src/data_memory/**/*.png
+src/data_memory/cache/
+src/data_memory/embeddings_cache/
+src/data_memory/user/
+src/data_memory/faces/
+src/data_memory/sessions/
+src/data_memory/emotional_states/
+src/data_memory/proactive/
+src/sessions/
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+.dockerignore

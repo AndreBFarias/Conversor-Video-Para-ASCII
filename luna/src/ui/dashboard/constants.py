@@ -1,0 +1,46 @@
+DRACULA = {
+    "bg": "#282a36",
+    "fg": "#f8f8f2",
+    "comment": "#6272a4",
+    "cyan": "#8be9fd",
+    "green": "#50fa7b",
+    "orange": "#ffb86c",
+    "pink": "#ff79c6",
+    "purple": "#bd93f9",
+    "red": "#ff5555",
+    "yellow": "#f1fa8c",
+}
+
+MATRIX_CHARS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789"
+GLITCH_CHARS = "!@#$%^&*()[]{}|;:,.<>?/\\~`αβγδεζηθικλμνξοπρστυφχψω"
+
+BOOT_MESSAGES = [
+    "[    0.000000] Linux version 6.17.4-luna-custom",
+    "[    0.000001] Command line: BOOT_IMAGE=/vmlinuz-luna root=UUID=deadbeef",
+    "[    0.000002] KERNEL supported cpus:",
+    "[    0.000003]   Intel GenuineIntel",
+    "[    0.000004]   AMD AuthenticAMD",
+    "[    0.000010] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point'",
+    "[    0.000015] BIOS-provided physical RAM map:",
+    "[    0.000020] BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable",
+    "[    0.000025] NX (Execute Disable) protection: active",
+    "[    0.000030] SMBIOS 3.4 present.",
+    "[    0.000035] DMI: LUNA/NEURAL-CORE, BIOS 2077.12.25",
+    "[    0.000040] Hypervisor detected: KVM",
+    "[    0.000045] tsc: Detected 3600.000 MHz processor",
+    "[    0.000050] Memory: 32768MB available (16384k kernel code)",
+    "[    0.000055] Calibrating delay loop (skipped), value calculated",
+    "[    0.000060] pid_max: default: 32768 minimum: 301",
+    "[    0.000065] Mount-cache hash table entries: 65536",
+    "[    0.000070] CPU: Physical Processor ID: 0",
+    "[    0.000075] mce: CPU0: Thermal monitoring enabled (TM1)",
+    "[    0.000080] process: using mwait in idle threads",
+    "[    0.000085] Freeing SMP alternatives memory: 48K",
+    "[    0.000090] NEURAL-CORE: Initializing consciousness matrix...",
+    "[    0.000095] NEURAL-CORE: Loading personality vectors...",
+    "[    0.000100] LUNA-SYS: Voice synthesis module loaded",
+    "[    0.000105] LUNA-SYS: Vision cortex initialized",
+    "[    0.000110] LUNA-SYS: Memory banks online",
+    "[    0.000115] LUNA-SYS: Emotional processing unit: ACTIVE",
+    "[    0.000120] LUNA-SYS: All systems nominal. Awaiting input...",
+]

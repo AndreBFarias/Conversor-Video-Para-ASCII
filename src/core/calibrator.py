@@ -6,9 +6,16 @@ import sys
 import os
 import time
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from src.core.utils.color import rgb_to_ansi256
+from src.core.utils.image import sharpen_frame, apply_morphological_refinement
+from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
+
 ANSI_RESET = "\033[0m"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
-LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 
 config_global = None
 config_path_global = None
@@ -16,16 +23,6 @@ config_path_global = None
 WINDOW_ORIGINAL = "Janela 1: Original (Webcam)"
 WINDOW_RESULT = "Janela 2: Filtro Chroma ('s' Salva, 'q' Sai)"
 WINDOW_CONTROLS = "Controles"
-
-
-def sharpen_frame(frame, sharpen_amount=0.5):
-    if sharpen_amount <= 0:
-        return frame
-    
-    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
-    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-    
-    return sharpened
 
 
 # Presets de Chroma Key
@@ -83,80 +80,6 @@ def auto_detect_green(frame):
     print(f"Auto-detectado: H={h_min}-{h_max}, S={s_min}-{s_max}, V={v_min}-{v_max}")
     
     return {'h_min': h_min, 'h_max': h_max, 's_min': s_min, 's_max': s_max, 'v_min': v_min, 'v_max': v_max}
-
-
-def apply_morphological_refinement(mask, erode_size=2, dilate_size=2):
-    """Aplica erosão + dilatação morfológica para limpar bordas
-    
-    Args:
-        mask: Máscara binária
-        erode_size: Tamanho do kernel de erosão (0 = desabilitado)
-        dilate_size: Tamanho do kernel de dilatação (0 = desabilitado)
-    
-    Returns:
-        Máscara refinada
-    """
-    if erode_size > 0:
-        kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
-        mask = cv2.erode(mask, kernel_erode, iterations=1)
-    
-    if dilate_size > 0:
-        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size*2+1, dilate_size*2+1))
-        mask = cv2.dilate(mask, kernel_dilate, iterations=1)
-    
-    return mask
-
-
-def rgb_to_ansi256(r, g, b):
-    if r == g == b:
-        if r < 8:
-            return 16
-        if r > 248:
-            return 231
-        return 232 + int(((r - 8) / 247) * 23)
-    ansi_r = int(r / 255 * 5)
-    ansi_g = int(g / 255 * 5)
-    ansi_b = int(b / 255 * 5)
-    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
-
-
-def frame_para_ascii_calibrador(gray_frame, color_frame, mask, magnitude_frame, angle_frame, sobel_threshold, luminance_ramp):
-    height, width = gray_frame.shape
-    output_buffer = []
-
-    for y in range(height):
-        line_buffer = []
-        for x in range(width):
-            if mask[y, x] == 255:
-                char = " "
-                ansi_code = 232
-            elif magnitude_frame[y, x] > sobel_threshold:
-                angle = angle_frame[y, x]
-                if (angle > 67.5 and angle <= 112.5):
-                    char = "|"
-                elif (angle > 112.5 and angle <= 157.5):
-                    char = "/"
-                elif (angle > 157.5 or angle <= 22.5):
-                    char = "-"
-                else:
-                    char = "\\"
-                b, g, r = color_frame[y, x]
-                ansi_code = rgb_to_ansi256(r, g, b)
-            else:
-                pixel_brightness = gray_frame[y, x]
-                char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
-                char = luminance_ramp[char_index]
-                b, g, r = color_frame[y, x]
-                ansi_code = rgb_to_ansi256(r, g, b)
-
-            if char:
-                line_buffer.append(f"\033[38;5;{ansi_code}m{char}")
-            else:
-                line_buffer.append(" ")
-
-        output_buffer.append("".join(line_buffer))
-
-    return "\n".join(output_buffer) + ANSI_RESET
 
 
 def load_config(config_path):
@@ -429,43 +352,21 @@ def main():
         angle = (angle + 180) % 180
         magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
-        frame_ascii = frame_para_ascii_calibrador(
+        frame_ascii = converter_frame_para_ascii(
             resized_gray, resized_color, resized_mask,
             magnitude_norm, angle,
-            converter_config['sobel_threshold'], converter_config['luminance_ramp']
+            converter_config['sobel_threshold'], converter_config['luminance_ramp'],
+            output_format="terminal"
         )
 
         if is_recording:
-            COLOR_SEPARATOR = "§"
-            frame_for_file_lines = []
-            height, width = resized_gray.shape
-            for y in range(height):
-                line = ""
-                for x in range(width):
-                    if resized_mask[y, x] == 255:
-                        char = " "
-                        ansi_code = 232
-                    elif magnitude_norm[y, x] > converter_config['sobel_threshold']:
-                        ang = angle[y, x]
-                        if (ang > 67.5 and ang <= 112.5):
-                            char = "|"
-                        elif (ang > 112.5 and ang <= 157.5):
-                            char = "/"
-                        elif (ang > 157.5 or ang <= 22.5):
-                            char = "-"
-                        else:
-                            char = "\\"
-                        b, g, r = resized_color[y, x]
-                        ansi_code = rgb_to_ansi256(r, g, b)
-                    else:
-                        pixel_brightness = resized_gray[y, x]
-                        char_index = int((pixel_brightness / 255) * (len(converter_config['luminance_ramp']) - 1))
-                        char = converter_config['luminance_ramp'][char_index]
-                        b, g, r = resized_color[y, x]
-                        ansi_code = rgb_to_ansi256(r, g, b)
-                    line += f"{char}{COLOR_SEPARATOR}{ansi_code}{COLOR_SEPARATOR}"
-                frame_for_file_lines.append(line)
-            recording_frames.append("\n".join(frame_for_file_lines))
+            frame_for_file = converter_frame_para_ascii(
+                resized_gray, resized_color, resized_mask,
+                magnitude_norm, angle,
+                converter_config['sobel_threshold'], converter_config['luminance_ramp'],
+                output_format="file"
+            )
+            recording_frames.append(frame_for_file)
 
         display_frame = frame.copy()
         if is_recording:

@@ -71,8 +71,12 @@ def main():
     print("Pressione Ctrl+C para parar.")
     time.sleep(1.5)
 
+    if config is None and os.path.exists(args.config_path):
+        config = configparser.ConfigParser(interpolation=None)
+        config.read(args.config_path, encoding='utf-8')
+
     try:
-        iniciar_player(file_to_play, loop)
+        iniciar_player(file_to_play, loop, config)
     except Exception as e:
         print(f"\n--- ERRO NA REPRODUCAO ---")
         print(e)

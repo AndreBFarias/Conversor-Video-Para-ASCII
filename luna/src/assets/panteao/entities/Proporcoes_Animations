@@ -1,0 +1,33 @@
+Animações Piscando
+
+[Proporções]
+Largura (Caracteres)= 85
+Altura (Linhas)= 44
+Sensibilidade = 100
+Caracteres = 1,0
+
+[Chroma key]
+85 - 85
+40 - 255
+40 - 255
+Erode 3
+Dilatation 4
+
+
+---
+
+
+Animações Rosto
+
+[Proporções]
+Largura (Caracteres)= 70
+Altura (Linhas)= 22
+Sensibilidade = 100
+Caracteres = 1,0
+
+[Chroma key]
+0 - 85
+40 - 255
+40 - 255
+Erode 3
+Dilatation 4

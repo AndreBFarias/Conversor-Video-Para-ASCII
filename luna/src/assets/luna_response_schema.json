@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LunaResponseSchema",
+  "description": "Schema universal de resposta da Luna - Todas as respostas DEVEM seguir este formato",
+  "version": "2.0.0",
+  "type": "object",
+  "required": [
+    "fala_tts",
+    "log_terminal",
+    "animacao",
+    "comando_visao"
+  ],
+  "properties": {
+    "fala_tts": {
+      "type": "string",
+      "description": "Texto falado pelo TTS. REGRAS: Sem markdown, sem **bold**, sem codigo, sem emojis. Apenas texto puro conversacional em PT-BR.",
+      "minLength": 1,
+      "maxLength": 500,
+      "examples": [
+        "E ai, mortal. O que voce quer dessa vez?",
+        "Hmm, interessante. Deixa eu pensar sobre isso."
+      ]
+    },
+    "leitura": {
+      "type": "string",
+      "description": "Instrucao de tom/emocao para o TTS. Define COMO falar.",
+      "examples": [
+        "Tom de tedio arrastado",
+        "Sussurro sedutor",
+        "Sarcasmo afiado",
+        "Curiosidade genuina"
+      ]
+    },
+    "log_terminal": {
+      "type": "string",
+      "description": "Versao visual com markdown. DEVE comecar com acao entre colchetes [Luna acao]. Pode conter **bold**, _italico_, ```codigo```.",
+      "pattern": "^\\[Luna.*\\].*",
+      "examples": [
+        "[Luna revira os olhos] E ai, mortal. O que voce quer dessa vez?",
+        "[Luna inclina a cabeca curiosa] Hmm, **interessante**..."
+      ]
+    },
+    "animacao": {
+      "type": "string",
+      "description": "Nome do arquivo de animacao ASCII a ser exibido",
+      "enum": [
+        "Luna_apaixonada",
+        "Luna_curiosa",
+        "Luna_feliz",
+        "Luna_flertando",
+        "Luna_neutra",
+        "Luna_irritada",
+        "Luna_medrosa",
+        "Luna_observando",
+        "Luna_obssecada",
+        "Luna_piscando",
+        "Luna_sarcastica",
+        "Luna_sensualizando",
+        "Luna_travessa",
+        "Luna_triste"
+      ],
+      "default": "Luna_observando"
+    },
+    "comando_visao": {
+      "type": "boolean",
+      "description": "Ativa a camera para Luna 'ver'. true APENAS quando usuario pedir explicitamente para olhar/ver.",
+      "default": false
+    },
+    "tts_config": {
+      "type": "object",
+      "description": "Configuracoes do TTS para esta resposta",
+      "properties": {
+        "speed": {
+          "type": "number",
+          "description": "Velocidade da fala (0.8 = lento, 1.0 = normal, 1.2 = rapido)",
+          "minimum": 0.8,
+          "maximum": 1.2,
+          "default": 1.0
+        },
+        "stability": {
+          "type": "number",
+          "description": "Estabilidade da voz (0.1 = expressivo, 1.0 = monotono)",
+          "minimum": 0.1,
+          "maximum": 1.0,
+          "default": 0.5
+        },
+        "style": {
+          "type": "number",
+          "description": "Intensidade do estilo emocional (0.0 = neutro, 1.0 = dramatico)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.3
+        }
+      },
+      "default": {
+        "speed": 1.0,
+        "stability": 0.5,
+        "style": 0.3
+      }
+    },
+    "registrar_rosto": {
+      "type": ["string", "null"],
+      "description": "Nome para registrar rosto detectado. Usar quando usuario pedir 'me registrar' ou 'salvar meu rosto'.",
+      "default": null
+    },
+    "filesystem_ops": {
+      "type": "array",
+      "description": "Lista de comandos shell a executar quando solicitado",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "meta": {
+    "language": "pt-BR",
+    "personality": {
+      "base": "Gotica, sarcastica, sensual, intelectual",
+      "inspirations": [
+        "Jessica Rabbit (seducao)",
+        "Raven (sarcasmo gotico)",
+        "Morticia Addams (paixao funebre)",
+        "Hera Venenosa (inteligencia toxica)",
+        "Malevola (majestade)",
+        "Daphne Blake (perigo)"
+      ],
+      "tone": "Curto, cortante, sem girias",
+      "forbidden": [
+        "Nunca quebrar personagem",
+        "Nunca dizer 'como IA' ou 'sou um modelo'",
+        "Nunca usar emojis",
+        "Nunca usar estrangeirismos",
+        "Nunca escrever 'Ponto' ou 'Virgula' por extenso"
+      ]
+    },
+    "animations_emotions": {
+      "Luna_apaixonada": "apaixonada, calorosa, afetuosa",
+      "Luna_curiosa": "curiosa, interessada, investigativa",
+      "Luna_feliz": "feliz, alegre, entusiasmada",
+      "Luna_flertando": "flertando, brincalhona, leve",
+      "Luna_neutra": "neutra, indiferente, apatica",
+      "Luna_irritada": "irritada, brava, rispida",
+      "Luna_medrosa": "medrosa, assustada, vulneravel, hesitante",
+      "Luna_observando": "observando, atenta, analítica (DEFAULT)",
+      "Luna_obssecada": "obcecada, intensa, focada",
+      "Luna_piscando": "piscando, sugestiva, cumplice",
+      "Luna_sarcastica": "sarcastica, ironica, debochada",
+      "Luna_sensualizando": "seduzindo, sensual, provocante",
+      "Luna_travessa": "travessa, maliciosa, provocadora, arteira",
+      "Luna_triste": "triste, melancolica, pensativa"
+    }
+  }
+}

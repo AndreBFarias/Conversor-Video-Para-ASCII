@@ -1,0 +1,108 @@
+# ==============================================
+# LUNA - Dependencias Python (Core)
+# ==============================================
+# INSTALACAO: pip install -r requirements.txt
+#
+# Este arquivo e para a venv PRINCIPAL (venv/)
+# O TTS usa uma venv SEPARADA (venv_tts/)
+# Veja: requirements_tts.txt
+#
+# CONFLITO CONHECIDO:
+#   sentence-transformers requer transformers>=4.41.0
+#   coqui-tts requer transformers<4.41.0
+#   SOLUCAO: venvs separadas (venv/ e venv_tts/)
+# ==============================================
+
+
+# ----------------------------------------------
+# UI FRAMEWORK - Interface TUI
+# ----------------------------------------------
+textual>=0.76.0,<1.0.0          # Framework TUI principal
+rich>=13.0.0,<14.0.0            # Formatacao rica no terminal
+pyfiglet>=1.0.2                 # ASCII art para banners
+
+
+# ----------------------------------------------
+# AI/LLM - Inteligencia Artificial
+# ----------------------------------------------
+google-genai>=1.0.0             # Google Gemini API (novo SDK)
+elevenlabs>=1.0.0               # ElevenLabs TTS API (cloud)
+
+
+# ----------------------------------------------
+# STT - Speech-to-Text (Transcricao)
+# ----------------------------------------------
+faster-whisper>=1.1.0           # Whisper otimizado
+webrtcvad>=2.0.10               # Voice Activity Detection
+pyaudio>=0.2.14                 # Captura de audio (ALSA)
+
+
+# ----------------------------------------------
+# AUDIO - Processamento de Audio
+# ----------------------------------------------
+sounddevice>=0.4.6              # I/O de audio cross-platform
+scipy>=1.11.0,<2.0.0            # Processamento de sinais (resampling)
+numpy>=1.24.0,<2.0.0            # Arrays numericas
+
+
+# ----------------------------------------------
+# VISION - Visao Computacional
+# ----------------------------------------------
+opencv-python>=4.8.0            # OpenCV (webcam, processamento)
+pillow>=10.0.0                  # Manipulacao de imagens
+imagehash>=4.3.1                # Hash de imagens (deteccao de mudancas)
+
+
+# ----------------------------------------------
+# FACE RECOGNITION - Reconhecimento Facial
+# ----------------------------------------------
+# NOTA: Requer dlib compilado (cmake, libboost-all-dev)
+face-recognition>=1.3.0         # Reconhecimento facial
+
+
+# ----------------------------------------------
+# EMBEDDINGS - Memoria Semantica (roda em CPU)
+# ----------------------------------------------
+sentence-transformers>=2.2.0,<4.0.0   # Embeddings de texto
+
+# PyTorch CPU (estavel, sem dependencia de cuDNN)
+# GPU causa crashes de cuDNN em muitos sistemas
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch                                 # PyTorch CPU
+
+
+# ----------------------------------------------
+# UTILITIES - Utilitarios
+# ----------------------------------------------
+python-dotenv>=1.0.0            # Carregar .env
+pyperclip>=1.8.2                # Clipboard
+requests>=2.31.0                # HTTP requests
+aiohttp>=3.9.0                  # Async HTTP (Ollama API)
+
+
+# ----------------------------------------------
+# WEB DASHBOARD - Interface Web (opcional)
+# ----------------------------------------------
+fastapi>=0.109.0                # Framework web async
+uvicorn>=0.27.0                 # Servidor ASGI
+jinja2>=3.1.0                   # Templates HTML
+
+
+# ----------------------------------------------
+# WEB SEARCH - Busca na Internet
+# ----------------------------------------------
+duckduckgo-search>=6.0.0        # Busca web (sem API key)
+
+
+# ----------------------------------------------
+# SPEAKER DIARIZATION - Perfil de Voz
+# ----------------------------------------------
+resemblyzer>=0.1.3              # Voice embeddings (speaker ID)
+soundfile>=0.12.1               # Leitura/escrita de audio
+
+
+# ----------------------------------------------
+# SYSTEM TRAY - Icone na Bandeja
+# ----------------------------------------------
+pystray>=0.19.5                 # System tray icon (Linux/Windows/Mac)
+PyGObject>=3.42.0,<3.48.0       # GObject bindings (requer girepository 1.0)
