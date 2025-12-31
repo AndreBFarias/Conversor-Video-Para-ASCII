@@ -1,28 +1,118 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.24"/>
+
+  <!-- Adjustments -->
+  <object class="GtkAdjustment" id="adjustment_width">
+    <property name="lower">40</property>
+    <property name="upper">400</property>
+    <property name="value">180</property>
+    <property name="step-increment">10</property>
+    <property name="page-increment">20</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_height">
+    <property name="lower">0</property>
+    <property name="upper">200</property>
+    <property name="value">0</property>
+    <property name="step-increment">5</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_sobel">
+    <property name="lower">0</property>
+    <property name="upper">255</property>
+    <property name="value">100</property>
+    <property name="step-increment">5</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_aspect">
+    <property name="lower">0.01</property>
+    <property name="upper">2.0</property>
+    <property name="value">0.48</property>
+    <property name="step-increment">0.01</property>
+    <property name="page-increment">0.1</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_h_min">
+    <property name="lower">0</property>
+    <property name="upper">179</property>
+    <property name="value">35</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_h_max">
+    <property name="lower">0</property>
+    <property name="upper">179</property>
+    <property name="value">85</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_s_min">
+    <property name="lower">0</property>
+    <property name="upper">255</property>
+    <property name="value">40</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_s_max">
+    <property name="lower">0</property>
+    <property name="upper">255</property>
+    <property name="value">255</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_v_min">
+    <property name="lower">0</property>
+    <property name="upper">255</property>
+    <property name="value">40</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_v_max">
+    <property name="lower">0</property>
+    <property name="upper">255</property>
+    <property name="value">255</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_erode">
+    <property name="lower">0</property>
+    <property name="upper">10</property>
+    <property name="value">2</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">1</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_dilate">
+    <property name="lower">0</property>
+    <property name="upper">10</property>
+    <property name="value">2</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">1</property>
+  </object>
+
+  <!-- Main Window -->
   <object class="GtkWindow" id="main_window">
     <property name="can-focus">False</property>
-    <property name="title" translatable="yes">Êxtase em 4R73</property>
+    <property name="title" translatable="yes">Extase em 4R73</property>
     <property name="resizable">False</property>
     <property name="window-position">center</property>
+    <property name="default-width">480</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">10</property>
-        <property name="margin-start">15</property>
-        <property name="margin-end">15</property>
-        <property name="margin-top">15</property>
-        <property name="margin-bottom">15</property>
+        <property name="spacing">8</property>
+        <property name="margin-start">12</property>
+        <property name="margin-end">12</property>
+        <property name="margin-top">12</property>
+        <property name="margin-bottom">12</property>
 
+        <!-- HEADER: Logo + Title -->
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="spacing">15</property>
-            <property name="margin-bottom">5</property>
+            <property name="spacing">12</property>
+            <property name="margin-bottom">4</property>
             <child>
               <object class="GtkImage" id="logo_image">
                 <property name="visible">True</property>
@@ -39,7 +129,7 @@
               <object class="GtkLabel" id="title_label">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Êxtase em 4R73</property>
+                <property name="label" translatable="yes">Extase em 4R73</property>
                 <property name="valign">center</property>
                 <property name="xalign">0</property>
               </object>
@@ -47,6 +137,28 @@
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="options_button">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Configurações avançadas</property>
+                <property name="relief">none</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="icon-name">preferences-system-symbolic</property>
+                  </object>
+                </child>
+                <signal name="clicked" handler="on_options_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
               </packing>
             </child>
           </object>
@@ -57,40 +169,111 @@
           </packing>
         </child>
 
+        <!-- FRAME: ENTRADA -->
         <child>
-          <object class="GtkBox">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="spacing">10</property>
+            <property name="label-xalign">0</property>
             <child>
-              <object class="GtkButton" id="select_file_button">
-                <property name="label" translatable="yes">Selecionar Arquivo</property>
+              <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_select_file_button_clicked" swapped="no"/>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="spacing">8</property>
+                    <child>
+                      <object class="GtkButton" id="select_file_button">
+                        <property name="label" translatable="yes">Arquivo</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Selecionar vídeo ou imagem</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_select_file_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="select_folder_button">
+                        <property name="label" translatable="yes">Pasta</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Selecionar pasta com vídeos</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_select_folder_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="select_ascii_button">
+                        <property name="label" translatable="yes">ASCII (.txt)</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Selecionar arquivo ASCII já convertido</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_select_ascii_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="selected_path_label">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Nenhum arquivo selecionado</property>
+                    <property name="ellipsize">middle</property>
+                    <property name="max-width-chars">50</property>
+                    <property name="xalign">0</property>
+                    <style>
+                      <class name="dim-label"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
             </child>
-            <child>
-              <object class="GtkButton" id="select_folder_button">
-                <property name="label" translatable="yes">Selecionar Pasta de Vídeos</property>
+            <child type="label">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_select_folder_button_clicked" swapped="no"/>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Entrada </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
               </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
             </child>
           </object>
           <packing>
@@ -100,15 +283,92 @@
           </packing>
         </child>
 
+        <!-- FRAME: CONVERSAO -->
         <child>
-          <object class="GtkLabel" id="selected_path_label">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Nenhum arquivo ou pasta selecionada.</property>
-            <property name="margin-top">5</property>
-            <property name="margin-bottom">5</property>
-            <property name="ellipsize">middle</property>
-            <property name="max-width-chars">60</property>
+            <property name="label-xalign">0</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="spacing">8</property>
+                    <child>
+                      <object class="GtkButton" id="convert_button">
+                        <property name="label" translatable="yes">Converter</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Converter arquivo selecionado para ASCII</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_convert_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="convert_all_button">
+                        <property name="label" translatable="yes">Converter Tudo</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Converter todos os vídeos da pasta selecionada</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_convert_all_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkProgressBar" id="conversion_progress">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="show-text">True</property>
+                    <property name="text" translatable="yes">Pronto</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Conversão </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -117,12 +377,157 @@
           </packing>
         </child>
 
+        <!-- FRAME: REPRODUCAO -->
         <child>
-          <object class="GtkSeparator">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="margin-top">5</property>
-            <property name="margin-bottom">5</property>
+            <property name="label-xalign">0</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="spacing">8</property>
+                    <child>
+                      <object class="GtkComboBoxText" id="play_mode_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="tooltip-text" translatable="yes">Modo de exibição:
+- Terminal ANSI: Cores 256, funciona em qualquer terminal
+- Janela OpenCV: Qualidade máxima, janela separada
+- Híbrido: Ambos simultaneamente</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="terminal" translatable="yes">Terminal (ANSI 256)</item>
+                          <item id="window" translatable="yes">Janela (OpenCV)</item>
+                          <item id="both" translatable="yes">Híbrido (Terminal + Janela)</item>
+                        </items>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="play_button">
+                        <property name="label" translatable="yes">Reproduzir</property>
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Reproduzir arquivo convertido</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_play_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="play_ascii_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Reproduzir arquivo ASCII selecionado</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="icon-name">media-playback-start-symbolic</property>
+                          </object>
+                        </child>
+                        <signal name="clicked" handler="on_play_ascii_button_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="spacing">8</property>
+                    <child>
+                      <object class="GtkButton" id="open_folder_button">
+                        <property name="label" translatable="yes">Abrir Pasta de Saída</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Abre a pasta onde os arquivos .txt são salvos</property>
+                        <property name="hexpand">True</property>
+                        <signal name="clicked" handler="on_open_folder_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="open_video_button">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Abrir vídeo original no player padrão</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="icon-name">video-x-generic-symbolic</property>
+                          </object>
+                        </child>
+                        <signal name="clicked" handler="on_open_video_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Reprodução </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -131,41 +536,64 @@
           </packing>
         </child>
 
+        <!-- FRAME: FERRAMENTAS -->
         <child>
-          <object class="GtkGrid">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="column-spacing">10</property>
+            <property name="label-xalign">0</property>
             <child>
-              <object class="GtkButton" id="convert_button">
-                <property name="label" translatable="yes">Converter Selecionado</property>
+              <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Processa apenas o arquivo de vídeo selecionado</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_convert_button_clicked" swapped="no"/>
+                <property name="can-focus">False</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkButton" id="calibrate_button">
+                    <property name="label" translatable="yes">Calibrar Chroma Key</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Ajustar filtro de fundo verde usando o vídeo selecionado ou webcam</property>
+                    <property name="hexpand">True</property>
+                    <signal name="clicked" handler="on_calibrate_button_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="open_webcam_button">
+                    <property name="label" translatable="yes">Webcam Real-Time</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Abrir webcam com conversão ASCII em tempo real</property>
+                    <property name="hexpand">True</property>
+                    <signal name="clicked" handler="on_open_webcam_button_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">0</property>
-              </packing>
             </child>
-            <child>
-              <object class="GtkButton" id="convert_all_button">
-                <property name="label" translatable="yes">Converter Pasta Inteira</property>
+            <child type="label">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Processa TODOS os vídeos na pasta selecionada (ou padrão)</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_convert_all_button_clicked" swapped="no"/>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Ferramentas </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
               </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">0</property>
-              </packing>
             </child>
           </object>
           <packing>
@@ -175,23 +603,22 @@
           </packing>
         </child>
 
+        <!-- STATUS + SAIR -->
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="spacing">10</property>
-            <property name="margin-top">5</property>
+            <property name="margin-top">4</property>
             <child>
-              <object class="GtkComboBoxText" id="play_mode_combo">
+              <object class="GtkLabel" id="status_label">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="active">0</property>
+                <property name="label" translatable="yes">Pronto. Selecione um arquivo ou pasta.</property>
+                <property name="wrap">True</property>
+                <property name="max-width-chars">45</property>
+                <property name="xalign">0</property>
                 <property name="hexpand">True</property>
-                <items>
-                  <item id="terminal" translatable="yes">Terminal (ANSI)</item>
-                  <item id="window" translatable="yes">Janela (OpenCV)</item>
-                  <item id="both" translatable="yes">Hibrido (Terminal + Janela)</item>
-                </items>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -200,18 +627,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="play_button">
-                <property name="label" translatable="yes">Reproduzir</property>
+              <object class="GtkButton" id="quit_button">
+                <property name="label" translatable="yes">Sair</property>
                 <property name="visible">True</property>
-                <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Reproduz o arquivo convertido no modo selecionado</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_play_button_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_quit_button_clicked" swapped="no"/>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
               </packing>
@@ -224,328 +648,18 @@
           </packing>
         </child>
 
-        <child>
-          <object class="GtkBox">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="spacing">10</property>
-            <child>
-              <object class="GtkButton" id="select_ascii_button">
-                <property name="label" translatable="yes">Selecionar Arquivo ASCII (.txt)</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_select_ascii_button_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="play_ascii_button">
-                <property name="label" translatable="yes">Reproduzir ASCII Selecionado</property>
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_play_ascii_button_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">6</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkBox">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="spacing">10</property>
-            <child>
-              <object class="GtkButton" id="open_video_button">
-                <property name="label" translatable="yes">Abrir Vídeo Original</property>
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Abre 
-o arquivo de vídeo original selecionado</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_open_video_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="open_folder_button">
-                <property name="label" translatable="yes">Abrir Pasta de Saída</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Abre a pasta onde os arquivos .txt são salvos</property>
-                <property name="hexpand">True</property>
-                <signal name="clicked" handler="on_open_folder_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">7</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkButton" id="calibrate_button">
-            <property name="label" translatable="yes">Calibrar Chroma Key</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property> 
-            <property name="tooltip-text" translatable="yes">Abre a webcam ou o vídeo selecionado para ajustar o filtro</property>
-            <property name="margin-top">5</property>
-            <signal name="clicked" handler="on_calibrate_button_clicked" swapped="no"/>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">8</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkButton" id="open_webcam_button">
-            <property name="label" translatable="yes">Abrir Webcam</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Abre a webcam diretamente para calibração</property>
-            <property name="margin-top">5</property>
-            <signal name="clicked" handler="on_open_webcam_button_clicked" swapped="no"/>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">9</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkButton" id="options_button">
-            <property name="label" translatable="yes">Opções / Configurações</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="margin-top">5</property>
-            <signal name="clicked" handler="on_options_button_clicked" swapped="no"/>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">10</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkButton" id="quit_button">
-            <property name="label" translatable="yes">Sair</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="margin-top">10</property>
-            <signal name="clicked" handler="on_quit_button_clicked" swapped="no"/>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">11</property>
-          </packing>
-        </child>
-
-        <child>
-          <object class="GtkLabel" id="status_label">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Pronto. Selecione um arquivo ou pasta.</property>
-            <property name="margin-top">10</property>
-            <property name="wrap">True</property>
-            <property name="max-width-chars">50</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">12</property>
-          </packing>
-        </child>
-
-
-        <!-- GTK v2: Integrated Preview Widget - DISABLED -->
-        <!--
-        <child>
-          <object class="GtkFrame" id="preview_frame">
-            <property name="visible">False</property>
-            <property name="can-focus">False</property>
-            <property name="label-xalign">0</property>
-            <property name="shadow-type">in</property>
-            <property name="margin-top">10</property>
-            <child>
-              <object class="GtkAspectFrame" id="preview_aspect_frame">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="xalign">0.5</property>
-                <property name="yalign">0.5</property>
-                <property name="ratio">1.0</property>
-                <property name="obey-child">False</property>
-                <child>
-                  <object class="GtkImage" id="preview_image">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="stock">gtk-missing-image</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="label">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Preview</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">13</property>
-          </packing>
-        </child>
-        -->
       </object>
     </child>
   </object>
 
-  <object class="GtkAdjustment" id="adjustment_width">
-    <property name="lower">40</property>
-    <property name="upper">300</property>
-    <property name="value">120</property>
-    <property name="step-increment">10</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_height">
-    <property name="lower">0</property>
-    <property name="upper">200</property>
-    <property name="value">0</property>
-    <property name="step-increment">5</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_sobel">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">100</property>
-    <property name="step-increment">5</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_aspect">
-    <property name="lower">0.01</property>
-    <property name="upper">2.0</property>
-    <property name="value">0.45</property>
-    <property name="step-increment">0.01</property>
-    <property name="page-increment">0.1</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_h_min">
-    <property name="lower">0</property>
-    <property name="upper">179</property>
-    <property name="value">0</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_h_max">
-    <property name="lower">0</property>
-    <property name="upper">179</property>
-    <property name="value">179</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_s_min">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">0</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_s_max">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">255</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_v_min">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">0</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_v_max">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">255</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_erode">
-    <property name="lower">0</property>
-    <property name="upper">10</property>
-    <property name="value">2</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">1</property>
-  </object>
-
-  <object class="GtkAdjustment" id="adjustment_dilate">
-    <property name="lower">0</property>
-    <property name="upper">10</property>
-    <property name="value">2</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">1</property>
-  </object>
-
+  <!-- OPTIONS DIALOG -->
   <object class="GtkWindow" id="options_dialog">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Configurações</property>
     <property name="modal">True</property>
     <property name="window-position">center-on-parent</property>
-    <property name="default-width">400</property>
-    <property name="default-height">300</property>
+    <property name="default-width">450</property>
+    <property name="default-height">400</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
     <child>
@@ -554,12 +668,12 @@ o arquivo de vídeo original selecionado</property>
         <property name="orientation">vertical</property>
         <property name="spacing">10</property>
         <property name="margin">10</property>
-        
+
         <child>
           <object class="GtkNotebook" id="options_notebook">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            
+
             <!-- TAB 1: PLAYER -->
             <child>
               <object class="GtkBox">
@@ -573,6 +687,7 @@ o arquivo de vídeo original selecionado</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">False</property>
+                    <property name="tooltip-text" translatable="yes">Quando ativado, a animação reinicia automaticamente ao terminar</property>
                     <property name="draw-indicator">True</property>
                   </object>
                 </child>
@@ -595,18 +710,19 @@ o arquivo de vídeo original selecionado</property>
                 <property name="orientation">vertical</property>
                 <property name="margin">10</property>
                 <property name="spacing">10</property>
-                
+
                 <child>
                   <object class="GtkGrid">
                     <property name="visible">True</property>
-                    <property name="row-spacing">10</property>
+                    <property name="row-spacing">8</property>
                     <property name="column-spacing">10</property>
-                    
+
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Largura (caracteres):</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Largura da saída em caracteres (40-400)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">0</property></packing>
                     </child>
@@ -626,6 +742,7 @@ o arquivo de vídeo original selecionado</property>
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Altura (0=auto):</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Altura da saída (0 = calcular automáticamente)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">1</property></packing>
                     </child>
@@ -643,8 +760,9 @@ o arquivo de vídeo original selecionado</property>
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Sensibilidade Bordas (Sobel):</property>
+                        <property name="label" translatable="yes">Sensibilidade Bordas:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Threshold do filtro Sobel para detecção de bordas (0-255)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">2</property></packing>
                     </child>
@@ -664,6 +782,7 @@ o arquivo de vídeo original selecionado</property>
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Proporção Caractere:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Razão altura/largura do caractere no terminal</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
                     </child>
@@ -684,6 +803,7 @@ o arquivo de vídeo original selecionado</property>
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Rampa de Luminância:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Caracteres usados para representar níveis de brilho (do mais escuro ao mais claro)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">4</property></packing>
                     </child>
@@ -709,7 +829,7 @@ o arquivo de vídeo original selecionado</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Abre uma janela de preview com a webcam ou vídeo selecionado</property>
+                    <property name="tooltip-text" translatable="yes">Abre preview com webcam ou vídeo selecionado</property>
                     <signal name="clicked" handler="on_test_converter_clicked" swapped="no"/>
                   </object>
                   <packing>
@@ -737,19 +857,37 @@ o arquivo de vídeo original selecionado</property>
                 <property name="orientation">vertical</property>
                 <property name="margin">10</property>
                 <property name="spacing">10</property>
-                
+
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Ajuste os valores HSV para remover o fundo verde.
+Erode remove ruído, Dilate preenche buracos.</property>
+                    <property name="wrap">True</property>
+                    <property name="xalign">0</property>
+                    <style>
+                      <class name="dim-label"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+
                 <child>
                   <object class="GtkGrid">
                     <property name="visible">True</property>
-                    <property name="row-spacing">10</property>
+                    <property name="row-spacing">8</property>
                     <property name="column-spacing">10</property>
 
-                    <!-- H Min/Max -->
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">H Min:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Matiz mínimo (0-179). Verde típico: 35-85</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">0</property></packing>
                     </child>
@@ -780,12 +918,12 @@ o arquivo de vídeo original selecionado</property>
                       <packing><property name="left-attach">3</property><property name="top-attach">0</property></packing>
                     </child>
 
-                    <!-- S Min/Max -->
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">S Min:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Saturação mínima (0-255)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">1</property></packing>
                     </child>
@@ -816,12 +954,12 @@ o arquivo de vídeo original selecionado</property>
                       <packing><property name="left-attach">3</property><property name="top-attach">1</property></packing>
                     </child>
 
-                    <!-- V Min/Max -->
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">V Min:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Valor/brilho mínimo (0-255)</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">2</property></packing>
                     </child>
@@ -852,12 +990,12 @@ o arquivo de vídeo original selecionado</property>
                       <packing><property name="left-attach">3</property><property name="top-attach">2</property></packing>
                     </child>
 
-                    <!-- Erode/Dilate -->
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Erode:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Erosão: Remove pixels isolados e encolhe a máscara. Maior = menos ruído, mas pode cortar bordas.</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
                     </child>
@@ -875,6 +1013,7 @@ o arquivo de vídeo original selecionado</property>
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Dilate:</property>
                         <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Dilatação: Expande a máscara e fecha buracos pequenos. Use após erosão para recuperar tamanho.</property>
                       </object>
                       <packing><property name="left-attach">2</property><property name="top-attach">3</property></packing>
                     </child>
@@ -891,7 +1030,7 @@ o arquivo de vídeo original selecionado</property>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
 
@@ -901,13 +1040,13 @@ o arquivo de vídeo original selecionado</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Abre o calibrador para testar as configurações de chroma key</property>
+                    <property name="tooltip-text" translatable="yes">Abre o calibrador para testar as configurações</property>
                     <signal name="clicked" handler="on_test_chroma_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
@@ -937,7 +1076,7 @@ o arquivo de vídeo original selecionado</property>
             <property name="spacing">10</property>
             <child>
               <object class="GtkButton" id="options_restore_button">
-                <property name="label" translatable="yes">Restaurar Padrões</property>
+                <property name="label" translatable="yes">Restaurar Padroes</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
@@ -961,7 +1100,7 @@ o arquivo de vídeo original selecionado</property>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="position">0</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -976,7 +1115,7 @@ o arquivo de vídeo original selecionado</property>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="position">1</property>
+                <property name="position">2</property>
               </packing>
             </child>
           </object>
@@ -989,3 +1128,4 @@ o arquivo de vídeo original selecionado</property>
       </object>
     </child>
   </object>
+</interface>

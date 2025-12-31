@@ -1,0 +1,1447 @@
+/*
+ * Templo Universal - Grimório de Estilos
+ * Paleta: Universal Theme Template
+ * Primary: {primary_color} | Secondary: {secondary_color} | Accent: {accent_color}
+ * Background: {background} | Glow: {primary_color}
+ */
+
+/* --- A TELA PRINCIPAL (O MUNDO) --- */
+Screen {
+    background: {background};
+    color: {text_primary};
+    layers: base fullscreen;
+}
+
+/* --- PAINÉIS PRINCIPAIS --- */
+
+#ascii-container {
+    width: 44%;
+    height: 100%;
+    border: heavy {text_secondary};
+    background: {background};
+    layout: vertical;
+    padding: 0 1;
+    dock: left;
+    margin-right: 1;
+    overflow: hidden;
+}
+
+#ascii-pane {
+    width: 100%;
+    height: 1fr;
+    min-height: 20;
+    border: none;
+    padding: 1 1 0 1;
+    content-align: center bottom;
+    overflow: hidden;
+    color: {primary_color};
+}
+
+#ascii-pane Static {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+#ascii-pane > * {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+#right-pane {
+    width: 56%;
+    height: 100%;
+    layout: vertical;
+    dock: right;
+    background: {background};
+}
+
+#welcome-pane {
+    height: 12;
+    max-height: 15;
+    content-align: left top;
+    border: none;
+    margin-bottom: 0;
+    padding: 1 0 0 1;
+    background: {background};
+}
+
+#menu-pane {
+    height: 5;
+    align: center middle;
+    border: heavy {text_secondary};
+    background: {background};
+    padding: 0 0;
+    margin-bottom: 0;
+    content-align: center middle;
+}
+
+#chat-area {
+    height: 1fr;
+    border: heavy {text_secondary};
+    background: {background};
+    margin-bottom: 0;
+}
+
+#input-container {
+    layout: horizontal;
+    height: auto;
+    min-height: 4;
+    max-height: 8;
+    border: heavy {text_secondary};
+    background: {background};
+    margin-top: 0;
+    padding: 0 1;
+    align: left bottom;
+    content-align: left bottom;
+    overflow: hidden;
+}
+
+/* --- WIDGETS --- */
+
+#main_input {
+    width: 1fr;
+    height: auto;
+    min-height: 3;
+    max-height: 6;
+    border: round transparent;
+    background: {background_input};
+    padding: 0 1;
+    color: {text_primary};
+    margin: auto 0 auto 1;
+}
+
+#main_input:focus {
+    border: round {primary_color};
+    background: {background_input_focus};
+}
+
+#main_input > .text-area--cursor {
+    background: {primary_color};
+    color: {background};
+}
+
+#main_input > .text-area--selection {
+    background: {text_secondary};
+}
+
+#main_input.-has-focus > .text-area--cursor {
+    background: {secondary_color};
+}
+
+Button {
+    margin: 0 1 0 1;
+    background: transparent;
+    border: none;
+    width: auto;
+    min-width: 8;
+    height: 3;
+    content-align: center middle;
+    text-align: center;
+    color: {primary_color};
+}
+
+#menu-pane>Button {
+    width: 15;
+    height: 3;
+    padding: 0 0;
+}
+
+#menu-pane>Button:focus {
+    background: rgba(98, 114, 164, 0.3);
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+#input-container>Button {
+    width: 9;
+    min-width: 6;
+    height: 3;
+    min-height: 3;
+    max-height: 3;
+    text-align: center;
+    content-align: center middle;
+    padding: 0 0;
+    margin: auto 0;
+}
+
+#input-container>Button:focus {
+    background: rgba(98, 114, 164, 0.3);
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+Button:hover {
+    background: rgba(98, 114, 164, 0.3);
+    color: {primary_color};
+    border: none;
+}
+
+Button:focus {
+    background: rgba(98, 114, 164, 0.3);
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+Button.-active {
+    background: {primary_color};
+    color: {background};
+}
+
+GlitchButton {
+    color: {primary_color};
+    background: transparent;
+}
+
+GlitchButton:hover {
+    background: rgba(98, 114, 164, 0.3);
+    color: {primary_color};
+}
+
+GlitchButton:focus {
+    background: rgba(68, 71, 90, 0.6);
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold reverse;
+}
+
+GlitchButton.focused {
+    background: rgba(68, 71, 90, 0.6);
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold reverse;
+}
+
+#toggle_voice_call.voice-active {
+    background: {primary_color};
+    color: #ffffff;
+    text-style: bold;
+}
+
+#toggle_voice_call.voice-inactive {
+    background: transparent;
+    color: {primary_color};
+}
+
+#toggle_voice_call.Button.-error {
+    background: {text_error};
+    color: #ffffff;
+    border: none;
+}
+
+Button.pulsing {
+    text-style: bold;
+    background: #ff7979;
+}
+
+/* --- TELA DE HISTÓRICO --- */
+
+HistoryScreen {
+    layout: vertical;
+    align: center middle;
+    padding: 0;
+    background: {background};
+}
+
+#history-container {
+    width: 80%;
+    max-width: 100;
+    height: 80%;
+    background: {background};
+    border: tall {text_secondary};
+    padding: 2;
+}
+
+#history-header {
+    width: 100%;
+    height: auto;
+    content-align: center middle;
+    margin-bottom: 1;
+}
+
+#history-title {
+    text-align: center;
+    color: {primary_color};
+    text-style: bold;
+    width: 100%;
+}
+
+#history-list {
+    border: tall {text_secondary};
+    width: 100%;
+    height: 1fr;
+    background: {background_alt};
+    padding: 1;
+}
+
+#history-list > ListItem {
+    background: transparent;
+    margin-bottom: 1;
+    padding: 1 2;
+    color: {text_primary};
+    border-left: wide {text_secondary};
+}
+
+#history-list > ListItem:hover {
+    background: rgba(98, 114, 164, 0.3);
+    border-left: wide {primary_color};
+}
+
+#history-list > ListItem:focus {
+    background: rgba(98, 114, 164, 0.3);
+    border-left: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+#history-list > ListItem.-selected {
+    background: rgba(98, 114, 164, 0.3);
+    border-left: wide {primary_color};
+}
+
+#back-button {
+    width: auto;
+    min-width: 20;
+    margin-top: 1;
+    background: {background_input};
+    color: {text_primary};
+    border: none;
+}
+
+#back-button:hover {
+    background: rgba(98, 114, 164, 0.3);
+}
+
+#back-button:focus {
+    background: {background_input};
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+/* --- TELA CANONE (CONFIGURACOES) --- */
+
+CanoneScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.70);
+}
+
+#canone-overlay {
+    width: 100%;
+    height: 100%;
+    align: center middle;
+}
+
+#canone-modal {
+    width: 95%;
+    max-width: 180;
+    height: 95%;
+    max-height: 80;
+    background: rgba(45, 47, 61, 0.80);
+    border: solid {text_secondary};
+    border-left: wide {primary_color};
+    padding: 1 2;
+}
+
+#canone-title {
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    color: {primary_color};
+    padding: 0;
+    margin-bottom: 0;
+}
+
+#canone-subtitle {
+    width: 100%;
+    text-align: center;
+    color: {text_secondary};
+    margin-bottom: 1;
+}
+
+#canone-tabs {
+    height: 1fr;
+    background: transparent;
+}
+
+#canone-tabs > ContentSwitcher {
+    background: transparent;
+}
+
+#canone-tabs TabPane {
+    background: {background};
+    padding: 0;
+}
+
+#canone-tabs Tabs {
+    background: {background_alt};
+    dock: top;
+    height: 3;
+    width: 100%;
+    align: center middle;
+    content-align: center middle;
+}
+
+#canone-tabs Tab {
+    background: transparent;
+    color: {text_secondary};
+    padding: 0 4;
+    height: 3;
+    width: 1fr;
+    text-align: center;
+    content-align: center middle;
+}
+
+#canone-tabs Tab:hover {
+    background: rgba(98, 114, 164, 0.3);
+    color: {primary_color};
+}
+
+#canone-tabs Tab.-active {
+    background: rgba(98, 114, 164, 0.3);
+    color: {primary_color};
+    text-style: bold;
+}
+
+#canone-tabs Underline {
+    background: {primary_color};
+}
+
+#entity-scroll,
+#providers-scroll,
+#voice-scroll,
+#audio-scroll,
+#keys-scroll,
+#advanced-scroll,
+#effects-scroll {
+    background: transparent;
+    padding: 1;
+    scrollbar-background: {background_alt};
+    scrollbar-color: {text_secondary};
+}
+
+.canone-section {
+    color: {primary_color};
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+.canone-hint {
+    color: {text_secondary};
+    margin-bottom: 0;
+    padding: 0;
+}
+
+#canone-modal Select {
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 1;
+    background: {background};
+    border: solid {text_secondary};
+    color: {text_primary};
+}
+
+#canone-modal Select:focus {
+    border: double {primary_color};
+    background: {background_input_focus};
+    color: {text_primary};
+}
+
+#canone-modal Input {
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 1;
+    background: {background};
+    border: solid {text_secondary};
+    color: {text_primary};
+    padding: 0 1;
+}
+
+#canone-modal Input:focus {
+    border: double {primary_color};
+    background: {background_input_focus};
+    color: {text_primary};
+}
+
+.canone-switch-row {
+    width: 100%;
+    height: 3;
+    align: left middle;
+    margin-bottom: 1;
+}
+
+.canone-switch-row Label {
+    width: auto;
+    padding-right: 2;
+    color: {text_primary};
+}
+
+.canone-switch-row Switch {
+    background: {text_secondary};
+}
+
+Switch {
+    background: {text_secondary};
+}
+
+Switch.-on {
+    background: {primary_color};
+}
+
+#canone-buttons {
+    width: 100%;
+    height: 4;
+    align: center middle;
+    margin-top: 1;
+    padding: 0 2;
+    layout: horizontal;
+}
+
+#canone-buttons Button,
+#canone-buttons GlitchButton {
+    margin: 0 1;
+    width: auto;
+    min-width: 14;
+    max-width: 28;
+    height: 3;
+    padding: 0 2;
+    text-align: center;
+    content-align: center middle;
+}
+
+CanoneScreen #btn-save-canone,
+#canone-modal #btn-save-canone,
+#btn-save-canone {
+    background: {accent_color};
+    color: {background};
+    text-style: bold;
+    border: none;
+    width: auto;
+    min-width: 18;
+    max-width: 22;
+}
+
+#btn-save-canone:hover {
+    background: #69ff94;
+    border: none;
+}
+
+#btn-save-canone:focus {
+    background: #2d6e45;
+    color: {accent_color};
+    border: double {primary_color};
+    text-style: bold;
+}
+
+CanoneScreen #btn-cancel-canone,
+#canone-modal #btn-cancel-canone,
+#btn-cancel-canone {
+    background: {background_input};
+    color: {text_primary};
+    border: solid {text_secondary};
+    width: auto;
+    min-width: 18;
+    max-width: 22;
+}
+
+#btn-cancel-canone:hover {
+    background: {text_secondary};
+    border: solid {primary_color};
+}
+
+#btn-cancel-canone:focus {
+    background: {background_input};
+    border: double {primary_color};
+    color: {text_primary};
+    text-style: bold;
+}
+
+/* --- ÁREA DE STATUS --- */
+
+#status-area {
+    height: 3;
+    width: 100%;
+    align: center middle;
+    content-align: center middle;
+    padding: 0;
+    margin-bottom: 0;
+    layout: horizontal;
+    background: {background};
+}
+
+#status-label {
+    width: auto;
+    text-align: left;
+    color: {primary_color};
+    text-style: bold;
+    padding: 0 1 0 0;
+    background: {background};
+    display: none;
+}
+
+#status-label.status-visible {
+    display: block;
+}
+
+#emotion-label {
+    width: auto;
+    min-width: 25;
+    text-align: center;
+    color: {primary_color};
+    text-style: bold;
+    padding: 0 0 0 0;
+    background: {background};
+    display: block;
+}
+
+/* --- CHAT WIDGETS --- */
+
+VerticalScroll#chat-list {
+    background: {background};
+    padding: 0 1;
+    scrollbar-gutter: stable;
+}
+
+VerticalScroll {
+    scrollbar-background: {background};
+    scrollbar-color: {text_secondary};
+    scrollbar-color-hover: {primary_color};
+    scrollbar-color-active: {primary_color};
+}
+
+.message-container {
+    layout: vertical;
+    height: auto;
+    width: 100%;
+    margin: 1 0;
+    background: rgba(68, 71, 90, 0.8);
+    padding: 1 2;
+    border: none;
+}
+
+.message-luna {
+    border-left: wide {primary_color};
+    background: rgba(189, 147, 249, 0.08);
+}
+
+.message-user {
+    border-left: wide {text_user};
+    background: #1e2a35;
+}
+
+.message-kernel {
+    border-left: wide {text_secondary};
+    background: #2a2a2a;
+}
+
+.message-code {
+    border-left: wide {text_secondary};
+    background: rgba(40, 42, 54, 0.6);
+}
+
+.message-container.copied {
+    border: round {accent_color};
+    background: #1a3020;
+}
+
+.msg-text.copied {
+    background: rgba(80, 250, 123, 0.15);
+    color: {accent_color};
+}
+
+ClickableText:hover {
+    background: {background_input_focus};
+}
+
+.msg-sender {
+    width: 100%;
+    text-align: left;
+    text-style: bold;
+    padding-bottom: 1;
+}
+
+.luna-sender {
+    color: {primary_color};
+}
+
+.user-sender {
+    color: {text_user};
+}
+
+.kernel-sender {
+    color: {text_secondary};
+}
+
+.code-sender {
+    color: #a8a8a8;
+}
+
+.system-sender {
+    color: {primary_color};
+}
+
+.msg-text {
+    width: 100%;
+    color: {text_primary};
+    padding: 0 0;
+    background: transparent;
+}
+
+Markdown {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+}
+
+.message-container Markdown {
+    background: transparent;
+}
+
+MarkdownH1, MarkdownH2, MarkdownH3, MarkdownH4, MarkdownH5, MarkdownH6 {
+    background: transparent;
+    color: {primary_color};
+    margin: 0 0 1 0;
+}
+
+MarkdownParagraph {
+    background: transparent;
+    margin: 0;
+}
+
+MarkdownBlockQuote {
+    background: {background_input_focus};
+    border-left: wide {text_secondary};
+    padding: 0 1;
+    margin: 1 0;
+}
+
+MarkdownBulletList, MarkdownOrderedList {
+    background: transparent;
+    margin: 0 0 0 2;
+}
+
+MarkdownListItem {
+    background: transparent;
+}
+
+/* --- CODE BLOCK --- */
+
+.code-block-container {
+    background: {background_alt};
+    border: round {text_secondary};
+    margin: 1 0;
+    height: auto;
+    width: 100%;
+}
+
+.code-header {
+    height: 3;
+    background: {background_panel};
+    padding: 0 2;
+    border-bottom: solid {background_input};
+}
+
+.code-lang {
+    color: {text_user};
+    text-style: bold;
+    width: 1fr;
+}
+
+.btn-code-copy {
+    dock: right;
+    min-width: 12;
+    height: 1;
+    background: {background_input};
+    color: {text_primary};
+    border: round {text_secondary};
+}
+
+.btn-code-copy:hover {
+    background: {accent_color};
+    color: {background};
+    border: round {accent_color};
+}
+
+.code-content {
+    padding: 0;
+    height: auto;
+    max-height: 30;
+    background: {background_code};
+    border: none;
+    scrollbar-gutter: stable;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.code-content:focus {
+    border: none;
+}
+
+.code-block {
+}
+
+.code-block:hover .code-block-container {
+    border: round {primary_color};
+}
+
+.code-block.copied .code-block-container {
+    border: round {accent_color};
+}
+
+.code-hint {
+    color: {text_secondary};
+    text-style: italic;
+    width: auto;
+    dock: right;
+    padding-right: 1;
+}
+
+.code-block:hover .code-hint {
+    color: {primary_color};
+}
+
+/* --- AUDIO VISUALIZER --- */
+
+#audio-visualizer {
+    width: 100%;
+    height: 12;
+    max-height: 15;
+    content-align: center middle;
+    border: none;
+    margin-bottom: 0;
+    padding: 0;
+    background: {background};
+}
+
+#audio-visualizer.hidden {
+    display: none;
+}
+
+#welcome-pane.hidden {
+    display: none;
+}
+
+#ascii-pane.hidden {
+    display: none;
+}
+
+#status-area.hidden {
+    display: none;
+}
+
+#ascii-pane.fullscreen {
+    height: 100%;
+    min-height: 44;
+    max-height: 100%;
+    width: 100%;
+    padding: 0 1;
+    content-align: center middle;
+    overflow: hidden;
+    layer: fullscreen;
+}
+
+/* --- VOICE TRAINER SCREEN --- */
+
+VoiceTrainerScreen {
+    background: {background};
+}
+
+#trainer-main {
+    width: 100%;
+    height: 1fr;
+    padding: 1 2;
+    layout: vertical;
+}
+
+#trainer-panels {
+    width: 100%;
+    height: 1fr;
+    layout: horizontal;
+}
+
+#recorder-panel {
+    width: 55%;
+    height: 100%;
+    border: heavy {primary_color};
+    padding: 1 2;
+    margin-right: 1;
+    background: rgba(40, 42, 54, 0.9);
+}
+
+#settings-panel {
+    width: 45%;
+    height: 100%;
+    border: heavy {text_secondary};
+    padding: 1 2;
+    background: rgba(40, 42, 54, 0.9);
+}
+
+#recorder-title,
+#settings-title {
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    color: {secondary_color};
+    padding-bottom: 1;
+    border-bottom: solid {background_input};
+    margin-bottom: 1;
+}
+
+#settings-title {
+    color: {text_user};
+}
+
+#phrase-display {
+    width: 100%;
+    height: 5;
+    background: {background_alt};
+    border: round {primary_color};
+    padding: 1 2;
+    color: {text_primary};
+    content-align: center middle;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#phrase-controls {
+    width: 100%;
+    height: 3;
+    align: center middle;
+    margin-bottom: 1;
+}
+
+#sample-counter {
+    width: auto;
+    min-width: 20;
+    padding: 0 2;
+    color: {accent_color};
+    text-style: bold;
+}
+
+#recording-indicator {
+    width: 100%;
+    height: 2;
+    text-align: center;
+    content-align: center middle;
+    margin-bottom: 1;
+}
+
+#recording-progress {
+    width: 100%;
+    height: 1;
+    margin-bottom: 1;
+}
+
+#recording-progress>.bar--bar {
+    color: {text_error};
+}
+
+#recording-progress>.bar--complete {
+    color: {accent_color};
+}
+
+#recorder-buttons {
+    width: 100%;
+    height: 5;
+    align: center middle;
+    margin-bottom: 1;
+}
+
+#recorder-buttons>Button {
+    width: 12;
+    height: 3;
+    margin: 0 1;
+}
+
+#btn-record {
+    background: {accent_color};
+    color: {background};
+}
+
+#btn-record:hover {
+    background: #69ff94;
+}
+
+#btn-stop {
+    background: {text_error};
+    color: #ffffff;
+}
+
+#btn-stop:hover {
+    background: #ff6e6e;
+}
+
+#btn-play {
+    background: {text_user};
+    color: {background};
+}
+
+#btn-play:hover {
+    background: #a4efff;
+}
+
+#btn-discard {
+    background: {accent_secondary};
+    color: {background};
+}
+
+#btn-discard:hover {
+    background: #ffc98a;
+}
+
+#btn-save-sample {
+    width: 100%;
+    height: 3;
+    background: {primary_color};
+    color: {background};
+    text-style: bold;
+}
+
+#btn-save-sample:hover {
+    background: #caa8ff;
+}
+
+.setting-label {
+    width: 100%;
+    color: {text_primary};
+    padding: 1 0 0 0;
+    text-style: bold;
+}
+
+.setting-hint {
+    width: auto;
+    color: {text_secondary};
+    padding-left: 1;
+}
+
+.slider-row {
+    width: 100%;
+    height: 3;
+    align: left middle;
+}
+
+.slider-row>Input {
+    width: 15;
+}
+
+#settings-panel>Input {
+    width: 100%;
+    height: 3;
+    background: {background_input};
+    border: round {text_secondary};
+    padding: 0 1;
+    margin-bottom: 0;
+}
+
+#settings-panel>Input:focus {
+    border: round {primary_color};
+}
+
+#advanced-toggle {
+    width: 100%;
+    height: 3;
+    align: left middle;
+    margin-top: 1;
+}
+
+#advanced-toggle>Label {
+    width: auto;
+    padding: 0;
+}
+
+#switch-normalize {
+    margin-left: 1;
+}
+
+#settings-spacer {
+    height: 1fr;
+}
+
+#samples-list-container {
+    width: 100%;
+    height: auto;
+    max-height: 10;
+    border-top: solid {background_input};
+    padding-top: 1;
+}
+
+#samples-list {
+    width: 100%;
+    height: auto;
+    max-height: 6;
+    color: {text_secondary};
+    padding: 0 1;
+    overflow-y: auto;
+}
+
+#btn-start-training {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+    background: {primary_color};
+    color: {background};
+    text-style: bold;
+    border: heavy {secondary_color};
+}
+
+#btn-start-training:hover {
+    background: {secondary_color};
+    border: heavy {primary_color};
+}
+
+#btn-start-training:disabled {
+    background: {background_input};
+    color: {text_secondary};
+    border: heavy {background_input};
+}
+
+.hidden {
+    display: none;
+}
+
+.startup-hidden {
+    display: none;
+}
+
+#ascii-container.transitioning {
+    overflow: hidden;
+}
+
+/* --- CONTEXT MENU --- */
+
+ContextMenu {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+#context-menu-container {
+    width: 35;
+    height: auto;
+    max-height: 15;
+    background: {background_panel};
+    border: solid {text_secondary};
+    padding: 0;
+}
+
+ContextMenuItem {
+    padding: 0 1;
+    height: 1;
+    background: {background_panel};
+}
+
+ContextMenuItem:hover {
+    background: {background_input};
+}
+
+ContextMenuItem:focus {
+    background: {primary_color};
+    color: {background};
+}
+
+.context-menu-item-label {
+    width: 100%;
+}
+
+.separator-item {
+    color: {text_secondary};
+    height: 1;
+}
+
+.separator-item:hover {
+    background: {background_panel};
+}
+
+/* --- CODE OUTPUT PANEL --- */
+
+CodeOutputPanel {
+    height: 100%;
+    background: {background_alt};
+}
+
+#code-output-header {
+    height: 1;
+    background: {background_panel};
+    color: {primary_color};
+    padding: 0 1;
+    text-style: bold;
+}
+
+#code-output-area {
+    height: 1fr;
+    background: {background_alt};
+    border: none;
+    scrollbar-background: {background_panel};
+    scrollbar-color: {text_secondary};
+}
+
+#code-status {
+    height: 1;
+    background: {background_panel};
+    color: {text_secondary};
+    padding: 0 1;
+}
+
+.code-output-clickable {
+}
+
+/* --- ONBOARDING RITUAL STYLES --- */
+
+.onboarding-hidden {
+    display: none;
+}
+
+.onboarding-revealed {
+    display: block;
+    border: heavy {secondary_color};
+    background: rgba(255, 121, 198, 0.18);
+    color: {secondary_color};
+    text-style: bold;
+}
+
+Button.onboarding-revealed,
+GlitchButton.onboarding-revealed {
+    display: block;
+    border: heavy {secondary_color};
+    background: rgba(255, 121, 198, 0.22);
+    color: {text_primary};
+    text-style: bold;
+}
+
+#main_input.onboarding-revealed {
+    display: block;
+    border: heavy {primary_color};
+    background: {background_input_focus};
+}
+
+.glitch-reveal {
+    display: block;
+    color: {accent_color};
+    border: double {accent_color};
+    background: rgba(80, 250, 123, 0.25);
+    text-style: bold reverse;
+}
+
+Button.glitch-reveal,
+GlitchButton.glitch-reveal {
+    display: block;
+    color: {background};
+    border: double {accent_color};
+    background: {accent_color};
+    text-style: bold reverse;
+}
+
+.revealed-stable {
+    display: block;
+    border: solid {primary_color};
+    background: rgba(189, 147, 249, 0.1);
+}
+
+Button.revealed-stable,
+GlitchButton.revealed-stable {
+    display: block;
+    border: solid {primary_color};
+    background: rgba(189, 147, 249, 0.12);
+    color: {text_primary};
+}
+
+#welcome-pane.onboarding-hidden {
+    display: none;
+    background: {background};
+}
+
+.onboarding-static-overlay {
+    width: 100%;
+    height: 100%;
+    background: #1a1a2e;
+    layer: overlay;
+}
+
+/* --- ENTITY SELECTOR --- */
+
+EntitySelectorScreen {
+    align: center middle;
+    background: {background};
+}
+
+#entity-container {
+    width: 90;
+    height: auto;
+    background: {background_input};
+    border: heavy {primary_color};
+    padding: 2 4;
+}
+
+#entity-banner {
+    width: 100%;
+    height: auto;
+    color: {primary_color};
+    text-align: center;
+    content-align: center middle;
+    padding: 1 0;
+}
+
+#entity-name {
+    width: 100%;
+    height: 3;
+    text-align: center;
+    content-align: center middle;
+    color: {text_primary};
+    text-style: bold;
+    padding: 1 0;
+}
+
+#entity-description {
+    width: 100%;
+    height: auto;
+    text-align: center;
+    content-align: center middle;
+    color: {text_secondary};
+    padding: 1 0;
+}
+
+#entity-status {
+    width: 100%;
+    height: 3;
+    text-align: center;
+    content-align: center middle;
+    color: {text_primary};
+    padding: 1 0;
+}
+
+.unavailable {
+    color: {text_secondary};
+}
+
+.unavailable #entity-banner {
+    color: {background_input};
+}
+
+.unavailable #entity-name {
+    color: {text_secondary};
+}
+
+#navigation-hint {
+    width: 100%;
+    height: 3;
+    text-align: center;
+    content-align: center middle;
+    color: {primary_color};
+    padding: 1 0;
+}
+
+/* --- INPUT FORMS --- */
+
+Select {
+    background: {background};
+    border: tall {text_secondary};
+}
+
+Select:focus {
+    border: tall {primary_color};
+}
+
+Input {
+    background: {background};
+    border: tall {text_secondary};
+}
+
+Input:focus {
+    border: tall {primary_color};
+}
+
+/* --- HISTORY SCREEN (Biblioteca das Palavras Conjuradas) --- */
+
+HistoryScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.70);
+}
+
+#history-container {
+    width: 80%;
+    max-width: 120;
+    height: 80%;
+    max-height: 60;
+    background: rgba(45, 47, 61, 0.90);
+    border: solid {text_secondary};
+    border-left: wide {primary_color};
+    padding: 1 2;
+}
+
+#history-header {
+    width: 100%;
+    height: auto;
+    align: center middle;
+    margin-bottom: 1;
+}
+
+#history-title {
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    color: {secondary_color};
+}
+
+#history-search {
+    width: 100%;
+    margin-bottom: 1;
+    background: {background_input};
+    border: round {text_secondary};
+}
+
+#history-search:focus {
+    border: round {primary_color};
+}
+
+#history-list {
+    width: 100%;
+    height: 1fr;
+    background: transparent;
+    scrollbar-color: {primary_color};
+}
+
+#history-list > ListItem {
+    width: 100%;
+    padding: 1;
+    margin-bottom: 1;
+    background: rgba(68, 71, 90, 0.5);
+}
+
+#history-list > ListItem:hover {
+    background: rgba(98, 114, 164, 0.3);
+}
+
+#history-list > ListItem.-highlight {
+    background: rgba(189, 147, 249, 0.2);
+}
+
+.group-header {
+    color: {secondary_color};
+    text-style: bold;
+    padding: 0 1;
+}
+
+.empty-message {
+    color: {text_secondary};
+    text-style: italic;
+    padding: 2;
+    text-align: center;
+}
+
+#history-footer {
+    height: 3;
+    align: center middle;
+    margin-top: 1;
+}
+
+#back-button {
+    min-width: 20;
+}
+
+#history-hints {
+    margin-left: 2;
+}

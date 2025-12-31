@@ -1,0 +1,170 @@
+name: CI Luna
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Modularization Progress Report
+        run: |
+          echo "========================================"
+          echo "   PROGRESSO DA MODULARIZACAO"
+          echo "========================================"
+          P0=0; P1=0; P2=0; OK=0; TOTAL=0
+          while IFS= read -r line; do
+            [[ "$line" =~ ^#.*$ ]] && continue
+            [[ -z "$line" ]] && continue
+            if [ -f "$line" ]; then
+              lines=$(wc -l < "$line")
+              TOTAL=$((TOTAL + 1))
+              if [ "$lines" -gt 700 ]; then P0=$((P0 + 1))
+              elif [ "$lines" -gt 500 ]; then P1=$((P1 + 1))
+              elif [ "$lines" -gt 300 ]; then P2=$((P2 + 1))
+              else OK=$((OK + 1)); fi
+            fi
+          done < src/tools/legacy_files.txt
+          echo "P0 (>700):  $P0 | P1 (500-700): $P1 | P2 (300-500): $P2 | OK: $OK"
+          echo "Progresso: $((OK * 100 / TOTAL))% ($OK/$TOTAL)"
+        continue-on-error: true
+
+      - name: Check file sizes (God Mode Prevention)
+        run: |
+          echo "Verificando arquivos com mais de 300 linhas..."
+          MAX_LINES=300
+          ERRORS=0
+
+          # Carregar lista de arquivos legados
+          LEGACY_FILE="src/tools/legacy_files.txt"
+          if [ -f "$LEGACY_FILE" ]; then
+            LEGACY_PATHS=$(grep -v '^#' "$LEGACY_FILE" | grep -v '^$' | tr '\n' ' ')
+          else
+            echo "AVISO: $LEGACY_FILE nao encontrado"
+            LEGACY_PATHS=""
+          fi
+
+          is_legacy() {
+            local file="$1"
+            for legacy in $LEGACY_PATHS; do
+              if [ "$file" = "$legacy" ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          for file in $(find src -name "*.py" -type f ! -path "*/tests/*" ! -path "*/assets/*" ! -name "__init__.py" ! -name "test_*" ! -name "conftest.py"); do
+            if is_legacy "$file"; then
+              continue
+            fi
+
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt $MAX_LINES ]; then
+              echo "ERRO: $file tem $lines linhas (max: $MAX_LINES)"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "God Mode detectado! $ERRORS arquivo(s) excedem $MAX_LINES linhas."
+            echo "Se o arquivo e legado, adicione-o em src/tools/legacy_files.txt"
+            exit 1
+          fi
+          echo "OK: Todos os arquivos nao-legados dentro do limite"
+
+      - name: Check for unused imports (warning only)
+        run: |
+          pip install ruff
+          ruff check src/ --select=F401 --output-format=github || true
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint (errors only)
+        run: ruff check src/ --select=E9,F63,F7,F82 --output-format=github
+
+      - name: Lint (warnings)
+        run: ruff check src/ --output-format=github --exit-zero
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install CI dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Run tests
+        run: |
+          # Testes ignorados: dependem de libs nativas (torch, pyaudio, google, etc)
+          pytest src/tests/ -v --tb=short \
+            --ignore=src/tests/test_audio_utils.py \
+            --ignore=src/tests/test_voice_profile.py \
+            --ignore=src/tests/test_voice_system.py \
+            --ignore=src/tests/test_comunicacao.py \
+            --ignore=src/tests/test_memory_adapter.py \
+            --ignore=src/tests/test_memory_interface.py \
+            --ignore=src/tests/test_vector_store.py \
+            --ignore=src/tests/test_embeddings_cache.py \
+            --ignore=src/tests/test_entity_memory.py \
+            --ignore=src/tests/test_entity_switch.py \
+            --ignore=src/tests/test_entity_loader.py \
+            --ignore=src/tests/test_entity_hotswap.py \
+            --ignore=src/tests/test_session.py \
+            --ignore=src/tests/test_animation.py \
+            --ignore=src/tests/test_circuit_breaker.py \
+            --ignore=src/tests/test_consciencia.py \
+            --ignore=src/tests/test_streaming.py \
+            --ignore=src/tests/test_model_manager.py \
+            --ignore=src/tests/test_wake_word.py \
+            --ignore=src/tests/test_processing_threads.py \
+            --ignore=src/tests/test_api_optimizer.py \
+            -x --maxfail=10 || true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          CUDA_VISIBLE_DEVICES: ""
+        continue-on-error: true
+
+      - name: Check test coverage
+        run: |
+          echo "Verificando cobertura de testes..."
+          for file in $(find src -name "*.py" -type f ! -path "*/tests/*" ! -name "__init__.py" ! -name "test_*" ! -name "conftest.py"); do
+            module=$(basename "$file" .py)
+            test_file="src/tests/test_${module}.py"
+            if [ ! -f "$test_file" ]; then
+              echo "AVISO: $file nao tem teste correspondente"
+            fi
+          done
+        continue-on-error: true

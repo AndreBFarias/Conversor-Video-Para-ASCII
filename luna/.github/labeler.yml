@@ -1,0 +1,26 @@
+module:soul:
+  - changed-files:
+    - any-glob-to-any-file: src/soul/**/*
+
+module:core:
+  - changed-files:
+    - any-glob-to-any-file: src/core/**/*
+
+module:ui:
+  - changed-files:
+    - any-glob-to-any-file: src/ui/**/*
+
+module:memory:
+  - changed-files:
+    - any-glob-to-any-file: src/data_memory/**/*
+
+type:infra:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .github/**/*
+      - Dockerfile
+      - docker-compose.yml
+
+type:test:
+  - changed-files:
+    - any-glob-to-any-file: src/tests/**/*
