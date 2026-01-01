@@ -4,7 +4,7 @@ import configparser
 import threading
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib, GdkPixbuf
+from gi.repository import Gtk, GLib, GdkPixbuf, Gdk
 
 from .constants import UI_FILE, LOGO_FILE, CONFIG_PATH, ROOT_DIR
 from .actions.file_actions import FileActionsMixin
@@ -43,7 +43,9 @@ class App(
             return
 
         self.window.set_title("Extase em 4R73")
+        self.window.set_wmclass("extase-em-4r73", "Extase em 4R73")
         self.window.connect("destroy", Gtk.main_quit)
+        self._apply_custom_css()
         self._setup_logo_and_title()
 
         self.builder.connect_signals(self)
@@ -83,6 +85,50 @@ class App(
         self.update_button_states()
         self.window.show_all()
 
+    def _apply_custom_css(self):
+        css = b"""
+        progressbar {
+            min-height: 28px;
+        }
+        progressbar trough {
+            min-height: 28px;
+        }
+        progressbar progress {
+            min-height: 28px;
+        }
+        #config_button_large {
+            background: none;
+            border: none;
+            box-shadow: none;
+            margin-bottom: 12px;
+        }
+        #config_button_large:hover {
+            background: alpha(@theme_fg_color, 0.1);
+        }
+        #convert_button, #convert_all_button {
+            border: 2px solid #81c995;
+            color: #81c995;
+        }
+        #convert_button:disabled, #convert_all_button:disabled {
+            border: 2px solid #81c995;
+            color: #81c995;
+            opacity: 0.6;
+        }
+        #convert_button:hover, #convert_all_button:hover {
+            background: alpha(#81c995, 0.2);
+        }
+        .file-selected {
+            color: #81c995;
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
     def _setup_logo_and_title(self):
         try:
             logo_widget = self.builder.get_object("logo_image")
@@ -95,14 +141,14 @@ class App(
                     self.window.set_icon(pixbuf_icon)
                 title_widget.set_markup(
                     "<span font_desc='Sans Bold 24' foreground='#EAEAEA'>"
-                    "Extase em <span foreground='#81c995'>4R73</span></span>"
+                    "Êxtase em <span foreground='#81c995'>4R73</span></span>"
                 )
         except Exception as e:
             self.logger.warning(f"Erro ao carregar assets: {e}")
 
     def _get_widgets(self) -> bool:
         try:
-            self.status_label = self.builder.get_object("status_label")
+            self.status_label = None
             self.selected_path_label = self.builder.get_object("selected_path_label")
             self.convert_button = self.builder.get_object("convert_button")
             self.convert_all_button = self.builder.get_object("convert_all_button")
@@ -114,7 +160,7 @@ class App(
             self.open_webcam_button = self.builder.get_object("open_webcam_button")
             self.select_ascii_button = self.builder.get_object("select_ascii_button")
             self.play_ascii_button = self.builder.get_object("play_ascii_button")
-            self.options_button = self.builder.get_object("options_button")
+            self.options_button = self.builder.get_object("config_button_large")
 
             self.options_dialog = self.builder.get_object("options_dialog")
             self.options_notebook = self.builder.get_object("options_notebook")
@@ -141,8 +187,20 @@ class App(
             self.opt_palette_size_spin = None
             self.opt_fixed_palette_check = None
 
+            self.opt_clear_screen_check = self.builder.get_object("opt_clear_screen_check")
+            self.opt_show_fps_check = self.builder.get_object("opt_show_fps_check")
+            self.opt_speed_combo = self.builder.get_object("opt_speed_combo")
+
+            self.pref_input_folder = self.builder.get_object("pref_input_folder")
+            self.pref_output_folder = self.builder.get_object("pref_output_folder")
+            self.pref_engine_combo = self.builder.get_object("pref_engine_combo")
+            self.pref_quality_combo = self.builder.get_object("pref_quality_combo")
+            self.pref_format_combo = self.builder.get_object("pref_format_combo")
+
+            self.opt_luminance_preset_combo = self.builder.get_object("opt_luminance_preset_combo")
+
             required_widgets = [
-                self.status_label, self.selected_path_label, self.convert_button,
+                self.selected_path_label, self.convert_button,
                 self.convert_all_button, self.play_mode_combo, self.play_button,
                 self.open_video_button, self.open_folder_button, self.calibrate_button,
                 self.open_webcam_button, self.select_ascii_button, self.play_ascii_button,

@@ -3,7 +3,8 @@
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, GdkPixbuf, Gdk, GLib
+gi.require_version('Vte', '2.91')
+from gi.repository import Gtk, GdkPixbuf, Gdk, GLib, Vte
 
 import cv2
 import numpy as np
@@ -84,10 +85,71 @@ class GTKCalibrator:
         self._cached_ascii_data = None
         self._last_click_time = 0.0
 
+        self.terminal = None
+        self.terminal_scrolled = None
+        self.terminal_container = None
+        self.main_paned = None
+        self._terminal_visible = True
+
         self._load_config()
         self._init_capture()
+        self._load_css()
         self._init_ui()
         self._load_initial_values()
+
+    def _load_css(self):
+        css = b'''
+        .island {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 6px 10px;
+            margin: 2px;
+            background-color: rgba(45, 30, 55, 0.4);
+        }
+        .island-presets {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 4px 8px;
+            margin: 2px;
+        }
+        .island-actions {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 4px 8px;
+            margin: 2px;
+        }
+        .island-recording {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 4px 8px;
+            margin: 2px;
+        }
+        .island-config {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 4px 8px;
+            margin: 2px;
+        }
+        .island-hsv {
+            border: 2px solid #5a3d7a;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 4px;
+        }
+        .video-frame {
+            border: 2px solid #5a3d7a;
+            border-radius: 10px;
+            padding: 4px;
+            background-color: rgba(30, 20, 40, 0.6);
+        }
+        '''
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
 
     def _load_config(self):
         if not os.path.exists(self.config_path):
@@ -161,13 +223,15 @@ class GTKCalibrator:
 
         self.window = self.builder.get_object("calibrator_window")
 
+        self.window.set_wmclass("extase-em-4r73", "Extase em 4R73")
+
         logo_path = os.path.join(BASE_DIR, "assets", "logo.png")
         if os.path.exists(logo_path):
             try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file(logo_path)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(logo_path, 64, 64, True)
                 self.window.set_icon(pixbuf)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Aviso: Erro ao carregar icone: {e}")
 
         self.image_original = self.builder.get_object("image_original")
         self.image_chroma = self.builder.get_object("image_chroma")
@@ -176,6 +240,10 @@ class GTKCalibrator:
         self.aspect_original = self.builder.get_object("aspect_original")
         self.aspect_chroma = self.builder.get_object("aspect_chroma")
         self.aspect_ascii = self.builder.get_object("aspect_ascii")
+
+        for aspect in [self.aspect_original, self.aspect_chroma, self.aspect_ascii]:
+            if aspect:
+                aspect.set_size_request(200, 150)
 
         self.scale_h_min = self.builder.get_object("scale_h_min")
         self.scale_h_max = self.builder.get_object("scale_h_max")
@@ -214,6 +282,80 @@ class GTKCalibrator:
         if self.event_ascii:
             self.event_ascii.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
             self.event_ascii.connect("button-press-event", self._on_ascii_button_press)
+
+        self.main_paned = self.builder.get_object("main_paned")
+        self.terminal_scrolled = self.builder.get_object("terminal_scrolled")
+        self.terminal_container = self.builder.get_object("terminal_container")
+
+        self._init_terminal()
+
+    def _init_terminal(self):
+        if not self.terminal_scrolled:
+            return
+
+        self.terminal = Vte.Terminal()
+        self.terminal.set_scroll_on_output(True)
+        self.terminal.set_scroll_on_keystroke(True)
+        self.terminal.set_scrollback_lines(1000)
+
+        self.terminal.set_color_background(Gdk.RGBA(0.1, 0.1, 0.1, 1.0))
+        self.terminal.set_color_foreground(Gdk.RGBA(0.9, 0.9, 0.9, 1.0))
+
+        font_desc = self.terminal.get_font()
+        if font_desc:
+            font_desc.set_size(9 * 1024)
+            self.terminal.set_font(font_desc)
+
+        self.terminal_scrolled.add(self.terminal)
+        self.terminal.show()
+
+        self._start_terminal_preview()
+
+    def _start_terminal_preview(self):
+        if not self.terminal:
+            return
+
+        realtime_script = os.path.join(BASE_DIR, "src", "core", "realtime_ascii.py")
+        python_exec = sys.executable
+
+        cmd = [python_exec, realtime_script, "--config", self.config_path]
+        if self.video_path:
+            cmd.extend(["--video", self.video_path])
+
+        try:
+            self.terminal.spawn_async(
+                Vte.PtyFlags.DEFAULT,
+                BASE_DIR,
+                cmd,
+                None,
+                GLib.SpawnFlags.DEFAULT,
+                None, None,
+                -1,
+                None,
+                None
+            )
+        except Exception as e:
+            self._set_status(f"Erro VTE: {e}")
+
+    def _restart_terminal_preview(self):
+        if self.terminal:
+            self.terminal.reset(True, True)
+            self._start_terminal_preview()
+
+    def on_terminal_restart_clicked(self, widget):
+        self._restart_terminal_preview()
+
+    def on_terminal_toggle(self, widget):
+        if not self.terminal_container or not self.main_paned:
+            return
+
+        self._terminal_visible = widget.get_active()
+
+        if self._terminal_visible:
+            self.terminal_container.show()
+            self.main_paned.set_position(self.main_paned.get_allocated_width() * 2 // 3)
+        else:
+            self.terminal_container.hide()
 
     def _on_ascii_button_press(self, widget, event):
         if event.button == 1:
@@ -287,27 +429,47 @@ class GTKCalibrator:
         if frame is None or frame.size == 0:
             return
 
-        h, w = frame.shape[:2]
-        aspect_ratio = w / h
+        try:
+            h, w = frame.shape[:2]
+            aspect_ratio = w / h
 
-        aspect_frame.set_property("ratio", aspect_ratio)
+            aspect_frame.set_property("ratio", aspect_ratio)
 
-        if len(frame.shape) == 2:
-            rgb_image = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-        else:
-            rgb_image = frame[:, :, ::-1].copy()
+            if len(frame.shape) == 2:
+                rgb_image = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            else:
+                rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        if not rgb_image.flags['C_CONTIGUOUS']:
-            rgb_image = np.ascontiguousarray(rgb_image)
+            alloc = aspect_frame.get_allocation()
+            target_w = max(alloc.width - 8, 200)
+            target_h = max(alloc.height - 8, 150)
 
-        pixbuf = GdkPixbuf.Pixbuf.new_from_data(
-            rgb_image.tobytes(),
-            GdkPixbuf.Colorspace.RGB,
-            False, 8, w, h, w * 3,
-            None, None
-        )
+            scale_w = target_w / w
+            scale_h = target_h / h
+            scale = min(scale_w, scale_h)
+            new_w = max(1, int(w * scale))
+            new_h = max(1, int(h * scale))
 
-        image_widget.set_from_pixbuf(pixbuf)
+            resized = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+            resized = np.ascontiguousarray(resized)
+
+            rowstride = new_w * 3
+
+            pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+                resized.tobytes(),
+                GdkPixbuf.Colorspace.RGB,
+                False,
+                8,
+                new_w,
+                new_h,
+                rowstride,
+                None,
+                None
+            )
+
+            image_widget.set_from_pixbuf(pixbuf.copy())
+        except Exception as e:
+            print(f"Erro ao definir frame: {e}")
 
     def _get_current_hsv_values(self) -> dict:
         return {
@@ -609,21 +771,33 @@ class GTKCalibrator:
         realtime_script = os.path.join(BASE_DIR, "src", "core", "realtime_ascii.py")
         python_exec = sys.executable
         cmd_base = [python_exec, realtime_script, "--config", self.config_path]
+        title = "Extase em 4R73 - Preview"
 
         if self.video_path:
             cmd_base.extend(["--video", self.video_path])
 
         try:
-            cmd = ['gnome-terminal', '--maximize', '--title=Preview ASCII Real-Time', '--'] + cmd_base
+            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
+                   '-o', 'font_size=10', '--start-as=maximized', '--'] + cmd_base
             subprocess.Popen(cmd)
             self._set_status("Terminal preview aberto")
         except FileNotFoundError:
             try:
-                cmd = ['xterm', '-maximized', '-e'] + cmd_base
+                cmd = ['gnome-terminal', '--maximize', f'--title={title}',
+                       '--class=extase-em-4r73', '--'] + cmd_base
                 subprocess.Popen(cmd)
-                self._set_status("Terminal preview aberto (xterm)")
+                self._set_status("Terminal preview aberto")
+            except FileNotFoundError:
+                try:
+                    cmd = ['xterm', '-maximized', '-title', title, '-e'] + cmd_base
+                    subprocess.Popen(cmd)
+                    self._set_status("Terminal preview aberto (xterm)")
+                except Exception as e:
+                    self._set_status(f"Erro terminal: {e}")
             except Exception as e:
                 self._set_status(f"Erro terminal: {e}")
+        except Exception as e:
+            self._set_status(f"Erro terminal: {e}")
 
     def on_hsv_changed(self, widget):
         pass
@@ -819,25 +993,32 @@ class GTKCalibrator:
         if self.is_recording_ascii and len(self.ascii_frames) > 0:
             self._stop_ascii_recording()
 
+        if self.terminal:
+            try:
+                self.terminal.feed_child([3])
+            except Exception:
+                pass
+
         if self.cap:
             self.cap.release()
 
     def run(self):
-        display = Gdk.Display.get_default()
-        monitor = display.get_primary_monitor() or display.get_monitor(0)
-        workarea = monitor.get_workarea()
-
-        win_width = int(workarea.width * 0.75)
-        win_height = int(workarea.height * 0.90)
-
-        self.window.set_resizable(True)
         self.window.show_all()
         self._update_mode_visibility()
-        self.window.resize(win_width, win_height)
+
+        if self.main_paned:
+            GLib.idle_add(self._set_initial_paned_position)
 
         GLib.timeout_add(50, self._update_frame)
 
         Gtk.main()
+
+    def _set_initial_paned_position(self):
+        if self.main_paned:
+            total_width = self.main_paned.get_allocated_width()
+            if total_width > 100:
+                self.main_paned.set_position(int(total_width * 0.6))
+        return False
 
 
 def main():

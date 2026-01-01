@@ -23,10 +23,10 @@ class AspectRatioPlayerWindow(Gtk.Window):
     - Keyboard controls (q/ESC to quit)
     """
     
-    def __init__(self, title="Êxtase em 4R73 - Player", initial_width=800, initial_height=600):
+    def __init__(self, title="Extase em 4R73", initial_width=800, initial_height=600):
         super().__init__(title=title)
-        
-        # Window configuration
+
+        self.set_wmclass("extase-em-4r73", "Extase em 4R73")
         self.set_default_size(initial_width, initial_height)
         self.set_position(Gtk.WindowPosition.CENTER)
         

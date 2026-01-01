@@ -117,13 +117,11 @@ class ConversionActionsMixin:
         if hasattr(self, 'conversion_progress') and self.conversion_progress:
             self.conversion_progress.set_fraction(fraction)
             self.conversion_progress.set_text(text)
-        if hasattr(self, 'status_label') and self.status_label:
-            self.status_label.set_text(text)
         return False
 
     def on_conversion_update(self, message: str):
-        if hasattr(self, 'status_label') and self.status_label:
-            self.status_label.set_text(message)
+        if hasattr(self, 'conversion_progress') and self.conversion_progress:
+            self.conversion_progress.set_text(message)
         return False
 
     def show_completion_popup(self, output_files: list):

@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "purge" ]; then
+    rm -rf /opt/extase-em-4r73/venv
+    rm -rf /opt/extase-em-4r73/data_input
+    rm -rf /opt/extase-em-4r73/data_output
+    rm -rf /opt/extase-em-4r73/logs
+    rm -rf /opt/extase-em-4r73/__pycache__
+fi
+
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+exit 0

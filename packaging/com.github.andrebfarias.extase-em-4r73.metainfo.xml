@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.andrebfarias.extase-em-4r73</id>
+  <name>Extase em 4R73</name>
+  <summary>Conversor de videos para arte ASCII colorida</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer_name>AndreBFarias</developer_name>
+  <description>
+    <p>
+      Extase em 4R73 transforma videos e imagens em arte ASCII colorida
+      com suporte a chroma key (fundo verde), presets de qualidade,
+      modo pixel art e player integrado com terminal VTE.
+    </p>
+    <p>Funcionalidades:</p>
+    <ul>
+      <li>Conversao ASCII colorida com cores ANSI</li>
+      <li>Calibrador GTK para chroma key em tempo real</li>
+      <li>Presets de qualidade (Mobile, Low, Medium, High, Very High)</li>
+      <li>Modo Pixel Art com paletas retro</li>
+      <li>Player integrado no terminal</li>
+      <li>Gravacao de screencast e exportacao ASCII</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.github.andrebfarias.extase-em-4r73.desktop</launchable>
+  <url type="homepage">https://github.com/AndreBFarias/Conversor-Video-Para-ASCII</url>
+  <url type="bugtracker">https://github.com/AndreBFarias/Conversor-Video-Para-ASCII/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/AndreBFarias/Conversor-Video-Para-ASCII/main/assets/background.png</image>
+      <caption>Interface principal do Extase em 4R73</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="2.1.0" date="2025-12-31">
+      <description>
+        <ul>
+          <li>Calibrador GTK integrado com terminal VTE</li>
+          <li>Suporte a kitty como terminal padrao</li>
+          <li>Agrupamento de janelas corrigido</li>
+          <li>Pacotes .deb e Flatpak</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <categories>
+    <category>Video</category>
+    <category>AudioVideo</category>
+  </categories>
+  <keywords>
+    <keyword>ascii</keyword>
+    <keyword>video</keyword>
+    <keyword>converter</keyword>
+    <keyword>chroma key</keyword>
+    <keyword>pixel art</keyword>
+  </keywords>
+</component>

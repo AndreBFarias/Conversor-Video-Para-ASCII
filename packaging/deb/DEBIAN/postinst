@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+INSTALL_DIR="/opt/extase-em-4r73"
+
+if [ -d "$INSTALL_DIR" ]; then
+    cd "$INSTALL_DIR"
+
+    if [ ! -d "venv" ]; then
+        python3 -m venv --system-site-packages venv
+        ./venv/bin/pip install --upgrade pip
+        if [ -f "requirements.txt" ]; then
+            ./venv/bin/pip install -r requirements.txt
+        fi
+    fi
+
+    mkdir -p data_input data_output logs
+    chmod 755 data_input data_output logs
+fi
+
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+if command -v gtk-update-icon-cache &> /dev/null; then
+    gtk-update-icon-cache /usr/share/icons/hicolor -f -t 2>/dev/null || true
+fi
+
+exit 0

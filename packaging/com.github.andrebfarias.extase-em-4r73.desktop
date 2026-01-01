@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.1
+Name=Extase em 4R73
+Comment=Conversor de Videos e Imagens para Arte ASCII
+Exec=extase-em-4r73
+Icon=com.github.andrebfarias.extase-em-4r73
+Terminal=false
+Type=Application
+Categories=Video;AudioVideo;
+StartupNotify=true
+StartupWMClass=extase-em-4r73

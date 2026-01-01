@@ -34,8 +34,8 @@ ICON_INSTALL_PATH="${ICON_INSTALL_DIR}/${ICON_NAME}.png"
 echo "[1/7] Atualizando selos arcanos (apt update)..."
 sudo apt update || { echo "ERRO: Falha ao atualizar repositorios apt."; exit 1; }
 
-echo "[2/7] Invocando dependencias (Python3, PIP, GTK, OpenCV)..."
-sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
+echo "[2/7] Invocando dependencias (Python3, PIP, GTK, OpenCV, VTE, Kitty)..."
+sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-vte-2.91 kitty desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
 
 echo "[3/7] Desenhando circulo de protecao (venv --system-site-packages)..."
 if [ -d "${SCRIPT_DIR}/venv" ]; then
@@ -87,13 +87,14 @@ PYTHON_VENV_PATH="${SCRIPT_DIR}/venv/bin/python3"
 MAIN_SCRIPT_PATH="${SCRIPT_DIR}/main.py"
 EXEC_COMMAND="\"${PYTHON_VENV_PATH}\" \"${MAIN_SCRIPT_PATH}\""
 
-CATEGORIES="AudioVideo;Video;Graphics;"
+CATEGORIES="Video;AudioVideo;"
 
-$SUDO_CMD printf "[Desktop Entry]\nVersion=2.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nPath=%s\n" \
+$SUDO_CMD printf "[Desktop Entry]\nVersion=1.1\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
     "${APP_DISPLAY_NAME}" \
     "${EXEC_COMMAND}" \
     "${ICON_NAME}" \
     "${CATEGORIES}" \
+    "${APP_NAME}" \
     "${SCRIPT_DIR}" \
     > "${DESKTOP_FILE_PATH}" || { echo "ERRO: Falha ao criar arquivo .desktop."; exit 1; }
 

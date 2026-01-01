@@ -1,0 +1,20 @@
+Package: extase-em-4r73
+Version: 2.1.0
+Section: video
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10), python3-gi, python3-gi-cairo, python3-opencv, gir1.2-gtk-3.0, gir1.2-vte-2.91, kitty | gnome-terminal | xterm, imagemagick
+Maintainer: AndreBFarias <andrebfarias@users.noreply.github.com>
+Homepage: https://github.com/AndreBFarias/Conversor-Video-Para-ASCII
+Description: Conversor de videos para arte ASCII colorida
+ Extase em 4R73 transforma videos e imagens em arte ASCII colorida
+ com suporte a chroma key (fundo verde), presets de qualidade,
+ modo pixel art e player integrado com terminal VTE.
+ .
+ Funcionalidades:
+  - Conversao ASCII colorida com cores ANSI
+  - Calibrador GTK para chroma key
+  - Presets de qualidade (Mobile, Low, Medium, High, Very High)
+  - Modo Pixel Art com paletas retro
+  - Player integrado
+  - Gravacao de screencast e exportacao ASCII

@@ -69,19 +69,30 @@ class PlaybackActionsMixin:
         self._launch_in_terminal(cmd_base, player_zoom, "Player")
 
     def _launch_in_terminal(self, cmd_base: list, zoom: float, title_suffix: str):
+        title = f"Extase em 4R73 - {title_suffix}"
+        font_size = max(8, int(12 * zoom))
+
         try:
-            cmd = ['gnome-terminal', f'--zoom={zoom}', '--maximize',
-                   f'--title=Extase em 4R73 - {title_suffix}', '--class=extase-em-4r73', '--'] + cmd_base
+            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
+                   '-o', f'font_size={font_size}', '--start-as=maximized', '--'] + cmd_base
             self.logger.info(f"Executando: {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
-            self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+            self.logger.warning("kitty nao encontrado. Tentando gnome-terminal...")
             try:
-                cmd = ['xterm', '-fn', '6x10', '-maximized',
-                       f'-title', f'Extase em 4R73 - {title_suffix}', '-hold', '-e'] + cmd_base
+                cmd = ['gnome-terminal', f'--zoom={zoom}', '--maximize',
+                       f'--title={title}', '--class=extase-em-4r73', '--'] + cmd_base
                 subprocess.Popen(cmd)
             except FileNotFoundError:
-                self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado.")
+                self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+                try:
+                    cmd = ['xterm', '-fn', '6x10', '-maximized',
+                           '-title', title, '-hold', '-e'] + cmd_base
+                    subprocess.Popen(cmd)
+                except FileNotFoundError:
+                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado (kitty, gnome-terminal, xterm).")
+                except Exception as e:
+                    self.show_error_dialog("Erro Terminal", f"Nao foi possivel abrir o terminal:\n{e}")
             except Exception as e:
                 self.show_error_dialog("Erro Terminal", f"Nao foi possivel abrir o terminal:\n{e}")
         except Exception as e:
