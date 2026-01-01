@@ -27,21 +27,30 @@ class CalibrationActionsMixin:
         python_executable = self._get_python_executable()
         cmd_base = [python_executable, REALTIME_SCRIPT, "--config", self.config_path]
         player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
+        font_size = max(8, int(12 * player_zoom))
+        title = "Extase em 4R73 - Webcam"
 
         try:
-            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize',
-                   '--title=Extase em 4R73 - Webcam Real-Time',
-                   '--class=extase-em-4r73', '--'] + cmd_base
+            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
+                   '-o', f'font_size={font_size}', '--start-as=maximized', '--'] + cmd_base
             self.logger.info(f"Executando webcam otimizada: {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
-            self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+            self.logger.warning("kitty nao encontrado. Tentando gnome-terminal...")
             try:
-                cmd = ['xterm', '-fn', '6x10', '-maximized',
-                       '-title', 'Extase em 4R73 - Webcam', '-e'] + cmd_base
+                cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize',
+                       f'--title={title}', '--class=extase-em-4r73', '--'] + cmd_base
                 subprocess.Popen(cmd)
             except FileNotFoundError:
-                self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado.")
+                self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+                try:
+                    cmd = ['xterm', '-fn', '6x10', '-maximized',
+                           '-title', title, '-e'] + cmd_base
+                    subprocess.Popen(cmd)
+                except FileNotFoundError:
+                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado.")
+                except Exception as e:
+                    self.show_error_dialog("Erro Terminal", f"Nao foi possivel abrir o terminal:\n{e}")
             except Exception as e:
                 self.show_error_dialog("Erro Terminal", f"Nao foi possivel abrir o terminal:\n{e}")
         except Exception as e:
@@ -62,23 +71,31 @@ class CalibrationActionsMixin:
         python_executable = self._get_python_executable()
         cmd_base = [python_executable, CALIBRATOR_SCRIPT, "--config", self.config_path] + extra_args
         player_zoom = self.config.getfloat('Quality', 'player_zoom', fallback=0.7)
+        font_size = max(8, int(12 * player_zoom))
+        title = "Extase em 4R73 - Calibrador"
 
         try:
-            cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize',
-                   '--title=Extase em 4R73 - Calibrador', '--class=extase-em-4r73', '--'] + cmd_base
+            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
+                   '-o', f'font_size={font_size}', '--start-as=maximized', '--'] + cmd_base
             self.logger.info(f"Executando calibrador OpenCV (fallback): {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:
-            self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+            self.logger.warning("kitty nao encontrado. Tentando gnome-terminal...")
             try:
-                base_font_size = 12
-                font_size = int(base_font_size * player_zoom)
-                cmd = ['xterm', '-fa', f'Mono-{font_size}', '-maximized',
-                       '-title', 'Extase em 4R73 - Calibrador', '-e'] + cmd_base
+                cmd = ['gnome-terminal', f'--zoom={player_zoom}', '--maximize',
+                       f'--title={title}', '--class=extase-em-4r73', '--'] + cmd_base
                 subprocess.Popen(cmd)
             except FileNotFoundError:
-                self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado.")
+                self.logger.warning("gnome-terminal nao encontrado. Tentando xterm...")
+                try:
+                    cmd = ['xterm', '-fa', f'Mono-{font_size}', '-maximized',
+                           '-title', title, '-e'] + cmd_base
+                    subprocess.Popen(cmd)
+                except FileNotFoundError:
+                    self.show_error_dialog("Erro Terminal", "Nenhum terminal compativel encontrado.")
+                except Exception as e:
+                    self.show_error_dialog("Erro Calibrador", f"Erro ao lancar xterm: {e}")
             except Exception as e:
-                self.show_error_dialog("Erro Calibrador", f"Erro ao lancar xterm: {e}")
+                self.show_error_dialog("Erro Calibrador", f"Erro ao lancar gnome-terminal: {e}")
         except Exception as e:
-            self.show_error_dialog("Erro Calibrador", f"Erro ao lancar gnome-terminal: {e}")
+            self.show_error_dialog("Erro Calibrador", f"Erro ao lancar kitty: {e}")

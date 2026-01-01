@@ -47,6 +47,7 @@ class FileActionsMixin:
             self.selected_file_path = dialog.get_filename()
             self.selected_folder_path = None
             self.selected_path_label.set_text(f"Arquivo: {os.path.basename(self.selected_file_path)}")
+            self.selected_path_label.get_style_context().add_class("file-selected")
             self.logger.info(f"Arquivo selecionado: {self.selected_file_path}")
         dialog.destroy()
         self.update_button_states()
@@ -70,6 +71,7 @@ class FileActionsMixin:
             self.selected_folder_path = dialog.get_filename()
             self.selected_file_path = None
             self.selected_path_label.set_text(f"Pasta: .../{os.path.basename(self.selected_folder_path)}")
+            self.selected_path_label.get_style_context().add_class("file-selected")
             self.logger.info(f"Pasta selecionada: {self.selected_folder_path}")
         dialog.destroy()
         self.update_button_states()
@@ -123,7 +125,7 @@ class FileActionsMixin:
         self.convert_button.set_sensitive(file_selected)
         self.play_button.set_sensitive(file_selected and ascii_exists)
         self.open_video_button.set_sensitive(file_selected)
-        self.convert_all_button.set_sensitive(folder_selected or default_folder_exists)
+        self.convert_all_button.set_sensitive(folder_selected)
         self.calibrate_button.set_sensitive(True)
         self.open_webcam_button.set_sensitive(True)
         self.play_ascii_button.set_sensitive(

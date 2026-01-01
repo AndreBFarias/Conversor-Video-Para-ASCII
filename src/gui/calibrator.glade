@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <requires lib="vte-2.91" version="0.50"/>
 
   <object class="GtkAdjustment" id="adj_h_min">
     <property name="lower">0</property><property name="upper">179</property><property name="value">35</property>
@@ -35,11 +36,11 @@
     <property name="step-increment">1</property><property name="page-increment">1</property>
   </object>
   <object class="GtkAdjustment" id="adj_width">
-    <property name="lower">40</property><property name="upper">400</property><property name="value">80</property>
+    <property name="lower">40</property><property name="upper">400</property><property name="value">105</property>
     <property name="step-increment">10</property><property name="page-increment">20</property>
   </object>
   <object class="GtkAdjustment" id="adj_height">
-    <property name="lower">10</property><property name="upper">200</property><property name="value">22</property>
+    <property name="lower">10</property><property name="upper">200</property><property name="value">40</property>
     <property name="step-increment">5</property><property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adj_sobel">
@@ -61,98 +62,342 @@
 
   <object class="GtkWindow" id="calibrator_window">
     <property name="can-focus">False</property>
-    <property name="title">Extase em 4R73 - Calibrador de Chroma Key</property>
+    <property name="title">Extase em 4R73</property>
+    <property name="default-width">1200</property>
+    <property name="default-height">700</property>
+    <property name="window-position">center</property>
+    <property name="resizable">True</property>
+    <property name="decorated">True</property>
     <signal name="destroy" handler="on_window_destroy"/>
     <signal name="key-press-event" handler="on_key_press"/>
     <child>
-      <object class="GtkBox" id="main_box">
+      <object class="GtkPaned" id="main_paned">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <property name="margin-start">4</property>
-        <property name="margin-end">4</property>
-        <property name="margin-top">4</property>
-        <property name="margin-bottom">4</property>
+        <property name="orientation">horizontal</property>
+        <property name="wide-handle">True</property>
+        <property name="position">750</property>
+        <child>
+          <object class="GtkBox" id="main_box">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">4</property>
+            <property name="margin-start">4</property>
+            <property name="margin-end">4</property>
+            <property name="margin-top">2</property>
+            <property name="margin-bottom">2</property>
 
-        <!-- ROW 1: Video Displays -->
+        <!-- ROW 1: TOOLBAR (Ilhas separadas) -->
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="spacing">8</property>
+            <property name="margin-start">4</property>
+            <property name="margin-end">4</property>
+            <property name="margin-top">4</property>
+            <property name="halign">fill</property>
+            <property name="hexpand">True</property>
+
+            <!-- ILHA: Presets -->
+            <child>
+              <object class="GtkBox" id="island_presets">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <property name="hexpand">True</property>
+                <property name="halign">fill</property>
+                <style><class name="island-presets"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Presets</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkButton" id="btn_preset_studio"><property name="label">Studio</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde de estudio</property><signal name="clicked" handler="on_preset_studio_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_preset_natural"><property name="label">Natural</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde natural</property><signal name="clicked" handler="on_preset_natural_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_preset_bright"><property name="label">Bright</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde vibrante</property><signal name="clicked" handler="on_preset_bright_clicked"/></object></child>
+              </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- ILHA: Ações -->
+            <child>
+              <object class="GtkBox" id="island_actions">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <property name="hexpand">True</property>
+                <property name="halign">fill</property>
+                <style><class name="island-actions"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Ações</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkButton" id="btn_auto_detect"><property name="label">Auto</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">[A]</property><signal name="clicked" handler="on_auto_detect_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_reset"><property name="label">Reset</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">[R]</property><signal name="clicked" handler="on_reset_clicked"/></object></child>
+              </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- ILHA: Gravacao -->
+            <child>
+              <object class="GtkBox" id="island_recording">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <property name="hexpand">True</property>
+                <property name="halign">fill</property>
+                <style><class name="island-recording"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Gravação</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child>
+                  <object class="GtkToggleButton" id="btn_record_mp4"><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Gravar MP4</property><signal name="toggled" handler="on_record_mp4_toggled"/>
+                    <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property><property name="halign">center</property>
+                      <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">media-record-symbolic</property></object></child>
+                      <child><object class="GtkLabel"><property name="visible">True</property><property name="label">MP4</property></object></child>
+                    </object></child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="btn_record_ascii"><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Gravar ASCII</property><signal name="toggled" handler="on_record_ascii_toggled"/>
+                    <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property><property name="halign">center</property>
+                      <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">document-save-symbolic</property></object></child>
+                      <child><object class="GtkLabel"><property name="visible">True</property><property name="label">TXT</property></object></child>
+                    </object></child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="btn_preview_terminal"><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">[T]</property><signal name="clicked" handler="on_preview_terminal_clicked"/>
+                    <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property><property name="halign">center</property>
+                      <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">utilities-terminal-symbolic</property></object></child>
+                      <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Term</property></object></child>
+                    </object></child>
+                  </object>
+                </child>
+              </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- ILHA: Salvar -->
+            <child>
+              <object class="GtkBox" id="island_save">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <style><class name="island"/></style>
+                <child>
+                  <object class="GtkButton" id="btn_save_config"><property name="visible">True</property><property name="tooltip-text">[S]</property><signal name="clicked" handler="on_save_config_clicked"/>
+                    <style><class name="suggested-action"/></style>
+                    <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                      <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">document-save-symbolic</property></object></child>
+                      <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Salvar</property></object></child>
+                    </object></child>
+                  </object>
+                </child>
+              </object>
+            </child>
+
+          </object>
+          <packing><property name="expand">False</property></packing>
+        </child>
+
+        <!-- ROW 2: MODO + CONFIG (Ilhas separadas) -->
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="spacing">8</property>
+            <property name="margin-start">4</property>
+            <property name="margin-end">4</property>
+            <property name="halign">fill</property>
+            <property name="hexpand">True</property>
+
+            <!-- ILHA: Modo -->
+            <child>
+              <object class="GtkBox" id="island_mode">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <style><class name="island-config"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Modo</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkRadioButton" id="radio_ascii"><property name="visible">True</property><property name="label">ASCII</property><property name="active">True</property><signal name="toggled" handler="on_mode_toggled"/></object></child>
+                <child><object class="GtkRadioButton" id="radio_pixelart"><property name="visible">True</property><property name="label">PixelArt</property><property name="group">radio_ascii</property><signal name="toggled" handler="on_mode_toggled"/></object></child>
+              </object>
+            </child>
+
+            <!-- ILHA: Config ASCII -->
+            <child>
+              <object class="GtkBox" id="box_ascii_options">
+                <property name="visible">True</property>
+                <property name="spacing">6</property>
+                <property name="hexpand">True</property>
+                <style><class name="island-config"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Configuração</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Larg:</property></object></child>
+                  <child><object class="GtkSpinButton" id="spin_width"><property name="visible">True</property><property name="adjustment">adj_width</property><property name="width-chars">4</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
+                </object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Alt:</property></object></child>
+                  <child><object class="GtkSpinButton" id="spin_height"><property name="visible">True</property><property name="adjustment">adj_height</property><property name="width-chars">3</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
+                </object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Sobel:</property></object></child>
+                  <child><object class="GtkSpinButton" id="scale_sobel"><property name="visible">True</property><property name="adjustment">adj_sobel</property><property name="width-chars">3</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
+                </object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Sharp:</property></object></child>
+                  <child><object class="GtkSpinButton" id="scale_sharpen"><property name="visible">True</property><property name="adjustment">adj_sharpen</property><property name="digits">1</property><property name="width-chars">3</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
+                  <child><object class="GtkCheckButton" id="chk_sharpen"><property name="visible">True</property><property name="active">True</property><signal name="toggled" handler="on_ascii_config_changed"/></object></child>
+                </object></child>
+              </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- ILHA: Render -->
+            <child>
+              <object class="GtkBox" id="island_render">
+                <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <style><class name="island-config"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Render</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkComboBoxText" id="combo_render_mode"><property name="visible">True</property><property name="active">0</property><items><item>User</item><item>BG</item><item>Ambos</item></items><signal name="changed" handler="on_render_mode_changed"/></object></child>
+              </object>
+            </child>
+
+            <!-- ILHA: PixelArt Options (hidden) -->
+            <child>
+              <object class="GtkBox" id="box_pixelart_options">
+                <property name="visible">False</property>
+                <property name="spacing">6</property>
+                <style><class name="island-config"/></style>
+                <child><object class="GtkLabel"><property name="visible">True</property><property name="label">PixelArt</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">PxSize:</property></object></child>
+                  <child><object class="GtkSpinButton" id="spin_pixel_size"><property name="visible">True</property><property name="adjustment">adj_pixel_size</property><property name="width-chars">2</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
+                </object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Paleta:</property></object></child>
+                  <child><object class="GtkSpinButton" id="spin_palette_size"><property name="visible">True</property><property name="adjustment">adj_palette_size</property><property name="width-chars">3</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
+                </object></child>
+              </object>
+            </child>
+
+          </object>
+          <packing><property name="expand">False</property></packing>
+        </child>
+
+        <!-- ROW 3: VIDEO DISPLAYS -->
         <child>
           <object class="GtkBox" id="displays_box">
             <property name="visible">True</property>
-            <property name="spacing">4</property>
+            <property name="spacing">8</property>
             <property name="homogeneous">True</property>
             <property name="vexpand">True</property>
+            <property name="hexpand">True</property>
+            <property name="valign">fill</property>
+            <property name="halign">fill</property>
+            <property name="margin-start">4</property>
+            <property name="margin-end">4</property>
 
             <child>
-              <object class="GtkFrame">
+              <object class="GtkBox" id="video_box_1">
                 <property name="visible">True</property>
-                <property name="label-xalign">0.5</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">2</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <style><class name="video-frame"/></style>
+                <child>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">1. ORIGINAL</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
+                  <packing><property name="expand">False</property></packing>
+                </child>
                 <child>
                   <object class="GtkAspectFrame" id="aspect_original">
                     <property name="visible">True</property>
                     <property name="ratio">1.333</property>
                     <property name="obey-child">False</property>
-                    <child><object class="GtkImage" id="image_original"><property name="visible">True</property></object></child>
+                    <property name="shadow-type">none</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <child><object class="GtkImage" id="image_original"><property name="visible">True</property><property name="hexpand">True</property><property name="vexpand">True</property></object></child>
                   </object>
+                  <packing><property name="expand">True</property><property name="fill">True</property></packing>
                 </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Original </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
               </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
 
             <child>
-              <object class="GtkFrame">
+              <object class="GtkBox" id="video_box_2">
                 <property name="visible">True</property>
-                <property name="label-xalign">0.5</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">2</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <style><class name="video-frame"/></style>
+                <child>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">2. MÁSCARA</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
+                  <packing><property name="expand">False</property></packing>
+                </child>
                 <child>
                   <object class="GtkAspectFrame" id="aspect_chroma">
                     <property name="visible">True</property>
                     <property name="ratio">1.333</property>
                     <property name="obey-child">False</property>
-                    <child><object class="GtkImage" id="image_chroma"><property name="visible">True</property></object></child>
+                    <property name="shadow-type">none</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <child><object class="GtkImage" id="image_chroma"><property name="visible">True</property><property name="hexpand">True</property><property name="vexpand">True</property></object></child>
                   </object>
+                  <packing><property name="expand">True</property><property name="fill">True</property></packing>
                 </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Mascara Chroma </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
               </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
 
             <child>
-              <object class="GtkFrame">
+              <object class="GtkBox" id="video_box_3">
                 <property name="visible">True</property>
-                <property name="label-xalign">0.5</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">2</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <style><class name="video-frame"/></style>
+                <child>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">3. RESULTADO</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
+                  <packing><property name="expand">False</property></packing>
+                </child>
                 <child>
                   <object class="GtkEventBox" id="event_ascii">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
                     <child>
                       <object class="GtkAspectFrame" id="aspect_ascii">
                         <property name="visible">True</property>
                         <property name="ratio">1.333</property>
                         <property name="obey-child">False</property>
-                        <child><object class="GtkImage" id="image_ascii"><property name="visible">True</property></object></child>
+                        <property name="shadow-type">none</property>
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child><object class="GtkImage" id="image_ascii"><property name="visible">True</property><property name="hexpand">True</property><property name="vexpand">True</property></object></child>
                       </object>
                     </child>
                   </object>
+                  <packing><property name="expand">True</property><property name="fill">True</property></packing>
                 </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Preview ASCII (duplo-clique = terminal) </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
               </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
           </object>
           <packing><property name="expand">True</property><property name="fill">True</property></packing>
         </child>
 
-        <!-- ROW 2: HSV Controls -->
+        <!-- ROW 4: HSV CONTROLS -->
         <child>
-          <object class="GtkFrame">
+          <object class="GtkBox" id="island_hsv">
             <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <style><class name="island-hsv"/></style>
+            <child>
+              <object class="GtkLabel"><property name="visible">True</property><property name="label">HSV Chroma Key</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
+              <packing><property name="expand">False</property></packing>
+            </child>
             <child>
               <object class="GtkGrid">
                 <property name="visible">True</property>
                 <property name="row-spacing">1</property>
-                <property name="column-spacing">8</property>
+                <property name="column-spacing">4</property>
                 <property name="margin-start">4</property>
                 <property name="margin-end">4</property>
                 <property name="margin-top">2</property>
                 <property name="margin-bottom">2</property>
-
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">H Min:</property><property name="xalign">1</property></object><packing><property name="left-attach">0</property><property name="top-attach">0</property></packing></child>
                 <child><object class="GtkScale" id="scale_h_min"><property name="visible">True</property><property name="adjustment">adj_h_min</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">0</property></packing></child>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">S Min:</property><property name="xalign">1</property></object><packing><property name="left-attach">2</property><property name="top-attach">0</property></packing></child>
@@ -161,7 +406,6 @@
                 <child><object class="GtkScale" id="scale_v_min"><property name="visible">True</property><property name="adjustment">adj_v_min</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">5</property><property name="top-attach">0</property></packing></child>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Erode:</property><property name="xalign">1</property></object><packing><property name="left-attach">6</property><property name="top-attach">0</property></packing></child>
                 <child><object class="GtkScale" id="scale_erode"><property name="visible">True</property><property name="adjustment">adj_erode</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">7</property><property name="top-attach">0</property></packing></child>
-
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">H Max:</property><property name="xalign">1</property></object><packing><property name="left-attach">0</property><property name="top-attach">1</property></packing></child>
                 <child><object class="GtkScale" id="scale_h_max"><property name="visible">True</property><property name="adjustment">adj_h_max</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">1</property></packing></child>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">S Max:</property><property name="xalign">1</property></object><packing><property name="left-attach">2</property><property name="top-attach">1</property></packing></child>
@@ -171,313 +415,85 @@
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Dilate:</property><property name="xalign">1</property></object><packing><property name="left-attach">6</property><property name="top-attach">1</property></packing></child>
                 <child><object class="GtkScale" id="scale_dilate"><property name="visible">True</property><property name="adjustment">adj_dilate</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">7</property><property name="top-attach">1</property></packing></child>
               </object>
-            </child>
-            <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Controles HSV </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-          </object>
-          <packing><property name="expand">False</property><property name="fill">True</property></packing>
-        </child>
-
-        <!-- ROW 3: Mode Toggle + Config + Presets + Acoes -->
-        <child>
-          <object class="GtkBox">
-            <property name="visible">True</property>
-            <property name="spacing">4</property>
-
-            <!-- Mode Toggle -->
-            <child>
-              <object class="GtkFrame">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="spacing">8</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child>
-                      <object class="GtkRadioButton" id="radio_ascii">
-                        <property name="visible">True</property>
-                        <property name="label">ASCII</property>
-                        <property name="active">True</property>
-                        <signal name="toggled" handler="on_mode_toggled"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkRadioButton" id="radio_pixelart">
-                        <property name="visible">True</property>
-                        <property name="label">PixelArt</property>
-                        <property name="group">radio_ascii</property>
-                        <signal name="toggled" handler="on_mode_toggled"/>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Modo </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
-            </child>
-
-            <!-- ASCII Options -->
-            <child>
-              <object class="GtkFrame" id="frame_ascii_options">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox" id="box_ascii_options">
-                    <property name="visible">True</property>
-                    <property name="spacing">8</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Larg:</property></object></child>
-                        <child><object class="GtkSpinButton" id="spin_width"><property name="visible">True</property><property name="adjustment">adj_width</property><property name="width-chars">4</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Alt:</property></object></child>
-                        <child><object class="GtkSpinButton" id="spin_height"><property name="visible">True</property><property name="adjustment">adj_height</property><property name="width-chars">3</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Sobel:</property></object></child>
-                        <child><object class="GtkScale" id="scale_sobel"><property name="visible">True</property><property name="adjustment">adj_sobel</property><property name="digits">0</property><property name="value-pos">right</property><property name="width-request">60</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Sharp:</property></object></child>
-                        <child><object class="GtkScale" id="scale_sharpen"><property name="visible">True</property><property name="adjustment">adj_sharpen</property><property name="digits">1</property><property name="value-pos">right</property><property name="width-request">50</property><signal name="value-changed" handler="on_ascii_config_changed"/></object></child>
-                        <child><object class="GtkCheckButton" id="chk_sharpen"><property name="visible">True</property><property name="active">True</property><signal name="toggled" handler="on_ascii_config_changed"/></object></child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Render:</property></object></child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_render_mode">
-                            <property name="visible">True</property>
-                            <property name="active">0</property>
-                            <items><item>User</item><item>Background</item><item>Ambos</item></items>
-                            <signal name="changed" handler="on_render_mode_changed"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Config </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
-            </child>
-
-            <!-- Pixel Art Options -->
-            <child>
-              <object class="GtkFrame" id="frame_pixelart_options">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox" id="box_pixelart_options">
-                    <property name="visible">True</property>
-                    <property name="spacing">8</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">PxSize:</property></object></child>
-                        <child><object class="GtkSpinButton" id="spin_pixel_size"><property name="visible">True</property><property name="adjustment">adj_pixel_size</property><property name="width-chars">2</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Paleta:</property></object></child>
-                        <child><object class="GtkSpinButton" id="spin_palette_size"><property name="visible">True</property><property name="adjustment">adj_palette_size</property><property name="width-chars">3</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> PixelArt </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
-            </child>
-
-            <!-- Presets Chroma -->
-            <child>
-              <object class="GtkFrame">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="spacing">2</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child><object class="GtkButton" id="btn_preset_studio"><property name="label">Studio</property><property name="visible">True</property><signal name="clicked" handler="on_preset_studio_clicked"/></object></child>
-                    <child><object class="GtkButton" id="btn_preset_natural"><property name="label">Natural</property><property name="visible">True</property><signal name="clicked" handler="on_preset_natural_clicked"/></object></child>
-                    <child><object class="GtkButton" id="btn_preset_bright"><property name="label">Bright</property><property name="visible">True</property><signal name="clicked" handler="on_preset_bright_clicked"/></object></child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Chroma </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
-            </child>
-
-            <!-- Presets Resolucao e Luminancia -->
-            <child>
-              <object class="GtkFrame">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="spacing">4</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Res:</property></object></child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_resolution">
-                            <property name="visible">True</property>
-                            <items><item>Mobile</item><item>Low</item><item>Medium</item><item>High</item><item>VeryHigh</item></items>
-                            <signal name="changed" handler="on_resolution_changed"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                        <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Lum:</property></object></child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_luminance">
-                            <property name="visible">True</property>
-                            <items><item>Default</item><item>Blocks</item><item>Simple</item><item>Dense</item><item>Dots</item></items>
-                            <signal name="changed" handler="on_luminance_changed"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Presets </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
-            </child>
-
-            <!-- Acoes -->
-            <child>
-              <object class="GtkFrame">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="spacing">2</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child><object class="GtkButton" id="btn_auto_detect"><property name="label">Auto</property><property name="visible">True</property><property name="tooltip-text">[A]</property><signal name="clicked" handler="on_auto_detect_clicked"/></object></child>
-                    <child><object class="GtkButton" id="btn_reset"><property name="label">Reset</property><property name="visible">True</property><property name="tooltip-text">[R]</property><signal name="clicked" handler="on_reset_clicked"/></object></child>
-                    <child>
-                      <object class="GtkButton" id="btn_save_config">
-                        <property name="visible">True</property>
-                        <property name="tooltip-text">[S]</property>
-                        <signal name="clicked" handler="on_save_config_clicked"/>
-                        <style><class name="suggested-action"/></style>
-                        <child>
-                          <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                            <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">document-save-symbolic</property></object></child>
-                            <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Salvar</property></object></child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Acoes </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-              </object>
+              <packing><property name="expand">False</property></packing>
             </child>
           </object>
-          <packing><property name="expand">False</property><property name="fill">True</property></packing>
+          <packing><property name="expand">False</property></packing>
         </child>
 
-        <!-- ROW 4: Gravacao + Status -->
+        <!-- ROW 5: STATUS -->
         <child>
-          <object class="GtkBox">
+          <object class="GtkLabel" id="lbl_status">
             <property name="visible">True</property>
-            <property name="spacing">4</property>
+            <property name="label">Atalhos: [A] Auto | [R] Reset | [S] Salvar | [T] Terminal | [Q] Sair</property>
+            <property name="xalign">0.5</property>
+            <property name="halign">center</property>
+            <property name="hexpand">True</property>
+            <attributes><attribute name="style" value="italic"/><attribute name="scale" value="0.9"/></attributes>
+          </object>
+          <packing><property name="expand">False</property></packing>
+        </child>
 
+          </object>
+          <packing><property name="resize">True</property><property name="shrink">False</property></packing>
+        </child>
+
+        <!-- PAINEL DIREITO: TERMINAL VTE -->
+        <child>
+          <object class="GtkBox" id="terminal_container">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">0</property>
+            <!-- Header do Terminal -->
             <child>
-              <object class="GtkFrame">
+              <object class="GtkBox">
                 <property name="visible">True</property>
+                <property name="spacing">4</property>
+                <property name="margin-start">4</property>
+                <property name="margin-end">4</property>
+                <property name="margin-top">2</property>
                 <child>
-                  <object class="GtkBox">
+                  <object class="GtkLabel">
                     <property name="visible">True</property>
-                    <property name="spacing">4</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="margin-top">2</property>
-                    <property name="margin-bottom">2</property>
-                    <child>
-                      <object class="GtkToggleButton" id="btn_record_mp4">
-                        <property name="visible">True</property>
-                        <property name="tooltip-text">Gravar MP4</property>
-                        <signal name="toggled" handler="on_record_mp4_toggled"/>
-                        <child>
-                          <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                            <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">media-record-symbolic</property></object></child>
-                            <child><object class="GtkLabel"><property name="visible">True</property><property name="label">MP4</property></object></child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkToggleButton" id="btn_record_ascii">
-                        <property name="visible">True</property>
-                        <property name="tooltip-text">Gravar ASCII</property>
-                        <signal name="toggled" handler="on_record_ascii_toggled"/>
-                        <child>
-                          <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                            <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">document-save-symbolic</property></object></child>
-                            <child><object class="GtkLabel"><property name="visible">True</property><property name="label">ASCII</property></object></child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="btn_preview_terminal">
-                        <property name="visible">True</property>
-                        <property name="tooltip-text">Preview terminal [T]</property>
-                        <signal name="clicked" handler="on_preview_terminal_clicked"/>
-                        <child>
-                          <object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                            <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">utilities-terminal-symbolic</property></object></child>
-                            <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Terminal</property></object></child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
+                    <property name="label">TERMINAL ASCII</property>
+                    <property name="hexpand">True</property>
+                    <property name="xalign">0</property>
+                    <attributes><attribute name="weight" value="bold"/></attributes>
                   </object>
                 </child>
-                <child type="label"><object class="GtkLabel"><property name="visible">True</property><property name="label"> Gravacao </property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                <child>
+                  <object class="GtkButton" id="btn_terminal_restart">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Reiniciar preview</property>
+                    <signal name="clicked" handler="on_terminal_restart_clicked"/>
+                    <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">view-refresh-symbolic</property></object></child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkToggleButton" id="btn_terminal_toggle">
+                    <property name="visible">True</property>
+                    <property name="active">True</property>
+                    <property name="tooltip-text">Mostrar/Ocultar terminal</property>
+                    <signal name="toggled" handler="on_terminal_toggle"/>
+                    <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">utilities-terminal-symbolic</property></object></child>
+                  </object>
+                </child>
               </object>
+              <packing><property name="expand">False</property></packing>
             </child>
-
+            <!-- Terminal VTE Scrolled -->
             <child>
-              <object class="GtkLabel" id="lbl_status">
+              <object class="GtkScrolledWindow" id="terminal_scrolled">
                 <property name="visible">True</property>
-                <property name="label">Status: Pronto | Q/Esc para sair</property>
                 <property name="hexpand">True</property>
-                <property name="xalign">0</property>
-                <property name="margin-start">8</property>
+                <property name="vexpand">True</property>
+                <property name="shadow-type">etched-in</property>
+                <!-- VTE sera inserido via Python -->
               </object>
               <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
-
           </object>
-          <packing><property name="expand">False</property><property name="fill">True</property></packing>
+          <packing><property name="resize">True</property><property name="shrink">True</property></packing>
         </child>
 
       </object>

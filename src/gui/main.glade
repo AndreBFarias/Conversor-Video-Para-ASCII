@@ -129,7 +129,7 @@
               <object class="GtkLabel" id="title_label">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Extase em 4R73</property>
+                <property name="label" translatable="yes">Êxtase em 4R73</property>
                 <property name="valign">center</property>
                 <property name="xalign">0</property>
               </object>
@@ -140,24 +140,27 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="options_button">
+              <object class="GtkButton" id="config_button_large">
+                <property name="name">config_button_large</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="tooltip-text" translatable="yes">Configurações avançadas</property>
                 <property name="relief">none</property>
+                <property name="valign">center</property>
                 <child>
                   <object class="GtkImage">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="icon-name">preferences-system-symbolic</property>
+                    <property name="icon-size">3</property>
                   </object>
                 </child>
                 <signal name="clicked" handler="on_options_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="fill">True</property>
+                <property name="fill">False</property>
                 <property name="position">2</property>
               </packing>
             </child>
@@ -247,12 +250,13 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="selected_path_label">
+                    <property name="name">selected_path_label</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label" translatable="yes">Nenhum arquivo selecionado</property>
                     <property name="ellipsize">middle</property>
                     <property name="max-width-chars">50</property>
-                    <property name="xalign">0</property>
+                    <property name="xalign">1</property>
                     <style>
                       <class name="dim-label"/>
                     </style>
@@ -269,7 +273,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes"> Entrada </property>
+                <property name="label" translatable="yes"> Selecionar </property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
@@ -306,7 +310,8 @@
                     <property name="spacing">8</property>
                     <child>
                       <object class="GtkButton" id="convert_button">
-                        <property name="label" translatable="yes">Converter</property>
+                        <property name="name">convert_button</property>
+                        <property name="label" translatable="yes">Arquivo</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can-focus">True</property>
@@ -323,7 +328,8 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="convert_all_button">
-                        <property name="label" translatable="yes">Converter Tudo</property>
+                        <property name="name">convert_all_button</property>
+                        <property name="label" translatable="yes">Pasta</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -344,19 +350,6 @@
                     <property name="position">0</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkProgressBar" id="conversion_progress">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="show-text">True</property>
-                    <property name="text" translatable="yes">Pronto</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
               </object>
             </child>
             <child type="label">
@@ -373,7 +366,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">5</property>
           </packing>
         </child>
 
@@ -532,7 +525,65 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">3</property>
+            <property name="position">7</property>
+          </packing>
+        </child>
+
+        <!-- FRAME: QUALIDADE -->
+        <child>
+          <object class="GtkFrame">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label-xalign">0</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkComboBoxText" id="quality_combo">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="active">0</property>
+                    <property name="tooltip-text" translatable="yes">Preset de qualidade de conversão</property>
+                    <property name="hexpand">True</property>
+                    <items>
+                      <item id="custom" translatable="yes">Custom (Manual)</item>
+                      <item id="mobile" translatable="yes">Mobile</item>
+                      <item id="low" translatable="yes">Low</item>
+                      <item id="medium" translatable="yes">Medium</item>
+                      <item id="high" translatable="yes">High</item>
+                      <item id="veryhigh" translatable="yes">Very High</item>
+                    </items>
+                    <signal name="changed" handler="on_quality_combo_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Qualidade </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
           </packing>
         </child>
 
@@ -599,52 +650,91 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">4</property>
+            <property name="position">3</property>
           </packing>
         </child>
 
-        <!-- STATUS + SAIR -->
+        <!-- FRAME: METODO -->
         <child>
-          <object class="GtkBox">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="spacing">10</property>
-            <property name="margin-top">4</property>
+            <property name="label-xalign">0</property>
             <child>
-              <object class="GtkLabel" id="status_label">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Pronto. Selecione um arquivo ou pasta.</property>
-                <property name="wrap">True</property>
-                <property name="max-width-chars">45</property>
-                <property name="xalign">0</property>
-                <property name="hexpand">True</property>
+                <property name="spacing">8</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">10</property>
+                <child>
+                  <object class="GtkRadioButton" id="radio_mode_ascii">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="label" translatable="yes">ASCII</property>
+                    <property name="active">True</property>
+                    <property name="draw-indicator">False</property>
+                    <property name="hexpand">True</property>
+                    <signal name="toggled" handler="on_mode_radio_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkRadioButton" id="radio_mode_pixelart">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="label" translatable="yes">PixelArt</property>
+                    <property name="draw-indicator">False</property>
+                    <property name="group">radio_mode_ascii</property>
+                    <property name="hexpand">True</property>
+                    <signal name="toggled" handler="on_mode_radio_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
             </child>
-            <child>
-              <object class="GtkButton" id="quit_button">
-                <property name="label" translatable="yes">Sair</property>
+            <child type="label">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_quit_button_clicked" swapped="no"/>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes"> Motor Gráfico </property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
               </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">5</property>
+            <property name="position">4</property>
+          </packing>
+        </child>
+
+        <!-- PROGRESSO -->
+        <child>
+          <object class="GtkProgressBar" id="conversion_progress">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="show-text">True</property>
+            <property name="text" translatable="yes"></property>
+            <property name="hexpand">True</property>
+            <property name="margin-top">8</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">6</property>
           </packing>
         </child>
 
@@ -681,6 +771,7 @@
                 <property name="orientation">vertical</property>
                 <property name="margin">10</property>
                 <property name="spacing">10</property>
+
                 <child>
                   <object class="GtkCheckButton" id="opt_loop_check">
                     <property name="label" translatable="yes">Loop Infinito (Repetir Animação)</property>
@@ -691,6 +782,79 @@
                     <property name="draw-indicator">True</property>
                   </object>
                 </child>
+
+                <child>
+                  <object class="GtkCheckButton" id="opt_clear_screen_check">
+                    <property name="label" translatable="yes">Limpar Tela Antes de Reproduzir</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">False</property>
+                    <property name="tooltip-text" translatable="yes">Limpa o terminal antes de iniciar a reprodução</property>
+                    <property name="draw-indicator">True</property>
+                    <property name="active">True</property>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="GtkCheckButton" id="opt_show_fps_check">
+                    <property name="label" translatable="yes">Mostrar FPS Durante Reprodução</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">False</property>
+                    <property name="tooltip-text" translatable="yes">Exibe contador de frames por segundo</property>
+                    <property name="draw-indicator">True</property>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="GtkSeparator">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="spacing">10</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Velocidade:</property>
+                        <property name="xalign">0</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="opt_speed_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">2</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="0.5" translatable="yes">0.5x (Lento)</item>
+                          <item id="0.75" translatable="yes">0.75x</item>
+                          <item id="1.0" translatable="yes">1.0x (Normal)</item>
+                          <item id="1.25" translatable="yes">1.25x</item>
+                          <item id="1.5" translatable="yes">1.5x (Rápido)</item>
+                          <item id="2.0" translatable="yes">2.0x</item>
+                        </items>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+
               </object>
             </child>
             <child type="tab">
@@ -801,11 +965,44 @@
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Rampa de Luminância:</property>
+                        <property name="label" translatable="yes">Preset de Rampa:</property>
                         <property name="xalign">1</property>
-                        <property name="tooltip-text" translatable="yes">Caracteres usados para representar níveis de brilho (do mais escuro ao mais claro)</property>
+                        <property name="tooltip-text" translatable="yes">Presets de rampas de luminancia</property>
                       </object>
                       <packing><property name="left-attach">0</property><property name="top-attach">4</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="opt_luminance_preset_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="standard" translatable="yes">Padrao (70 chars)</item>
+                          <item id="simple" translatable="yes">Simples (10 chars)</item>
+                          <item id="blocks" translatable="yes">Blocos Unicode</item>
+                          <item id="minimal" translatable="yes">Minimalista (5 chars)</item>
+                          <item id="binary" translatable="yes">Binario (Matrix)</item>
+                          <item id="dots" translatable="yes">Pontos</item>
+                          <item id="detailed" translatable="yes">Detalhado (Dense)</item>
+                          <item id="letters" translatable="yes">Letras</item>
+                          <item id="numbers" translatable="yes">Numeros</item>
+                          <item id="arrows" translatable="yes">Setas/Simbolos</item>
+                          <item id="custom" translatable="yes">Custom (Manual)</item>
+                        </items>
+                        <signal name="changed" handler="on_luminance_preset_changed" swapped="no"/>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Rampa Manual:</property>
+                        <property name="xalign">1</property>
+                        <property name="tooltip-text" translatable="yes">Caracteres usados para representar niveis de brilho (do mais escuro ao mais claro)</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">5</property></packing>
                     </child>
                     <child>
                       <object class="GtkEntry" id="opt_luminance_entry">
@@ -813,7 +1010,7 @@
                         <property name="can-focus">True</property>
                         <property name="width-chars">25</property>
                       </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
+                      <packing><property name="left-attach">1</property><property name="top-attach">5</property></packing>
                     </child>
                   </object>
                   <packing>
@@ -1061,6 +1258,147 @@ Erode remove ruído, Dilate preenche buracos.</property>
               </packing>
             </child>
 
+            <!-- TAB: PREFERENCIAS -->
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="margin">10</property>
+                <property name="spacing">10</property>
+
+                <child>
+                  <object class="GtkGrid">
+                    <property name="visible">True</property>
+                    <property name="row-spacing">8</property>
+                    <property name="column-spacing">10</property>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Pasta de Entrada:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">0</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkFileChooserButton" id="pref_input_folder">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="action">select-folder</property>
+                        <property name="title" translatable="yes">Selecionar pasta de entrada</property>
+                        <property name="hexpand">True</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">0</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Pasta de Saída:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">1</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkFileChooserButton" id="pref_output_folder">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="action">select-folder</property>
+                        <property name="title" translatable="yes">Selecionar pasta de saída</property>
+                        <property name="hexpand">True</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">1</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Motor Gráfico Padrão:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">2</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_engine_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="ascii" translatable="yes">ASCII Art</item>
+                          <item id="pixelart" translatable="yes">Pixel Art</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">2</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Qualidade Padrão:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_quality_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="custom" translatable="yes">Custom (Manual)</item>
+                          <item id="mobile" translatable="yes">Mobile</item>
+                          <item id="low" translatable="yes">Low</item>
+                          <item id="medium" translatable="yes">Medium</item>
+                          <item id="high" translatable="yes">High</item>
+                          <item id="veryhigh" translatable="yes">Very High</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">3</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Formato de Saída:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">4</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_format_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="txt" translatable="yes">Texto (.txt)</item>
+                          <item id="html" translatable="yes">HTML (.html)</item>
+                          <item id="ansi" translatable="yes">ANSI (.ans)</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Preferências</property>
+              </object>
+              <packing>
+                <property name="tab-fill">False</property>
+              </packing>
+            </child>
+
           </object>
           <packing>
             <property name="expand">True</property>
@@ -1076,7 +1414,7 @@ Erode remove ruído, Dilate preenche buracos.</property>
             <property name="spacing">10</property>
             <child>
               <object class="GtkButton" id="options_restore_button">
-                <property name="label" translatable="yes">Restaurar Padroes</property>
+                <property name="label" translatable="yes">Restaurar Padrões</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>

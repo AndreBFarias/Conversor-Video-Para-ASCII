@@ -2,7 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP
+from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP, LUMINANCE_RAMPS, FIXED_PALETTES
 
 
 class OptionsActionsMixin:
@@ -69,6 +69,15 @@ class OptionsActionsMixin:
             self.opt_palette_size_spin.set_value(16)
 
             self.opt_fixed_palette_check = Gtk.CheckButton.new_with_label("Usar Paleta Fixa (Retro)")
+            self.opt_fixed_palette_check.connect("toggled", self.on_fixed_palette_toggled)
+
+            fixed_palette_label = Gtk.Label(label="Paleta Fixa:")
+            fixed_palette_label.set_halign(Gtk.Align.START)
+            self.opt_fixed_palette_combo = Gtk.ComboBoxText()
+            for palette_id, palette_data in FIXED_PALETTES.items():
+                self.opt_fixed_palette_combo.append(palette_id, palette_data['name'])
+            self.opt_fixed_palette_combo.set_active(0)
+            self.opt_fixed_palette_combo.set_sensitive(False)
 
             pixelart_grid.attach(bit_preset_label, 0, 0, 1, 1)
             pixelart_grid.attach(self.opt_bit_preset_combo, 1, 0, 1, 1)
@@ -77,6 +86,8 @@ class OptionsActionsMixin:
             pixelart_grid.attach(palette_size_label, 0, 2, 1, 1)
             pixelart_grid.attach(self.opt_palette_size_spin, 1, 2, 1, 1)
             pixelart_grid.attach(self.opt_fixed_palette_check, 0, 3, 2, 1)
+            pixelart_grid.attach(fixed_palette_label, 0, 4, 1, 1)
+            pixelart_grid.attach(self.opt_fixed_palette_combo, 1, 4, 1, 1)
 
             pixelart_frame.add(pixelart_grid)
 
@@ -96,48 +107,24 @@ class OptionsActionsMixin:
 
     def _create_quality_preset_combo(self):
         try:
-            main_box = None
-            for child in self.window.get_children():
-                if isinstance(child, Gtk.Box):
-                    main_box = child
-                    break
+            self.quality_combo = self.builder.get_object("quality_combo")
+            self.radio_mode_ascii = self.builder.get_object("radio_mode_ascii")
+            self.radio_mode_pixelart = self.builder.get_object("radio_mode_pixelart")
 
-            if not main_box:
-                return
+            if self.quality_combo:
+                current_preset = self.config.get('Quality', 'preset', fallback='custom')
+                preset_map = {'custom': 0, 'mobile': 1, 'low': 2, 'medium': 3, 'high': 4, 'veryhigh': 5}
+                self.quality_combo.set_active(preset_map.get(current_preset, 0))
 
-            preset_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-            preset_box.set_margin_start(10)
-            preset_box.set_margin_end(10)
-            preset_box.set_margin_top(5)
-            preset_box.set_margin_bottom(10)
-
-            preset_label = Gtk.Label(label="Qualidade:")
-            preset_label.set_halign(Gtk.Align.START)
-
-            self.quality_preset_combo = Gtk.ComboBoxText()
-            self.quality_preset_combo.append("mobile", "Mobile (144p) - 100x25")
-            self.quality_preset_combo.append("low", "Low (360p) - 120x30")
-            self.quality_preset_combo.append("medium", "Medium (480p) - 180x45")
-            self.quality_preset_combo.append("high", "High (540p) - 240x60")
-            self.quality_preset_combo.append("veryhigh", "Very High (720p) - 300x75")
-            self.quality_preset_combo.append("custom", "Custom (Manual)")
-
-            current_preset = self.config.get('Quality', 'preset', fallback='medium')
-            self.quality_preset_combo.set_active_id(current_preset)
-            self.quality_preset_combo.connect("changed", self.on_quality_preset_changed)
-            self.quality_preset_combo.set_hexpand(True)
-
-            preset_box.pack_start(preset_label, False, False, 0)
-            preset_box.pack_start(self.quality_preset_combo, True, True, 0)
-
-            main_box.pack_start(preset_box, False, False, 0)
-            main_box.reorder_child(preset_box, 4)
-            preset_box.show_all()
+            if self.radio_mode_ascii and self.radio_mode_pixelart:
+                current_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii')
+                if current_mode == 'pixelart':
+                    self.radio_mode_pixelart.set_active(True)
+                else:
+                    self.radio_mode_ascii.set_active(True)
 
         except Exception as e:
-            import traceback
-            self.logger.error(f"Erro ao criar ComboBox de presets: {e}")
-            traceback.print_exc()
+            self.logger.error(f"Erro ao configurar combos: {e}")
 
     def on_quality_preset_changed(self, combo):
         preset_id = combo.get_active_id()
@@ -156,6 +143,57 @@ class OptionsActionsMixin:
         except Exception as e:
             self.logger.error(f"Erro ao salvar preset: {e}")
 
+    def on_quality_combo_changed(self, combo):
+        active = combo.get_active()
+        preset_names = ['custom', 'mobile', 'low', 'medium', 'high', 'veryhigh']
+
+        if 0 <= active < len(preset_names):
+            preset_id = preset_names[active]
+
+            if preset_id == 'custom':
+                return
+
+            try:
+                if preset_id in QUALITY_PRESETS:
+                    preset = QUALITY_PRESETS[preset_id]
+                    self.config.set('Conversor', 'target_width', str(preset['width']))
+                    self.config.set('Conversor', 'target_height', str(preset['height']))
+                    self.config.set('Conversor', 'char_aspect_ratio', str(preset['aspect']))
+                    self.config.set('Quality', 'preset', preset_id)
+                    self.config.set('Quality', 'player_zoom', str(preset['zoom']))
+                    self.save_config()
+                    self.logger.info(f"Preset de qualidade alterado: {preset_id}")
+            except Exception as e:
+                self.logger.error(f"Erro ao aplicar preset: {e}")
+
+    def on_mode_combo_changed(self, combo):
+        active = combo.get_active()
+        mode = 'ascii' if active == 0 else 'pixelart'
+
+        try:
+            if 'Mode' not in self.config:
+                self.config.add_section('Mode')
+            self.config.set('Mode', 'conversion_mode', mode)
+            self.save_config()
+            self.logger.info(f"Modo de conversao alterado: {mode}")
+        except Exception as e:
+            self.logger.error(f"Erro ao alterar modo: {e}")
+
+    def on_mode_radio_toggled(self, radio):
+        if not radio.get_active():
+            return
+
+        mode = 'ascii' if radio == self.radio_mode_ascii else 'pixelart'
+
+        try:
+            if 'Mode' not in self.config:
+                self.config.add_section('Mode')
+            self.config.set('Mode', 'conversion_mode', mode)
+            self.save_config()
+            self.logger.info(f"Modo de conversao alterado: {mode}")
+        except Exception as e:
+            self.logger.error(f"Erro ao alterar modo: {e}")
+
     def on_bit_preset_changed(self, combo):
         preset_id = combo.get_active_id()
         if not preset_id or preset_id == 'custom':
@@ -171,6 +209,27 @@ class OptionsActionsMixin:
 
         if hasattr(self, 'opt_palette_size_spin') and self.opt_palette_size_spin:
             self.opt_palette_size_spin.set_value(preset['palette_size'])
+
+    def on_luminance_preset_changed(self, combo):
+        preset_id = combo.get_active_id()
+        if not preset_id:
+            return
+
+        if preset_id == 'custom':
+            if hasattr(self, 'opt_luminance_entry') and self.opt_luminance_entry:
+                self.opt_luminance_entry.set_sensitive(True)
+            return
+
+        if preset_id in LUMINANCE_RAMPS:
+            ramp = LUMINANCE_RAMPS[preset_id]['ramp']
+            if hasattr(self, 'opt_luminance_entry') and self.opt_luminance_entry:
+                self.opt_luminance_entry.set_text(ramp)
+                self.opt_luminance_entry.set_sensitive(False)
+
+    def on_fixed_palette_toggled(self, check):
+        is_active = check.get_active()
+        if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
+            self.opt_fixed_palette_combo.set_sensitive(is_active)
 
     def on_options_button_clicked(self, widget):
         try:
@@ -189,7 +248,17 @@ class OptionsActionsMixin:
             self.opt_aspect_spin.set_value(aspect_val)
 
             luminance_val = self.config.get('Conversor', 'luminance_ramp', fallback=DEFAULT_LUMINANCE_RAMP)
+            luminance_preset = self.config.get('Conversor', 'luminance_preset', fallback='standard')
             self.opt_luminance_entry.set_text(luminance_val)
+
+            if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
+                preset_map = {
+                    'standard': 0, 'simple': 1, 'blocks': 2, 'minimal': 3,
+                    'binary': 4, 'dots': 5, 'detailed': 6, 'letters': 7,
+                    'numbers': 8, 'arrows': 9, 'custom': 10
+                }
+                self.opt_luminance_preset_combo.set_active(preset_map.get(luminance_preset, 0))
+                self.opt_luminance_entry.set_sensitive(luminance_preset == 'custom')
 
             h_min = self.config.getint('ChromaKey', 'h_min', fallback=35)
             h_max = self.config.getint('ChromaKey', 'h_max', fallback=85)
@@ -214,6 +283,7 @@ class OptionsActionsMixin:
             pixel_size_val = self.config.getint('PixelArt', 'pixel_size', fallback=2)
             palette_size_val = self.config.getint('PixelArt', 'color_palette_size', fallback=16)
             fixed_palette_val = self.config.getboolean('PixelArt', 'use_fixed_palette', fallback=False)
+            fixed_palette_name = self.config.get('PixelArt', 'fixed_palette_name', fallback='gameboy')
 
             if not hasattr(self, '_mode_widgets_created') or not self._mode_widgets_created:
                 self._create_mode_widgets()
@@ -230,6 +300,42 @@ class OptionsActionsMixin:
                     self.opt_palette_size_spin.set_value(palette_size_val)
                 if self.opt_fixed_palette_check:
                     self.opt_fixed_palette_check.set_active(fixed_palette_val)
+                if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
+                    palette_keys = list(FIXED_PALETTES.keys())
+                    if fixed_palette_name in palette_keys:
+                        self.opt_fixed_palette_combo.set_active(palette_keys.index(fixed_palette_name))
+                    self.opt_fixed_palette_combo.set_sensitive(fixed_palette_val)
+
+            clear_screen = self.config.getboolean('Player', 'clear_screen', fallback=True)
+            show_fps = self.config.getboolean('Player', 'show_fps', fallback=False)
+            speed = self.config.get('Player', 'speed', fallback='1.0')
+
+            if hasattr(self, 'opt_clear_screen_check') and self.opt_clear_screen_check:
+                self.opt_clear_screen_check.set_active(clear_screen)
+            if hasattr(self, 'opt_show_fps_check') and self.opt_show_fps_check:
+                self.opt_show_fps_check.set_active(show_fps)
+            if hasattr(self, 'opt_speed_combo') and self.opt_speed_combo:
+                speed_map = {'0.5': 0, '0.75': 1, '1.0': 2, '1.25': 3, '1.5': 4, '2.0': 5}
+                self.opt_speed_combo.set_active(speed_map.get(speed, 2))
+
+            if hasattr(self, 'pref_input_folder') and self.pref_input_folder:
+                self.pref_input_folder.set_current_folder(self.input_dir)
+            if hasattr(self, 'pref_output_folder') and self.pref_output_folder:
+                self.pref_output_folder.set_current_folder(self.output_dir)
+
+            if hasattr(self, 'pref_engine_combo') and self.pref_engine_combo:
+                engine = self.config.get('Mode', 'conversion_mode', fallback='ascii')
+                self.pref_engine_combo.set_active(0 if engine == 'ascii' else 1)
+
+            if hasattr(self, 'pref_quality_combo') and self.pref_quality_combo:
+                quality = self.config.get('Quality', 'preset', fallback='custom')
+                quality_map = {'custom': 0, 'mobile': 1, 'low': 2, 'medium': 3, 'high': 4, 'veryhigh': 5}
+                self.pref_quality_combo.set_active(quality_map.get(quality, 0))
+
+            if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
+                fmt = self.config.get('Output', 'format', fallback='txt')
+                fmt_map = {'txt': 0, 'html': 1, 'ansi': 2}
+                self.pref_format_combo.set_active(fmt_map.get(fmt, 0))
 
         except Exception as e:
             self.logger.error(f"Erro ao carregar opcoes: {e}")
@@ -255,6 +361,29 @@ class OptionsActionsMixin:
         self.opt_erode_spin.set_value(2)
         self.opt_dilate_spin.set_value(2)
 
+        if hasattr(self, 'opt_clear_screen_check') and self.opt_clear_screen_check:
+            self.opt_clear_screen_check.set_active(True)
+        if hasattr(self, 'opt_show_fps_check') and self.opt_show_fps_check:
+            self.opt_show_fps_check.set_active(False)
+        if hasattr(self, 'opt_speed_combo') and self.opt_speed_combo:
+            self.opt_speed_combo.set_active(2)
+
+        if hasattr(self, 'pref_engine_combo') and self.pref_engine_combo:
+            self.pref_engine_combo.set_active(0)
+        if hasattr(self, 'pref_quality_combo') and self.pref_quality_combo:
+            self.pref_quality_combo.set_active(0)
+        if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
+            self.pref_format_combo.set_active(0)
+
+        if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
+            self.opt_luminance_preset_combo.set_active(0)
+            self.opt_luminance_entry.set_sensitive(False)
+        if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
+            self.opt_fixed_palette_combo.set_active(0)
+            self.opt_fixed_palette_combo.set_sensitive(False)
+        if hasattr(self, 'opt_fixed_palette_check') and self.opt_fixed_palette_check:
+            self.opt_fixed_palette_check.set_active(False)
+
     def on_options_save_clicked(self, widget):
         try:
             if 'Player' not in self.config:
@@ -268,6 +397,11 @@ class OptionsActionsMixin:
             self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
             self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
             self.config.set('Conversor', 'luminance_ramp', self.opt_luminance_entry.get_text())
+
+            if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
+                preset_id = self.opt_luminance_preset_combo.get_active_id()
+                if preset_id:
+                    self.config.set('Conversor', 'luminance_preset', preset_id)
 
             if 'ChromaKey' not in self.config:
                 self.config.add_section('ChromaKey')
@@ -291,6 +425,66 @@ class OptionsActionsMixin:
                 self.config.set('PixelArt', 'pixel_size', str(int(self.opt_pixel_size_spin.get_value())))
                 self.config.set('PixelArt', 'color_palette_size', str(int(self.opt_palette_size_spin.get_value())))
                 self.config.set('PixelArt', 'use_fixed_palette', 'true' if self.opt_fixed_palette_check.get_active() else 'false')
+
+                if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
+                    palette_id = self.opt_fixed_palette_combo.get_active_id()
+                    if palette_id:
+                        self.config.set('PixelArt', 'fixed_palette_name', palette_id)
+
+            if hasattr(self, 'opt_clear_screen_check') and self.opt_clear_screen_check:
+                self.config.set('Player', 'clear_screen', 'true' if self.opt_clear_screen_check.get_active() else 'false')
+            if hasattr(self, 'opt_show_fps_check') and self.opt_show_fps_check:
+                self.config.set('Player', 'show_fps', 'true' if self.opt_show_fps_check.get_active() else 'false')
+            if hasattr(self, 'opt_speed_combo') and self.opt_speed_combo:
+                speed_list = ['0.5', '0.75', '1.0', '1.25', '1.5', '2.0']
+                active = self.opt_speed_combo.get_active()
+                if 0 <= active < len(speed_list):
+                    self.config.set('Player', 'speed', speed_list[active])
+
+            if hasattr(self, 'pref_input_folder') and self.pref_input_folder:
+                folder = self.pref_input_folder.get_filename()
+                if folder:
+                    if 'Pastas' not in self.config:
+                        self.config.add_section('Pastas')
+                    self.config.set('Pastas', 'input_dir', folder)
+                    self.input_dir = folder
+
+            if hasattr(self, 'pref_output_folder') and self.pref_output_folder:
+                folder = self.pref_output_folder.get_filename()
+                if folder:
+                    if 'Pastas' not in self.config:
+                        self.config.add_section('Pastas')
+                    self.config.set('Pastas', 'output_dir', folder)
+                    self.output_dir = folder
+
+            if hasattr(self, 'pref_engine_combo') and self.pref_engine_combo:
+                if 'Mode' not in self.config:
+                    self.config.add_section('Mode')
+                engine = 'ascii' if self.pref_engine_combo.get_active() == 0 else 'pixelart'
+                self.config.set('Mode', 'conversion_mode', engine)
+                if hasattr(self, 'radio_mode_ascii') and self.radio_mode_ascii:
+                    if engine == 'ascii':
+                        self.radio_mode_ascii.set_active(True)
+                    else:
+                        self.radio_mode_pixelart.set_active(True)
+
+            if hasattr(self, 'pref_quality_combo') and self.pref_quality_combo:
+                if 'Quality' not in self.config:
+                    self.config.add_section('Quality')
+                quality_list = ['custom', 'mobile', 'low', 'medium', 'high', 'veryhigh']
+                active = self.pref_quality_combo.get_active()
+                if 0 <= active < len(quality_list):
+                    self.config.set('Quality', 'preset', quality_list[active])
+                    if hasattr(self, 'quality_combo') and self.quality_combo:
+                        self.quality_combo.set_active(active)
+
+            if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
+                if 'Output' not in self.config:
+                    self.config.add_section('Output')
+                fmt_list = ['txt', 'html', 'ansi']
+                active = self.pref_format_combo.get_active()
+                if 0 <= active < len(fmt_list):
+                    self.config.set('Output', 'format', fmt_list[active])
 
             self.save_config()
 

@@ -1,6 +1,80 @@
 # Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
+
+## [2.1.0] - 2025-12-31
+
+### Interface Renovada
+
+#### Reorganizacao da Interface Principal
+- Nova ordem de secoes seguindo jornada do usuario:
+  1. Selecionar (Arquivo/Pasta/ASCII)
+  2. Qualidade (Presets)
+  3. Ferramentas (Calibrador/Webcam)
+  4. Motor Grafico (ASCII/PixelArt)
+  5. Conversao (Botoes)
+  6. Progresso (Barra)
+  7. Reproducao (Modo + Controles)
+- Engrenagem de configuracoes movida para header
+- Barra de progresso com altura aumentada (CSS override)
+- Botoes de conversao com borda verde (#81c995)
+- Label de selecao alinhado a direita com cor dinamica
+
+#### Nova Aba: Preferencias
+- Pasta de Entrada padrao (FileChooserButton)
+- Pasta de Saida padrao (FileChooserButton)
+- Motor Grafico padrao (ASCII/PixelArt)
+- Qualidade padrao (Custom a Very High)
+- Formato de Saida (txt/html/ansi)
+
+#### Opcoes Expandidas do Player
+- Limpar Tela Antes de Reproduzir
+- Mostrar FPS Durante Reproducao
+- Controle de Velocidade (0.5x a 2.0x)
+
+### Sistema de Presets de Rampa de Luminancia
+
+10 presets prontos para uso + modo manual:
+- **Padrao** (70 chars) - Rampa completa classica
+- **Simples** (10 chars) - `@%#*+=-:. `
+- **Blocos Unicode** - Caracteres de bloco
+- **Minimalista** (5 chars) - `#=:. `
+- **Binario (Matrix)** - `10 `
+- **Pontos** - Circulos graduados
+- **Detalhado** - Versao densa
+- **Letras** - Apenas caracteres alfabeticos
+- **Numeros** - Apenas digitos
+- **Setas/Simbolos** - Formas geometricas
+- **Custom** - Edicao manual liberada
+
+### Sistema de Paletas Fixas para Pixel Art
+
+10 paletas retro/tematicas:
+- **Game Boy** - 4 cores (verde classico)
+- **CGA** - 16 cores (IBM PC)
+- **NES** - 54 cores (Nintendo)
+- **Commodore 64** - 16 cores
+- **PICO-8** - 16 cores (fantasy console)
+- **Escala de Cinza** - 8 tons
+- **Sepia** - 8 tons (vintage)
+- **Cyberpunk** - 12 cores neon
+- **Dracula Theme** - 11 cores
+- **Monitor Verde (CRT)** - 12 tons de verde
+
+### Correcoes
+
+- Corrigida acentuacao em toda a interface (Extase, Configuracoes, etc.)
+- Botao "Converter Pasta" agora desativado quando sem selecao
+- CSS Provider para override de estilos do tema GTK
+
+### Arquivos Modificados
+- `src/app/app.py` - CSS Provider, widgets, titulo
+- `src/app/actions/file_actions.py` - Estados de botao, CSS dinamico
+- `src/app/actions/options_actions.py` - Handlers de presets
+- `src/app/constants.py` - LUMINANCE_RAMPS, FIXED_PALETTES
+- `src/gui/main.glade` - Reorganizacao completa
+
+---
 
 ## [2.0.0] - 2025-12-17
 
