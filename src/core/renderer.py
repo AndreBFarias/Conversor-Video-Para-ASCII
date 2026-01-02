@@ -231,7 +231,7 @@ def render_window(pixel_frame, window_name=DEFAULT_WINDOW_NAME, scale_factor=DEF
     # Set initial window size
     try:
         cv2.resizeWindow(window_name, upscaled_w, upscaled_h)
-    except:
+    except Exception:
         pass
     
     return scale_factor

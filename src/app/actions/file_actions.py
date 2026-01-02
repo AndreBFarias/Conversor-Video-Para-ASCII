@@ -114,7 +114,6 @@ class FileActionsMixin:
 
         file_selected = self.selected_file_path is not None and os.path.exists(self.selected_file_path)
         folder_selected = self.selected_folder_path is not None and os.path.isdir(self.selected_folder_path)
-        default_folder_exists = self.input_dir is not None and os.path.isdir(self.input_dir)
 
         ascii_exists = False
         if file_selected and hasattr(self, 'output_dir'):

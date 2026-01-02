@@ -120,7 +120,7 @@ def iniciar_player(arquivo_path, loop=False, config=None):
                         gtk_window = render_window_gtk(None, None, 
                                                       is_ascii=True, ascii_string=frame_data)
                         
-                        print(f"\n[Imagem Estatica - Pressione ESC ou 'q' para sair]")
+                        print("\n[Imagem Estatica - Pressione ESC ou 'q' para sair]")
                         
                         # GTK event loop for static image
                         import gi
@@ -133,7 +133,7 @@ def iniciar_player(arquivo_path, loop=False, config=None):
                         render_window(None, window_name, current_scale, 
                                      is_ascii=True, ascii_string=frame_data)
                         
-                        print(f"\n[Imagem Estatica - Pressione ESC ou 'q' para sair]")
+                        print("\n[Imagem Estatica - Pressione ESC ou 'q' para sair]")
                         
                         while True:
                             key = cv2.waitKey(100) & 0xFF
@@ -222,7 +222,7 @@ if __name__ == '__main__':
             time.sleep(1.5)
             iniciar_player(test_file, test_loop, config)
         except Exception as e:
-            print(f"\n--- Erro no Teste do Player ---")
+            print("\n--- Erro no Teste do Player ---")
             print(e)
             print("----------------------------")
             input("Pressione Enter para sair...")
