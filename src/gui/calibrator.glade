@@ -236,7 +236,7 @@
                 </object></child>
                 <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
                   <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Rampa:</property></object></child>
-                  <child><object class="GtkComboBoxText" id="combo_ramp_preset"><property name="visible">True</property><property name="active">0</property><items><item id="default">Padrao</item><item id="blocks">Blocos</item><item id="simple">Simples</item><item id="dense">Denso</item><item id="dots">Pontos</item></items><signal name="changed" handler="on_ramp_preset_changed"/></object></child>
+                  <child><object class="GtkComboBoxText" id="combo_ramp_preset"><property name="visible">True</property><property name="active">0</property><items><item id="standard">Padrao (70)</item><item id="simple">Simples (10)</item><item id="blocks">Blocos</item><item id="minimal">Minimalista</item><item id="binary">Binario</item><item id="dots">Pontos</item><item id="detailed">Detalhado</item><item id="letters">Letras</item><item id="numbers">Numeros</item><item id="arrows">Setas</item></items><signal name="changed" handler="on_ramp_preset_changed"/></object></child>
                 </object></child>
               </object>
               <packing><property name="expand">True</property><property name="fill">True</property></packing>
@@ -258,6 +258,7 @@
               <object class="GtkBox" id="box_pixelart_options">
                 <property name="visible">False</property>
                 <property name="spacing">6</property>
+                <property name="hexpand">True</property>
                 <style><class name="island-config"/></style>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">PixelArt</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
                 <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
@@ -265,14 +266,19 @@
                   <child><object class="GtkSpinButton" id="spin_pixel_size"><property name="visible">True</property><property name="adjustment">adj_pixel_size</property><property name="width-chars">2</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
                 </object></child>
                 <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
-                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Paleta:</property></object></child>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Cores:</property></object></child>
                   <child><object class="GtkSpinButton" id="spin_palette_size"><property name="visible">True</property><property name="adjustment">adj_palette_size</property><property name="width-chars">3</property><signal name="value-changed" handler="on_pixel_art_changed"/></object></child>
                 </object></child>
                 <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
                   <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Fixa:</property></object></child>
-                  <child><object class="GtkCheckButton" id="chk_fixed_palette"><property name="visible">True</property><property name="active">False</property><signal name="toggled" handler="on_pixel_art_changed"/></object></child>
+                  <child><object class="GtkCheckButton" id="chk_fixed_palette"><property name="visible">True</property><property name="active">False</property><signal name="toggled" handler="on_fixed_palette_toggled"/></object></child>
+                </object></child>
+                <child><object class="GtkBox"><property name="visible">True</property><property name="spacing">2</property>
+                  <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Paleta:</property></object></child>
+                  <child><object class="GtkComboBoxText" id="combo_fixed_palette"><property name="visible">True</property><property name="active">0</property><items><item id="gameboy">Game Boy (4)</item><item id="cga">CGA (16)</item><item id="nes">NES (54)</item><item id="commodore64">Commodore 64 (16)</item><item id="pico8">PICO-8 (16)</item><item id="grayscale">Escala Cinza (8)</item><item id="sepia">Sepia (8)</item><item id="cyberpunk">Cyberpunk (12)</item><item id="dracula">Dracula (11)</item><item id="monogreen">Monitor Verde (12)</item></items><signal name="changed" handler="on_fixed_palette_changed"/></object></child>
                 </object></child>
               </object>
+              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
 
           </object>

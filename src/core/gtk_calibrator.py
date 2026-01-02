@@ -24,6 +24,7 @@ from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
 from src.core.pixel_art_converter import quantize_colors
+from src.app.constants import LUMINANCE_RAMPS, FIXED_PALETTES
 
 
 CHROMA_PRESETS = {
@@ -40,14 +41,6 @@ QUALITY_PRESETS = {
     'medium': {'width': 180, 'height': 45},
     'high': {'width': 240, 'height': 60},
     'veryhigh': {'width': 300, 'height': 75},
-}
-
-LUMINANCE_PRESETS = {
-    'default': "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ",
-    'blocks': " ░▒▓█",
-    'simple': " .-:=+*#%@",
-    'dense': "@%#*+=-:. ",
-    'dots': " .,:;!?*@#",
 }
 
 RENDER_MODE_USER = 0
@@ -267,6 +260,7 @@ class GTKCalibrator:
         self.spin_palette_size = self.builder.get_object("spin_palette_size")
         self.chk_fixed_palette = self.builder.get_object("chk_fixed_palette")
         self.combo_ramp_preset = self.builder.get_object("combo_ramp_preset")
+        self.combo_fixed_palette = self.builder.get_object("combo_fixed_palette")
 
         self.radio_ascii = self.builder.get_object("radio_ascii")
         self.radio_pixelart = self.builder.get_object("radio_pixelart")
@@ -408,7 +402,10 @@ class GTKCalibrator:
         if self.spin_palette_size:
             self.spin_palette_size.set_value(self.pixel_art_config['color_palette_size'])
         if self.chk_fixed_palette:
-            self.chk_fixed_palette.set_active(self.pixel_art_config.get('use_fixed_palette', False))
+            use_fixed = self.pixel_art_config.get('use_fixed_palette', False)
+            self.chk_fixed_palette.set_active(use_fixed)
+            if self.combo_fixed_palette:
+                self.combo_fixed_palette.set_sensitive(use_fixed)
 
         if self.combo_render_mode:
             self.combo_render_mode.set_active(0)
@@ -868,17 +865,36 @@ class GTKCalibrator:
             self.pixel_art_config['pixel_size'] = int(self.spin_pixel_size.get_value())
         if self.spin_palette_size:
             self.pixel_art_config['color_palette_size'] = int(self.spin_palette_size.get_value())
-        if self.chk_fixed_palette:
-            self.pixel_art_config['use_fixed_palette'] = self.chk_fixed_palette.get_active()
+
+    def on_fixed_palette_toggled(self, widget):
+        if self._block_signals:
+            return
+
+        use_fixed = widget.get_active()
+        self.pixel_art_config['use_fixed_palette'] = use_fixed
+
+        if self.combo_fixed_palette:
+            self.combo_fixed_palette.set_sensitive(use_fixed)
+
+        self._set_status(f"Paleta fixa: {'Ativada' if use_fixed else 'Desativada'}")
+
+    def on_fixed_palette_changed(self, widget):
+        if self._block_signals:
+            return
+
+        palette_id = widget.get_active_id()
+        if palette_id and palette_id in FIXED_PALETTES:
+            self.pixel_art_config['fixed_palette_name'] = palette_id
+            self._set_status(f"Paleta: {FIXED_PALETTES[palette_id]['name']}")
 
     def on_ramp_preset_changed(self, widget):
         if self._block_signals:
             return
 
         preset_id = widget.get_active_id()
-        if preset_id and preset_id in LUMINANCE_PRESETS:
-            self.converter_config['luminance_ramp'] = LUMINANCE_PRESETS[preset_id]
-            self._set_status(f"Rampa: {preset_id}")
+        if preset_id and preset_id in LUMINANCE_RAMPS:
+            self.converter_config['luminance_ramp'] = LUMINANCE_RAMPS[preset_id]['ramp']
+            self._set_status(f"Rampa: {LUMINANCE_RAMPS[preset_id]['name']}")
 
     def on_mode_toggled(self, widget):
         if self._block_signals:
@@ -929,12 +945,12 @@ class GTKCalibrator:
             return
 
         active = widget.get_active()
-        preset_names = ['default', 'blocks', 'simple', 'dense', 'dots']
+        preset_names = list(LUMINANCE_RAMPS.keys())
 
         if 0 <= active < len(preset_names):
-            ramp = LUMINANCE_PRESETS[preset_names[active]]
-            self.converter_config['luminance_ramp'] = ramp
-            self._set_status(f"Luminancia: {preset_names[active].title()}")
+            preset_id = preset_names[active]
+            self.converter_config['luminance_ramp'] = LUMINANCE_RAMPS[preset_id]['ramp']
+            self._set_status(f"Luminancia: {LUMINANCE_RAMPS[preset_id]['name']}")
 
     def on_preview_terminal_clicked(self, widget):
         self._open_terminal_preview()
