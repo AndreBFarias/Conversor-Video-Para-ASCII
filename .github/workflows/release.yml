@@ -75,7 +75,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare icons
-        run: python3 packaging/prepare-icons.py
+        run: |
+          chmod +x packaging/prepare-icons.sh
+          ./packaging/prepare-icons.sh
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
