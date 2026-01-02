@@ -21,7 +21,7 @@ logs/*
 !logs/.gitkeep
 Dev_log/
 
-# Instrucoes AI (privado)
+# Arquivos de desenvolvimento privados
 CLAUDE.md
 IMPORTANT.md
 

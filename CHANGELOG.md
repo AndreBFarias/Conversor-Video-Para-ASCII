@@ -78,7 +78,7 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
 ## [2.0.0] - 2025-12-17
 
-### 🛡️ Compliance & Estrutura (LEI MARCIAL v3.0)
+### 🛡️ Compliance & Estrutura
 - **Reestruturação Completa de Diretórios:**
   - `src/ui` -> `src/gui`
   - `src/assets` -> `assets/` (Root)
