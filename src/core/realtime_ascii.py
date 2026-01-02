@@ -71,7 +71,7 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
     return "\n".join(output_buffer) + ANSI_RESET
 
 
-def run_realtime_ascii(config_path):
+def run_realtime_ascii(config_path, video_path=None):
     config = configparser.ConfigParser(interpolation=None)
 
     config.add_section('Conversor')
@@ -81,18 +81,18 @@ def run_realtime_ascii(config_path):
         print(f"Erro fatal: config.ini nao encontrado em {config_path}")
         return
 
-    # Detectar tamanho do terminal
+    is_video_file = video_path is not None
+
     try:
         term_size = os.get_terminal_size()
         terminal_cols = term_size.columns
         terminal_lines = term_size.lines
         print(f"Terminal detectado: {terminal_cols}x{terminal_lines}")
-        
-        # Usar TODO o espaço disponível, com margem de segurança
+
         target_width = terminal_cols - 2
         target_height = terminal_lines - 5
         char_aspect_ratio = 0.48
-        
+
         print(f"Usando resolucao maxima: {target_width}x{target_height}")
     except OSError:
         print("Aviso: Nao foi possivel detectar tamanho do terminal. Usando config.ini")
@@ -100,44 +100,49 @@ def run_realtime_ascii(config_path):
             target_width = config.getint('Conversor', 'target_width')
             char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
-            print(f"Erro ao ler config.ini: {e}. Usando valores padrão médios.")
+            print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
             target_width = 180
             char_aspect_ratio = 0.48
-    
+
     try:
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
         luminance_ramp = config.get('Conversor', 'luminance_ramp')
-        
+
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
-        print(f"Erro ao ler config.ini: {e}. Usando valores padrão médios.")
+        print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
         target_width = 180
         char_aspect_ratio = 0.48
         sobel_threshold = 70
         luminance_ramp = LUMINANCE_RAMP_DEFAULT
 
-    cap = cv2.VideoCapture(0)
+    capture_source = video_path if is_video_file else 0
+    cap = cv2.VideoCapture(capture_source)
     if not cap.isOpened():
-        print("Erro: Nao foi possivel abrir a webcam.")
+        source_name = video_path if is_video_file else "webcam"
+        print(f"Erro: Nao foi possivel abrir {source_name}.")
         return
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
 
     try:
         ret, frame_teste = cap.read()
         if not ret or frame_teste is None:
-            raise ValueError("Nao foi possivel ler o primeiro frame da webcam.")
+            raise ValueError("Nao foi possivel ler o primeiro frame.")
         source_height, source_width, _ = frame_teste.shape
-        
-        # Se usamos detecção de terminal, target_height já foi calculado
-        # Senão, calculamos baseado em aspect ratio
+
         if 'target_height' not in locals() or target_height <= 0:
             target_height = int((target_width * source_height * char_aspect_ratio) / source_width)
             if target_height <= 0:
                 target_height = int(target_width * (9/16) * char_aspect_ratio)
-        
+
         target_dimensions = (target_width, target_height)
-        print(f"Webcam detectada: {source_width}x{source_height}. Convertendo para: {target_width}x{target_height} chars.")
+        source_name = f"Video: {os.path.basename(video_path)}" if is_video_file else "Webcam"
+        print(f"{source_name} detectado: {source_width}x{source_height}. Convertendo para: {target_width}x{target_height} chars.")
         print("Pressione Ctrl+C para sair.")
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
     except Exception as e:
         print(f"Erro ao calcular dimensoes: {e}. Usando 80x{int(80*0.45*(9/16))}.")
         target_dimensions = (target_width, int(target_width * 0.45 * (9/16)))
@@ -146,11 +151,15 @@ def run_realtime_ascii(config_path):
         while True:
             ret, frame_colorido = cap.read()
             if not ret or frame_colorido is None:
-                print("Erro ao ler frame da webcam.")
+                if is_video_file:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    continue
+                print("Erro ao ler frame.")
                 time.sleep(0.5)
                 continue
 
-            frame_colorido = cv2.flip(frame_colorido, 1)
+            if not is_video_file:
+                frame_colorido = cv2.flip(frame_colorido, 1)
 
             if sharpen_enabled:
                 frame_colorido = sharpen_frame(frame_colorido, sharpen_amount)
@@ -175,7 +184,7 @@ def run_realtime_ascii(config_path):
             sys.stdout.write(ANSI_CLEAR_AND_HOME + frame_ascii)
             sys.stdout.flush()
 
-            time.sleep(1.0 / 30)
+            time.sleep(1.0 / fps)
 
     except KeyboardInterrupt:
         print("\nSaindo do modo Real-Time...")
@@ -189,8 +198,9 @@ def run_realtime_ascii(config_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Conversor Webcam -> ASCII em Tempo Real")
+    parser = argparse.ArgumentParser(description="Conversor Video/Webcam -> ASCII em Tempo Real")
     parser.add_argument("--config", required=True, help="Caminho para o config.ini.")
+    parser.add_argument("--video", required=False, default=None, help="Caminho para arquivo de video (opcional).")
     args = parser.parse_args()
 
-    run_realtime_ascii(config_path=args.config)
+    run_realtime_ascii(config_path=args.config, video_path=args.video)
