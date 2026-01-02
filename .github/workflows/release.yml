@@ -74,6 +74,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install ImageMagick
+        run: |
+          dnf install -y ImageMagick || yum install -y ImageMagick || apt-get update && apt-get install -y imagemagick
+
       - name: Prepare icons
         run: |
           chmod +x packaging/prepare-icons.sh
