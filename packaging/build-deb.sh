@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VERSION="2.1.0"
+VERSION="${1:-2.1.0}"
 PACKAGE_NAME="extase-em-4r73"
 BUILD_DIR="${SCRIPT_DIR}/build"
 DEB_ROOT="${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}"
@@ -25,6 +25,9 @@ cp "${SCRIPT_DIR}/deb/DEBIAN/postinst" "${DEB_ROOT}/DEBIAN/"
 cp "${SCRIPT_DIR}/deb/DEBIAN/postrm" "${DEB_ROOT}/DEBIAN/"
 chmod 755 "${DEB_ROOT}/DEBIAN/postinst"
 chmod 755 "${DEB_ROOT}/DEBIAN/postrm"
+
+# Update version in control file
+sed -i "s/^Version: .*/Version: ${VERSION}/" "${DEB_ROOT}/DEBIAN/control"
 
 echo "[2/5] Copiando codigo fonte..."
 cp -r "${PROJECT_DIR}/src" "${DEB_ROOT}/opt/${PACKAGE_NAME}/"

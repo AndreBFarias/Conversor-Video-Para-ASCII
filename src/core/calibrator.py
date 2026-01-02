@@ -198,7 +198,7 @@ def main():
             try:
                 target_width = config_global.getint('Conversor', 'target_width')
                 target_height = config_global.getint('Conversor', 'target_height')
-            except:
+            except Exception:
                 target_width = 180
                 target_height = 45
         

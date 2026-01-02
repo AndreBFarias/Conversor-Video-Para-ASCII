@@ -13,7 +13,7 @@ sys.path.insert(0, project_root)
 try:
     from src.core.player import iniciar_player
 except ImportError as e:
-    print(f"Erro fatal: Nao foi possivel importar 'src.core.player'.")
+    print("Erro fatal: Nao foi possivel importar 'src.core.player'.")
     print(f"Verifique se 'src/core/player.py' existe. Erro: {e}")
     import traceback
     traceback.print_exc()
@@ -78,7 +78,7 @@ def main():
     try:
         iniciar_player(file_to_play, loop, config)
     except Exception as e:
-        print(f"\n--- ERRO NA REPRODUCAO ---")
+        print("\n--- ERRO NA REPRODUCAO ---")
         print(e)
         print("----------------------------")
         input("Pressione Enter para sair...")

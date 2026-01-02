@@ -125,7 +125,7 @@ class PlaybackActionsMixin:
                 if result.returncode != 0:
                     result_gvfs = subprocess.run(["gvfs-open", abs_path], check=False, capture_output=True, text=True)
                     if result_gvfs.returncode != 0:
-                        raise OSError(f"xdg-open e gvfs-open falharam.")
+                        raise OSError("xdg-open e gvfs-open falharam.")
         except FileNotFoundError:
             self.show_error_dialog("Erro", "Comando 'xdg-open'/'gvfs-open' nao encontrado.")
         except Exception as e:

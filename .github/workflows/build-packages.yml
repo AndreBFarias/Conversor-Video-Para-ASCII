@@ -19,9 +19,17 @@ jobs:
           sudo apt-get install -y imagemagick dpkg-dev
 
       - name: Build .deb package
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
+          VERSION="2.1.0"
+          if [[ "$REF" == "refs/tags/"* ]]; then
+            VERSION="${REF_NAME#v}"
+          fi
+          echo "Building version: $VERSION"
           chmod +x packaging/build-deb.sh
-          cd packaging && ./build-deb.sh
+          cd packaging && ./build-deb.sh "$VERSION"
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4

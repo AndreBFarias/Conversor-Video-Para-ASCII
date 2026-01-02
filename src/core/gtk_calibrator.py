@@ -524,7 +524,6 @@ class GTKCalibrator:
         return ascii_image
 
     def _render_pixelart_to_image(self, resized_color, resized_mask, frame_h, frame_w) -> np.ndarray:
-        pixel_size = self.pixel_art_config.get('pixel_size', 2)
         n_colors = self.pixel_art_config.get('color_palette_size', 16)
         use_fixed = self.pixel_art_config.get('use_fixed_palette', False)
 
