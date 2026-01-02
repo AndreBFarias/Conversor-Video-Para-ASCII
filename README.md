@@ -107,6 +107,3 @@ GPLv3 - Veja [LICENSE](LICENSE) para detalhes.
 ### Creditos
 
 - **AndreBFarias**: Criador Original
-
----
-*LEI MARCIAL v3.0*

@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 
 def setup_logger(name="ConversorApp", log_file="logs/system.log"):
     """
-    Configura um logger rotacionado conforme o protocolo LEI MARCIAL.
+    Configura um logger rotacionado.
     Salva em logs/ com rotação de 5MB e backup de 3 arquivos.
     """
     # Garante que a pasta logs existe
