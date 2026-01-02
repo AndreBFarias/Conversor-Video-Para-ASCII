@@ -23,6 +23,7 @@ if BASE_DIR not in sys.path:
 from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
+from src.core.pixel_art_converter import quantize_colors
 
 
 CHROMA_PRESETS = {
@@ -188,9 +189,10 @@ class GTKCalibrator:
             self.pixel_art_config = {
                 'pixel_size': self.config.getint('PixelArt', 'pixel_size', fallback=2),
                 'color_palette_size': self.config.getint('PixelArt', 'color_palette_size', fallback=256),
+                'use_fixed_palette': self.config.getboolean('PixelArt', 'use_fixed_palette', fallback=False),
             }
         except Exception:
-            self.pixel_art_config = {'pixel_size': 2, 'color_palette_size': 256}
+            self.pixel_art_config = {'pixel_size': 2, 'color_palette_size': 256, 'use_fixed_palette': False}
 
     def _init_capture(self):
         capture_source = self.video_path if self.is_video_file else 0
@@ -263,6 +265,8 @@ class GTKCalibrator:
 
         self.spin_pixel_size = self.builder.get_object("spin_pixel_size")
         self.spin_palette_size = self.builder.get_object("spin_palette_size")
+        self.chk_fixed_palette = self.builder.get_object("chk_fixed_palette")
+        self.combo_ramp_preset = self.builder.get_object("combo_ramp_preset")
 
         self.radio_ascii = self.builder.get_object("radio_ascii")
         self.radio_pixelart = self.builder.get_object("radio_pixelart")
@@ -403,6 +407,8 @@ class GTKCalibrator:
             self.spin_pixel_size.set_value(self.pixel_art_config['pixel_size'])
         if self.spin_palette_size:
             self.spin_palette_size.set_value(self.pixel_art_config['color_palette_size'])
+        if self.chk_fixed_palette:
+            self.chk_fixed_palette.set_active(self.pixel_art_config.get('use_fixed_palette', False))
 
         if self.combo_render_mode:
             self.combo_render_mode.set_active(0)
@@ -417,13 +423,13 @@ class GTKCalibrator:
         self._block_signals = False
 
     def _update_mode_visibility(self):
-        if self.frame_ascii_options and self.frame_pixelart_options:
+        if self.box_ascii_options and self.box_pixelart_options:
             if self.conversion_mode == MODE_ASCII:
-                self.frame_ascii_options.set_visible(True)
-                self.frame_pixelart_options.set_visible(False)
+                self.box_ascii_options.set_visible(True)
+                self.box_pixelart_options.set_visible(False)
             else:
-                self.frame_ascii_options.set_visible(False)
-                self.frame_pixelart_options.set_visible(True)
+                self.box_ascii_options.set_visible(False)
+                self.box_pixelart_options.set_visible(True)
 
     def _set_frame_to_image(self, image_widget, aspect_frame, frame):
         if frame is None or frame.size == 0:
@@ -598,6 +604,42 @@ class GTKCalibrator:
 
         return ascii_image
 
+    def _render_pixelart_to_image(self, resized_color, resized_mask, frame_h, frame_w) -> np.ndarray:
+        pixel_size = self.pixel_art_config.get('pixel_size', 2)
+        n_colors = self.pixel_art_config.get('color_palette_size', 16)
+        use_fixed = self.pixel_art_config.get('use_fixed_palette', False)
+
+        height, width = resized_color.shape[:2]
+
+        try:
+            quantized = quantize_colors(resized_color, n_colors, use_fixed_palette=use_fixed)
+        except Exception:
+            quantized = resized_color
+
+        block_w = max(1, frame_w // width)
+        block_h = max(1, frame_h // height)
+
+        pixel_image = np.zeros((frame_h, frame_w, 3), dtype=np.uint8)
+
+        for y in range(height):
+            for x in range(width):
+                if resized_mask[y, x] > 127:
+                    if self.render_mode == RENDER_MODE_USER:
+                        continue
+                else:
+                    if self.render_mode == RENDER_MODE_BACKGROUND:
+                        continue
+
+                b, g, r = quantized[y, x]
+                y1 = y * block_h
+                y2 = min((y + 1) * block_h, frame_h)
+                x1 = x * block_w
+                x2 = min((x + 1) * block_w, frame_w)
+
+                pixel_image[y1:y2, x1:x2] = [int(b), int(g), int(r)]
+
+        return pixel_image
+
     def _set_status(self, text: str):
         if self.lbl_status:
             prefix = ""
@@ -659,8 +701,12 @@ class GTKCalibrator:
             angle = (angle + 180) % 180
             magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
-            ascii_image = self._render_ascii_to_image(resized_gray, resized_color, resized_mask, magnitude_norm, angle, frame_h, frame_w)
-            self._set_frame_to_image(self.image_ascii, self.aspect_ascii, ascii_image)
+            if self.conversion_mode == MODE_PIXELART:
+                result_image = self._render_pixelart_to_image(resized_color, resized_mask, frame_h, frame_w)
+            else:
+                result_image = self._render_ascii_to_image(resized_gray, resized_color, resized_mask, magnitude_norm, angle, frame_h, frame_w)
+
+            self._set_frame_to_image(self.image_ascii, self.aspect_ascii, result_image)
 
             self._cached_ascii_data = (resized_gray, resized_color, resized_mask, magnitude_norm, angle)
 
@@ -822,6 +868,17 @@ class GTKCalibrator:
             self.pixel_art_config['pixel_size'] = int(self.spin_pixel_size.get_value())
         if self.spin_palette_size:
             self.pixel_art_config['color_palette_size'] = int(self.spin_palette_size.get_value())
+        if self.chk_fixed_palette:
+            self.pixel_art_config['use_fixed_palette'] = self.chk_fixed_palette.get_active()
+
+    def on_ramp_preset_changed(self, widget):
+        if self._block_signals:
+            return
+
+        preset_id = widget.get_active_id()
+        if preset_id and preset_id in LUMINANCE_PRESETS:
+            self.converter_config['luminance_ramp'] = LUMINANCE_PRESETS[preset_id]
+            self._set_status(f"Rampa: {preset_id}")
 
     def on_mode_toggled(self, widget):
         if self._block_signals:
@@ -929,11 +986,14 @@ class GTKCalibrator:
         self.config.set('Conversor', 'sobel_threshold', str(int(self.scale_sobel.get_value())))
         self.config.set('Conversor', 'sharpen_amount', str(self.scale_sharpen.get_value()))
         self.config.set('Conversor', 'sharpen_enabled', str(self.chk_sharpen.get_active()).lower())
+        self.config.set('Conversor', 'luminance_ramp', self.converter_config.get('luminance_ramp', LUMINANCE_RAMP_DEFAULT))
 
         if self.spin_pixel_size:
             self.config.set('PixelArt', 'pixel_size', str(int(self.spin_pixel_size.get_value())))
         if self.spin_palette_size:
             self.config.set('PixelArt', 'color_palette_size', str(int(self.spin_palette_size.get_value())))
+        if self.chk_fixed_palette:
+            self.config.set('PixelArt', 'use_fixed_palette', str(self.chk_fixed_palette.get_active()).lower())
 
         self.config.set('Mode', 'conversion_mode', self.conversion_mode)
 

@@ -106,8 +106,8 @@ class AspectRatioPlayerWindow(Gtk.Window):
             None    # User data
         )
         
-        # Update image
-        self.image.set_from_pixbuf(pixbuf)
+        # Update image (copy() evita que GC colete dados antes do render)
+        self.image.set_from_pixbuf(pixbuf.copy())
     
     def process_events(self):
         """Process pending GTK events (for video playback)"""
