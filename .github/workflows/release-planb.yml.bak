@@ -1,0 +1,44 @@
+# PLANO B: Gerar ícones fora do container Flatpak
+
+  prepare-icons:
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Generate icons
+        run: |
+          chmod +x packaging/prepare-icons.sh
+          ./packaging/prepare-icons.sh
+
+      - name: Upload icons artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-icons
+          path: assets/logo-*.png
+          if-no-files-found: error
+
+  build-flatpak:
+    needs: [validate, prepare-icons]  # ← Adicionar prepare-icons
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-45
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download icons artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-icons
+          path: assets/
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        # ... resto igual
