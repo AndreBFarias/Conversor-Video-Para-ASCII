@@ -20,7 +20,7 @@ modules:
       - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}" --prefix=${FLATPAK_DEST} numpy
     sources:
       - type: file
-        url: https://files.pythonhosted.org/packages/ea/d9/6f3b063d8b2d4168c033a450943ded891bed2d54e6755e35e5835d63f4f6931d5/numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        url: https://files.pythonhosted.org/packages/3a/d0/edc009c27b406c4f9cbc79274d6e46d634d139075492ad055e3d68445925/numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
         sha256: 666dbfb6ec68962c033a450943ded891bed2d54e6755e35e5835d63f4f6931d5
 
   - name: python3-opencv
@@ -29,8 +29,8 @@ modules:
       - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}" --prefix=${FLATPAK_DEST} opencv-python-headless
     sources:
       - type: file
-        url: https://files.pythonhosted.org/packages/7e/9e/3b0cf6d2eeafcbac9bd0d7db823c2ba7d3de6f7a45c6939b3cb8df1f0c39/opencv_python_headless-4.10.0.84-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-        sha256: 062f0be060b05a9a001c4ddd2cbdb50e4a8c1b567a4eda7610d6e9864fe38f48
+        url: https://files.pythonhosted.org/packages/d1/09/248f86a404567303cdf120e4a301f389b68e3b18e5c0cc428de327da609c/opencv_python_headless-4.10.0.84-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        sha256: 377d08a7e48a1405b5e84afcbe4798464ce7ee17081c1c23619c8b398ff18295
 
   - name: extase-em-4r73
     buildsystem: simple
