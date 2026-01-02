@@ -992,6 +992,7 @@ class GTKCalibrator:
             self.cap.release()
 
     def run(self):
+        self.window.maximize()
         self.window.show_all()
         self._update_mode_visibility()
 
