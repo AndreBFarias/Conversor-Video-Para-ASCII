@@ -71,12 +71,6 @@
     <signal name="destroy" handler="on_window_destroy"/>
     <signal name="key-press-event" handler="on_key_press"/>
     <child>
-      <object class="GtkPaned" id="main_paned">
-        <property name="visible">True</property>
-        <property name="orientation">horizontal</property>
-        <property name="wide-handle">True</property>
-        <property name="position">750</property>
-        <child>
           <object class="GtkBox" id="main_box">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
@@ -449,68 +443,6 @@
         </child>
 
           </object>
-          <packing><property name="resize">True</property><property name="shrink">False</property></packing>
-        </child>
-
-        <!-- PAINEL DIREITO: TERMINAL VTE -->
-        <child>
-          <object class="GtkBox" id="terminal_container">
-            <property name="visible">True</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">0</property>
-            <!-- Header do Terminal -->
-            <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="spacing">4</property>
-                <property name="margin-start">4</property>
-                <property name="margin-end">4</property>
-                <property name="margin-top">2</property>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="label">TERMINAL ASCII</property>
-                    <property name="hexpand">True</property>
-                    <property name="xalign">0</property>
-                    <attributes><attribute name="weight" value="bold"/></attributes>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="btn_terminal_restart">
-                    <property name="visible">True</property>
-                    <property name="tooltip-text">Reiniciar preview</property>
-                    <signal name="clicked" handler="on_terminal_restart_clicked"/>
-                    <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">view-refresh-symbolic</property></object></child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkToggleButton" id="btn_terminal_toggle">
-                    <property name="visible">True</property>
-                    <property name="active">True</property>
-                    <property name="tooltip-text">Mostrar/Ocultar terminal</property>
-                    <signal name="toggled" handler="on_terminal_toggle"/>
-                    <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">utilities-terminal-symbolic</property></object></child>
-                  </object>
-                </child>
-              </object>
-              <packing><property name="expand">False</property></packing>
-            </child>
-            <!-- Terminal VTE Scrolled -->
-            <child>
-              <object class="GtkScrolledWindow" id="terminal_scrolled">
-                <property name="visible">True</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
-                <property name="shadow-type">etched-in</property>
-                <!-- VTE sera inserido via Python -->
-              </object>
-              <packing><property name="expand">True</property><property name="fill">True</property></packing>
-            </child>
-          </object>
-          <packing><property name="resize">True</property><property name="shrink">True</property></packing>
-        </child>
-
-      </object>
     </child>
   </object>
 </interface>

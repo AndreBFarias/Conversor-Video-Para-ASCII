@@ -3,8 +3,7 @@
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-gi.require_version('Vte', '2.91')
-from gi.repository import Gtk, GdkPixbuf, Gdk, GLib, Vte
+from gi.repository import Gtk, GdkPixbuf, Gdk, GLib
 
 import cv2
 import numpy as np
@@ -78,12 +77,6 @@ class GTKCalibrator:
         self._frame_counter = 0
         self._cached_ascii_data = None
         self._last_click_time = 0.0
-
-        self.terminal = None
-        self.terminal_scrolled = None
-        self.terminal_container = None
-        self.main_paned = None
-        self._terminal_visible = True
 
         self._load_config()
         self._init_capture()
@@ -280,80 +273,6 @@ class GTKCalibrator:
         if self.event_ascii:
             self.event_ascii.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
             self.event_ascii.connect("button-press-event", self._on_ascii_button_press)
-
-        self.main_paned = self.builder.get_object("main_paned")
-        self.terminal_scrolled = self.builder.get_object("terminal_scrolled")
-        self.terminal_container = self.builder.get_object("terminal_container")
-
-        self._init_terminal()
-
-    def _init_terminal(self):
-        if not self.terminal_scrolled:
-            return
-
-        self.terminal = Vte.Terminal()
-        self.terminal.set_scroll_on_output(True)
-        self.terminal.set_scroll_on_keystroke(True)
-        self.terminal.set_scrollback_lines(1000)
-
-        self.terminal.set_color_background(Gdk.RGBA(0.1, 0.1, 0.1, 1.0))
-        self.terminal.set_color_foreground(Gdk.RGBA(0.9, 0.9, 0.9, 1.0))
-
-        font_desc = self.terminal.get_font()
-        if font_desc:
-            font_desc.set_size(9 * 1024)
-            self.terminal.set_font(font_desc)
-
-        self.terminal_scrolled.add(self.terminal)
-        self.terminal.show()
-
-        self._start_terminal_preview()
-
-    def _start_terminal_preview(self):
-        if not self.terminal:
-            return
-
-        realtime_script = os.path.join(BASE_DIR, "src", "core", "realtime_ascii.py")
-        python_exec = sys.executable
-
-        cmd = [python_exec, realtime_script, "--config", self.config_path]
-        if self.video_path:
-            cmd.extend(["--video", self.video_path])
-
-        try:
-            self.terminal.spawn_async(
-                Vte.PtyFlags.DEFAULT,
-                BASE_DIR,
-                cmd,
-                None,
-                GLib.SpawnFlags.DEFAULT,
-                None, None,
-                -1,
-                None,
-                None
-            )
-        except Exception as e:
-            self._set_status(f"Erro VTE: {e}")
-
-    def _restart_terminal_preview(self):
-        if self.terminal:
-            self.terminal.reset(True, True)
-            self._start_terminal_preview()
-
-    def on_terminal_restart_clicked(self, widget):
-        self._restart_terminal_preview()
-
-    def on_terminal_toggle(self, widget):
-        if not self.terminal_container or not self.main_paned:
-            return
-
-        self._terminal_visible = widget.get_active()
-
-        if self._terminal_visible:
-            self.terminal_container.show()
-            self.main_paned.set_position(self.main_paned.get_allocated_width() * 2 // 3)
-        else:
-            self.terminal_container.hide()
 
     def _on_ascii_button_press(self, widget, event):
         if event.button == 1:
@@ -1069,12 +988,6 @@ class GTKCalibrator:
         if self.is_recording_ascii and len(self.ascii_frames) > 0:
             self._stop_ascii_recording()
 
-        if self.terminal:
-            try:
-                self.terminal.feed_child([3])
-            except Exception:
-                pass
-
         if self.cap:
             self.cap.release()
 
@@ -1082,19 +995,9 @@ class GTKCalibrator:
         self.window.show_all()
         self._update_mode_visibility()
 
-        if self.main_paned:
-            GLib.idle_add(self._set_initial_paned_position)
-
         GLib.timeout_add(50, self._update_frame)
 
         Gtk.main()
-
-    def _set_initial_paned_position(self):
-        if self.main_paned:
-            total_width = self.main_paned.get_allocated_width()
-            if total_width > 100:
-                self.main_paned.set_position(int(total_width * 0.6))
-        return False
 
 
 def main():
