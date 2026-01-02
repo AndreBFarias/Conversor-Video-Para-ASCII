@@ -278,7 +278,10 @@ class GTKCalibrator:
         if event.button == 1:
             current_time = time.time()
             if current_time - self._last_click_time < 0.4:
-                self._open_terminal_preview()
+                if self.is_video_file:
+                    self._open_terminal_preview()
+                else:
+                    self._set_status("Preview indisponivel: webcam em uso")
                 self._last_click_time = 0.0
                 return True
             self._last_click_time = current_time
@@ -872,7 +875,10 @@ class GTKCalibrator:
             self._set_status(f"Luminancia: {LUMINANCE_RAMPS[preset_id]['name']}")
 
     def on_preview_terminal_clicked(self, widget):
-        self._open_terminal_preview()
+        if self.is_video_file:
+            self._open_terminal_preview()
+        else:
+            self._set_status("Preview indisponivel: webcam em uso")
 
     def on_preset_studio_clicked(self, widget):
         self._set_hsv_values(CHROMA_PRESETS['studio'])
@@ -976,7 +982,10 @@ class GTKCalibrator:
             return True
 
         if keyname == 't':
-            self._open_terminal_preview()
+            if self.is_video_file:
+                self._open_terminal_preview()
+            else:
+                self._set_status("Preview indisponivel: webcam em uso")
             return True
 
         return False
