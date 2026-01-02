@@ -52,5 +52,10 @@ Thumbs.db
 *.swo
 *~
 
+# Icones gerados automaticamente
+assets/logo-64.png
+assets/logo-128.png
+assets/logo-512.png
+
 # Logs de execucao
 *.log
