@@ -1,0 +1,45 @@
+#!/bin/bash
+# Pre-commit hook agregador
+# Executa todos os hooks de validacao antes do commit
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "========================================"
+echo "       PRE-COMMIT VALIDATION"
+echo "========================================"
+echo ""
+
+FAILED=0
+
+echo "[1/3] Verificando sintaxe..."
+if ! "$SCRIPT_DIR/check_syntax.sh"; then
+    FAILED=1
+fi
+echo ""
+
+echo "[2/3] Verificando imports..."
+if ! "$SCRIPT_DIR/check_imports.sh"; then
+    FAILED=1
+fi
+echo ""
+
+echo "[3/3] Verificando anonimato..."
+if ! "$SCRIPT_DIR/check_anonymity.sh"; then
+    FAILED=1
+fi
+echo ""
+
+echo "========================================"
+if [ $FAILED -eq 0 ]; then
+    echo "       VALIDACAO: PASSOU"
+    echo "========================================"
+    exit 0
+else
+    echo "       VALIDACAO: FALHOU"
+    echo "========================================"
+    echo ""
+    echo "Corrija os erros acima antes de commitar."
+    exit 1
+fi
