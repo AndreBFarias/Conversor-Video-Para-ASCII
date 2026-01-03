@@ -21,11 +21,16 @@
 Conversor de videos e imagens para arte ASCII colorida com suporte a chroma key (fundo verde), presets de qualidade, modo pixel art e player integrado com terminal VTE.
 
 ---
-
+### Interface
 <div align="center">
 <img src="assets/background.png" width="700" alt="Interface do Extase em 4R73">
 </div>
 
+
+---
+
+
+### Calibrador
 <div align="center">
 <img src="assets/calibrator.png" width="700" alt="Calibrador Chroma Key">
 </div>
