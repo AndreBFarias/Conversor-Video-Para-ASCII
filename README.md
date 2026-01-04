@@ -109,6 +109,3 @@ Conversor-Video-Para-ASCII/
 
 GPLv3 - Veja [LICENSE](LICENSE) para detalhes.
 
-### Creditos
-
-- **AndreBFarias**: Criador Original
