@@ -229,9 +229,8 @@ class GTKCalibrator:
         self.aspect_chroma = self.builder.get_object("aspect_chroma")
         self.aspect_ascii = self.builder.get_object("aspect_ascii")
 
-        for aspect in [self.aspect_original, self.aspect_chroma, self.aspect_ascii]:
-            if aspect:
-                aspect.set_size_request(200, 150)
+        if self.aspect_ascii:
+            self.aspect_ascii.set_size_request(500, 350)
 
         self.scale_h_min = self.builder.get_object("scale_h_min")
         self.scale_h_max = self.builder.get_object("scale_h_max")
@@ -1006,7 +1005,14 @@ class GTKCalibrator:
 
         GLib.timeout_add(50, self._update_frame)
 
+        if self.is_video_file:
+            GLib.timeout_add(500, self._auto_open_terminal)
+
         Gtk.main()
+
+    def _auto_open_terminal(self) -> bool:
+        self._open_terminal_preview()
+        return False
 
 
 def main():

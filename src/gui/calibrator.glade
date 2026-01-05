@@ -284,7 +284,7 @@
           <object class="GtkBox" id="displays_box">
             <property name="visible">True</property>
             <property name="spacing">8</property>
-            <property name="homogeneous">True</property>
+            <property name="homogeneous">False</property>
             <property name="vexpand">True</property>
             <property name="hexpand">True</property>
             <property name="valign">fill</property>
@@ -292,16 +292,18 @@
             <property name="margin-start">4</property>
             <property name="margin-end">4</property>
 
+            <!-- ESQUERDA: Original -->
             <child>
               <object class="GtkBox" id="video_box_1">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">2</property>
-                <property name="hexpand">True</property>
+                <property name="hexpand">False</property>
                 <property name="vexpand">True</property>
+                <property name="width-request">280</property>
                 <style><class name="video-frame"/></style>
                 <child>
-                  <object class="GtkLabel"><property name="visible">True</property><property name="label">1. ORIGINAL</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">ORIGINAL</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.0"/></attributes></object>
                   <packing><property name="expand">False</property></packing>
                 </child>
                 <child>
@@ -317,37 +319,10 @@
                   <packing><property name="expand">True</property><property name="fill">True</property></packing>
                 </child>
               </object>
-              <packing><property name="expand">True</property><property name="fill">True</property></packing>
+              <packing><property name="expand">False</property><property name="fill">True</property></packing>
             </child>
 
-            <child>
-              <object class="GtkBox" id="video_box_2">
-                <property name="visible">True</property>
-                <property name="orientation">vertical</property>
-                <property name="spacing">2</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
-                <style><class name="video-frame"/></style>
-                <child>
-                  <object class="GtkLabel"><property name="visible">True</property><property name="label">2. MÁSCARA</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
-                  <packing><property name="expand">False</property></packing>
-                </child>
-                <child>
-                  <object class="GtkAspectFrame" id="aspect_chroma">
-                    <property name="visible">True</property>
-                    <property name="ratio">1.333</property>
-                    <property name="obey-child">False</property>
-                    <property name="shadow-type">none</property>
-                    <property name="hexpand">True</property>
-                    <property name="vexpand">True</property>
-                    <child><object class="GtkImage" id="image_chroma"><property name="visible">True</property><property name="hexpand">True</property><property name="vexpand">True</property></object></child>
-                  </object>
-                  <packing><property name="expand">True</property><property name="fill">True</property></packing>
-                </child>
-              </object>
-              <packing><property name="expand">True</property><property name="fill">True</property></packing>
-            </child>
-
+            <!-- CENTRO: Resultado (maior) -->
             <child>
               <object class="GtkBox" id="video_box_3">
                 <property name="visible">True</property>
@@ -357,7 +332,7 @@
                 <property name="vexpand">True</property>
                 <style><class name="video-frame"/></style>
                 <child>
-                  <object class="GtkLabel"><property name="visible">True</property><property name="label">3. RESULTADO</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">RESULTADO</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.1"/></attributes></object>
                   <packing><property name="expand">False</property></packing>
                 </child>
                 <child>
@@ -382,6 +357,36 @@
                 </child>
               </object>
               <packing><property name="expand">True</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- DIREITA: Mascara -->
+            <child>
+              <object class="GtkBox" id="video_box_2">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">2</property>
+                <property name="hexpand">False</property>
+                <property name="vexpand">True</property>
+                <property name="width-request">280</property>
+                <style><class name="video-frame"/></style>
+                <child>
+                  <object class="GtkLabel"><property name="visible">True</property><property name="label">MÁSCARA</property><property name="halign">center</property><attributes><attribute name="weight" value="bold"/><attribute name="scale" value="1.0"/></attributes></object>
+                  <packing><property name="expand">False</property></packing>
+                </child>
+                <child>
+                  <object class="GtkAspectFrame" id="aspect_chroma">
+                    <property name="visible">True</property>
+                    <property name="ratio">1.333</property>
+                    <property name="obey-child">False</property>
+                    <property name="shadow-type">none</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <child><object class="GtkImage" id="image_chroma"><property name="visible">True</property><property name="hexpand">True</property><property name="vexpand">True</property></object></child>
+                  </object>
+                  <packing><property name="expand">True</property><property name="fill">True</property></packing>
+                </child>
+              </object>
+              <packing><property name="expand">False</property><property name="fill">True</property></packing>
             </child>
           </object>
           <packing><property name="expand">True</property><property name="fill">True</property></packing>
