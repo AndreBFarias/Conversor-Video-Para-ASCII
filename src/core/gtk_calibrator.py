@@ -273,6 +273,10 @@ class GTKCalibrator:
             self.event_ascii.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
             self.event_ascii.connect("button-press-event", self._on_ascii_button_press)
 
+        self.btn_save_config = self.builder.get_object("btn_save_config")
+        if self.btn_save_config:
+            self.btn_save_config.connect("clicked", self.on_save_config_clicked)
+
     def _on_ascii_button_press(self, widget, event):
         if event.button == 1:
             current_time = time.time()
