@@ -901,27 +901,17 @@ class GTKCalibrator:
         except Exception:
             quantized = resized_color
 
-        block_w = max(1, frame_w // width)
-        block_h = max(1, frame_h // height)
+        if self.render_mode == RENDER_MODE_USER:
+            mask_filter = resized_mask <= 127
+        elif self.render_mode == RENDER_MODE_BACKGROUND:
+            mask_filter = resized_mask > 127
+        else:
+            mask_filter = np.ones((height, width), dtype=bool)
 
-        pixel_image = np.zeros((frame_h, frame_w, 3), dtype=np.uint8)
+        filtered = quantized.copy()
+        filtered[~mask_filter] = 0
 
-        for y in range(height):
-            for x in range(width):
-                if resized_mask[y, x] > 127:
-                    if self.render_mode == RENDER_MODE_USER:
-                        continue
-                else:
-                    if self.render_mode == RENDER_MODE_BACKGROUND:
-                        continue
-
-                b, g, r = quantized[y, x]
-                y1 = y * block_h
-                y2 = min((y + 1) * block_h, frame_h)
-                x1 = x * block_w
-                x2 = min((x + 1) * block_w, frame_w)
-
-                pixel_image[y1:y2, x1:x2] = [int(b), int(g), int(r)]
+        pixel_image = cv2.resize(filtered, (frame_w, frame_h), interpolation=cv2.INTER_NEAREST)
 
         return pixel_image
 

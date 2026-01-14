@@ -30,18 +30,28 @@ def quantize_colors(image, n_colors=16, use_fixed_palette=False):
     else:
         h, w, c = image.shape
         pixels = image.reshape((-1, 3)).astype(np.float32)
-        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
-        kmeans.fit(pixels)
+
+        max_samples = 1000
+        if len(pixels) > max_samples:
+            indices = np.random.choice(len(pixels), max_samples, replace=False)
+            sample_pixels = pixels[indices]
+        else:
+            sample_pixels = pixels
+
+        n_colors = min(n_colors, len(sample_pixels))
+        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=1, max_iter=100)
+        kmeans.fit(sample_pixels)
         palette = kmeans.cluster_centers_.astype(np.uint8)
 
     h, w, c = image.shape
-    pixels = image.reshape((-1, 3))
-    quantized = np.zeros_like(pixels)
+    pixels = image.reshape((-1, 3)).astype(np.float32)
 
-    for i, pixel in enumerate(pixels):
-        distances = np.linalg.norm(palette - pixel, axis=1)
-        nearest_color_idx = np.argmin(distances)
-        quantized[i] = palette[nearest_color_idx]
+    distances = np.linalg.norm(
+        pixels[:, np.newaxis, :] - palette[np.newaxis, :, :],
+        axis=2
+    )
+    nearest_indices = np.argmin(distances, axis=1)
+    quantized = palette[nearest_indices]
 
     return quantized.reshape((h, w, c))
 

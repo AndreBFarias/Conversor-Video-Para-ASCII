@@ -154,17 +154,25 @@
             <child>
               <object class="GtkBox" id="island_recording">
                 <property name="visible">True</property>
-                <property name="spacing">2</property>
+                <property name="spacing">4</property>
                 <property name="halign">fill</property>
                 <style><class name="island-recording"/></style>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Rec</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
                 <child>
-                  <object class="GtkToggleButton" id="btn_record_mp4"><property name="visible">True</property><property name="tooltip-text">Gravar MP4</property><signal name="toggled" handler="on_record_mp4_toggled"/>
+                  <object class="GtkToggleButton" id="btn_record_mp4">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Gravar MP4</property>
+                    <property name="width-request">36</property>
+                    <signal name="toggled" handler="on_record_mp4_toggled"/>
                     <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">media-record-symbolic</property></object></child>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkToggleButton" id="btn_record_ascii"><property name="visible">True</property><property name="tooltip-text">Gravar TXT</property><signal name="toggled" handler="on_record_ascii_toggled"/>
+                  <object class="GtkToggleButton" id="btn_record_ascii">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Gravar TXT</property>
+                    <property name="width-request">36</property>
+                    <signal name="toggled" handler="on_record_ascii_toggled"/>
                     <child><object class="GtkImage"><property name="visible">True</property><property name="icon-name">document-save-symbolic</property></object></child>
                   </object>
                 </child>
@@ -482,9 +490,8 @@
               <object class="GtkBox" id="island_gpu">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">4</property>
-                <property name="valign">fill</property>
-                <property name="vexpand">True</property>
+                <property name="spacing">2</property>
+                <property name="valign">start</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">GPU</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
@@ -518,9 +525,8 @@
               <object class="GtkBox" id="island_matrix">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">3</property>
-                <property name="valign">fill</property>
-                <property name="vexpand">True</property>
+                <property name="spacing">2</property>
+                <property name="valign">start</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">Matrix Rain</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
