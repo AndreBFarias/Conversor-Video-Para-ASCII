@@ -127,31 +127,27 @@
             <child>
               <object class="GtkBox" id="island_presets">
                 <property name="visible">True</property>
-                <property name="spacing">4</property>
-                <property name="hexpand">True</property>
-                <property name="halign">fill</property>
+                <property name="spacing">2</property>
+                <property name="halign">start</property>
                 <style><class name="island-presets"/></style>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Presets</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-                <child><object class="GtkButton" id="btn_preset_studio"><property name="label">Studio</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde de estudio</property><signal name="clicked" handler="on_preset_studio_clicked"/></object></child>
-                <child><object class="GtkButton" id="btn_preset_natural"><property name="label">Natural</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde natural</property><signal name="clicked" handler="on_preset_natural_clicked"/></object></child>
-                <child><object class="GtkButton" id="btn_preset_bright"><property name="label">Bright</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">Verde vibrante</property><signal name="clicked" handler="on_preset_bright_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_preset_studio"><property name="label">Studio</property><property name="visible">True</property><property name="tooltip-text">Verde de estudio</property><signal name="clicked" handler="on_preset_studio_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_preset_natural"><property name="label">Natural</property><property name="visible">True</property><property name="tooltip-text">Verde natural</property><signal name="clicked" handler="on_preset_natural_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_preset_bright"><property name="label">Bright</property><property name="visible">True</property><property name="tooltip-text">Verde vibrante</property><signal name="clicked" handler="on_preset_bright_clicked"/></object></child>
               </object>
-              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
 
             <!-- ILHA: Ações -->
             <child>
               <object class="GtkBox" id="island_actions">
                 <property name="visible">True</property>
-                <property name="spacing">4</property>
-                <property name="hexpand">True</property>
-                <property name="halign">fill</property>
+                <property name="spacing">2</property>
+                <property name="halign">start</property>
                 <style><class name="island-actions"/></style>
                 <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Ações</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
-                <child><object class="GtkButton" id="btn_auto_detect"><property name="label">Auto</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">[A]</property><signal name="clicked" handler="on_auto_detect_clicked"/></object></child>
-                <child><object class="GtkButton" id="btn_reset"><property name="label">Reset</property><property name="visible">True</property><property name="hexpand">True</property><property name="tooltip-text">[R]</property><signal name="clicked" handler="on_reset_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_auto_detect"><property name="label">Auto</property><property name="visible">True</property><property name="tooltip-text">[A]</property><signal name="clicked" handler="on_auto_detect_clicked"/></object></child>
+                <child><object class="GtkButton" id="btn_reset"><property name="label">Reset</property><property name="visible">True</property><property name="tooltip-text">[R]</property><signal name="clicked" handler="on_reset_clicked"/></object></child>
               </object>
-              <packing><property name="expand">True</property><property name="fill">True</property></packing>
             </child>
 
             <!-- ILHA: Gravacao -->
@@ -487,7 +483,8 @@
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">4</property>
-                <property name="valign">center</property>
+                <property name="valign">fill</property>
+                <property name="vexpand">True</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">GPU</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
@@ -522,7 +519,8 @@
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">3</property>
-                <property name="valign">center</property>
+                <property name="valign">fill</property>
+                <property name="vexpand">True</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">Matrix Rain</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
