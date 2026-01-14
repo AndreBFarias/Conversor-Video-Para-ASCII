@@ -36,15 +36,16 @@ modules:
     buildsystem: simple
     build-commands:
       - mkdir -p /app/share/extase-em-4r73
+      - mkdir -p /app/share/extase-em-4r73/data_input
+      - mkdir -p /app/share/extase-em-4r73/data_output
+      - mkdir -p /app/share/extase-em-4r73/logs
+      - mkdir -p /app/bin
       - cp -r src /app/share/extase-em-4r73/
       - cp main.py /app/share/extase-em-4r73/
       - cp config.ini /app/share/extase-em-4r73/
       - cp -r assets /app/share/extase-em-4r73/
-      - mkdir -p /app/share/extase-em-4r73/data_input
-      - mkdir -p /app/share/extase-em-4r73/data_output
-      - mkdir -p /app/share/extase-em-4r73/logs
-      - install -Dm644 assets/logo-64.png /app/share/icons/hicolor/64x64/apps/com.github.andrebfarias.extase-em-4r73.png
-      - install -Dm644 assets/logo-128.png /app/share/icons/hicolor/128x128/apps/com.github.andrebfarias.extase-em-4r73.png
+      - install -Dm644 /app/share/extase-em-4r73/assets/logo-64.png /app/share/icons/hicolor/64x64/apps/com.github.andrebfarias.extase-em-4r73.png
+      - install -Dm644 /app/share/extase-em-4r73/assets/logo-128.png /app/share/icons/hicolor/128x128/apps/com.github.andrebfarias.extase-em-4r73.png
       - install -Dm644 packaging/com.github.andrebfarias.extase-em-4r73.desktop /app/share/applications/com.github.andrebfarias.extase-em-4r73.desktop
       - install -Dm644 packaging/com.github.andrebfarias.extase-em-4r73.metainfo.xml /app/share/metainfo/com.github.andrebfarias.extase-em-4r73.metainfo.xml
       - |
