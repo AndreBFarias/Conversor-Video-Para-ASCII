@@ -53,10 +53,7 @@ Thumbs.db
 *.swo
 *~
 
-# Icones gerados automaticamente
-assets/logo-64.png
-assets/logo-128.png
-assets/logo-512.png
+# Icones gerados automaticamente (mantidos no git para Flatpak)
 
 # Modelos ML (baixar via script)
 assets/models/*.tflite
