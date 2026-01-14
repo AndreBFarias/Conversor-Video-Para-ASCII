@@ -56,4 +56,4 @@ modules:
       - chmod +x /app/bin/extase-em-4r73
     sources:
       - type: dir
-        path: ..
+        path: ../
