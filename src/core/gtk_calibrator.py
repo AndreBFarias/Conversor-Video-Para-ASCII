@@ -37,6 +37,13 @@ except Exception as e:
     print(f"Matrix Rain nao disponivel: {e}")
 
 try:
+    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
+    POSTFX_AVAILABLE = True
+except Exception as e:
+    POSTFX_AVAILABLE = False
+    print(f"PostFX nao disponivel: {e}")
+
+try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
     AUTO_SEG_AVAILABLE = auto_seg_available()
 except Exception as e:
@@ -120,6 +127,10 @@ class GTKCalibrator:
         self.auto_seg_enabled = False
         self.auto_segmenter = None
 
+        self.postfx_enabled = False
+        self.postfx_processor = None
+        self.postfx_config = None
+
         self.terminal_font = None
         self.config_last_load = 0
 
@@ -161,6 +172,13 @@ class GTKCalibrator:
             border-radius: 15px;
             padding: 4px 8px;
             margin: 2px;
+        }
+        .island-fx {
+            border: 2px solid #7a5a3d;
+            border-radius: 15px;
+            padding: 4px 8px;
+            margin: 2px;
+            background-color: rgba(55, 40, 30, 0.3);
         }
         .island-hsv {
             border: 2px solid #5a3d7a;
@@ -415,6 +433,12 @@ class GTKCalibrator:
         self.combo_matrix_charset = self.builder.get_object("combo_matrix_charset")
         self.spin_matrix_particles = self.builder.get_object("spin_matrix_particles")
         self.scale_matrix_speed = self.builder.get_object("scale_matrix_speed")
+
+        self.chk_bloom = self.builder.get_object("chk_bloom")
+        self.chk_chromatic = self.builder.get_object("chk_chromatic")
+        self.chk_scanlines = self.builder.get_object("chk_scanlines")
+        self.chk_glitch = self.builder.get_object("chk_glitch")
+        self._init_postfx()
 
         self.event_ascii = self.builder.get_object("event_ascii")
         if self.event_ascii:
@@ -1012,6 +1036,9 @@ class GTKCalibrator:
 
             if self.matrix_enabled and self.matrix_rain_instance:
                 result_image = self._apply_matrix_rain(result_image, resized_mask)
+
+            if self.postfx_enabled and self.postfx_processor:
+                result_image = self.postfx_processor.process(result_image)
 
             self._set_frame_to_image(self.image_ascii, self.aspect_ascii, result_image)
 
@@ -1735,6 +1762,92 @@ class GTKCalibrator:
             traceback.print_exc()
             return image
 
+    def _init_postfx(self):
+        if not POSTFX_AVAILABLE:
+            if self.chk_bloom:
+                self.chk_bloom.set_sensitive(False)
+            if self.chk_chromatic:
+                self.chk_chromatic.set_sensitive(False)
+            if self.chk_scanlines:
+                self.chk_scanlines.set_sensitive(False)
+            if self.chk_glitch:
+                self.chk_glitch.set_sensitive(False)
+            return
+
+        if 'PostFX' in self.config:
+            bloom_enabled = self.config.getboolean('PostFX', 'bloom_enabled', fallback=False)
+            chromatic_enabled = self.config.getboolean('PostFX', 'chromatic_enabled', fallback=False)
+            scanlines_enabled = self.config.getboolean('PostFX', 'scanlines_enabled', fallback=False)
+            glitch_enabled = self.config.getboolean('PostFX', 'glitch_enabled', fallback=False)
+
+            if self.chk_bloom:
+                self.chk_bloom.set_active(bloom_enabled)
+            if self.chk_chromatic:
+                self.chk_chromatic.set_active(chromatic_enabled)
+            if self.chk_scanlines:
+                self.chk_scanlines.set_active(scanlines_enabled)
+            if self.chk_glitch:
+                self.chk_glitch.set_active(glitch_enabled)
+
+            self.postfx_enabled = any([bloom_enabled, chromatic_enabled, scanlines_enabled, glitch_enabled])
+
+            if self.postfx_enabled:
+                self.postfx_config = PostFXConfig(
+                    bloom_enabled=bloom_enabled,
+                    bloom_intensity=self.config.getfloat('PostFX', 'bloom_intensity', fallback=0.3),
+                    bloom_radius=self.config.getint('PostFX', 'bloom_radius', fallback=5),
+                    bloom_threshold=self.config.getint('PostFX', 'bloom_threshold', fallback=200),
+                    chromatic_enabled=chromatic_enabled,
+                    chromatic_shift=self.config.getint('PostFX', 'chromatic_shift', fallback=2),
+                    scanlines_enabled=scanlines_enabled,
+                    scanlines_intensity=self.config.getfloat('PostFX', 'scanlines_intensity', fallback=0.3),
+                    scanlines_spacing=self.config.getint('PostFX', 'scanlines_spacing', fallback=2),
+                    glitch_enabled=glitch_enabled,
+                    glitch_intensity=self.config.getfloat('PostFX', 'glitch_intensity', fallback=0.1),
+                    glitch_block_size=self.config.getint('PostFX', 'glitch_block_size', fallback=8)
+                )
+                self.postfx_processor = PostFXProcessor(self.postfx_config)
+
+    def on_postfx_changed(self, widget):
+        if self._block_signals:
+            return
+
+        bloom = self.chk_bloom.get_active() if self.chk_bloom else False
+        chromatic = self.chk_chromatic.get_active() if self.chk_chromatic else False
+        scanlines = self.chk_scanlines.get_active() if self.chk_scanlines else False
+        glitch = self.chk_glitch.get_active() if self.chk_glitch else False
+
+        self.postfx_enabled = any([bloom, chromatic, scanlines, glitch])
+
+        if self.postfx_enabled and POSTFX_AVAILABLE:
+            if self.postfx_config is None:
+                self.postfx_config = PostFXConfig()
+
+            self.postfx_config.bloom_enabled = bloom
+            self.postfx_config.chromatic_enabled = chromatic
+            self.postfx_config.scanlines_enabled = scanlines
+            self.postfx_config.glitch_enabled = glitch
+
+            if self.postfx_processor is None:
+                self.postfx_processor = PostFXProcessor(self.postfx_config)
+            else:
+                self.postfx_processor.config = self.postfx_config
+
+        effects = []
+        if bloom:
+            effects.append("Bloom")
+        if chromatic:
+            effects.append("Chrom")
+        if scanlines:
+            effects.append("Scan")
+        if glitch:
+            effects.append("Glitch")
+
+        if effects:
+            self._set_status(f"FX: {' | '.join(effects)}")
+        else:
+            self._set_status("FX: Desativado")
+
     def on_resolution_changed(self, widget):
         if self._block_signals:
             return
@@ -1844,6 +1957,17 @@ class GTKCalibrator:
         self.config.set('MatrixRain', 'char_set', self.matrix_charset)
         self.config.set('MatrixRain', 'num_particles', str(self.matrix_particles))
         self.config.set('MatrixRain', 'speed_multiplier', str(self.matrix_speed))
+
+        if not self.config.has_section('PostFX'):
+            self.config.add_section('PostFX')
+        bloom = self.chk_bloom.get_active() if self.chk_bloom else False
+        chromatic = self.chk_chromatic.get_active() if self.chk_chromatic else False
+        scanlines = self.chk_scanlines.get_active() if self.chk_scanlines else False
+        glitch = self.chk_glitch.get_active() if self.chk_glitch else False
+        self.config.set('PostFX', 'bloom_enabled', str(bloom).lower())
+        self.config.set('PostFX', 'chromatic_enabled', str(chromatic).lower())
+        self.config.set('PostFX', 'scanlines_enabled', str(scanlines).lower())
+        self.config.set('PostFX', 'glitch_enabled', str(glitch).lower())
 
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
