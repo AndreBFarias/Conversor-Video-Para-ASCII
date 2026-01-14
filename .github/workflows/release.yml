@@ -58,19 +58,21 @@ jobs:
   build-flatpak:
     needs: test
     runs-on: ubuntu-22.04
-    container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-45
-      options: --privileged
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install Flatpak dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y flatpak flatpak-builder
+        flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install --user -y flathub org.gnome.Platform//45 org.gnome.Sdk//45
+
     - name: Build Flatpak
-      uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-      with:
-        manifest-path: com.github.andrebfarias.extase-em-4r73.yml
-        bundle: extase-em-4r73.flatpak
-        cache-key: flatpak-builder-${{ github.sha }}
+      run: |
+        flatpak-builder --user --force-clean --repo=repo build-dir com.github.andrebfarias.extase-em-4r73.yml
+        flatpak build-bundle repo extase-em-4r73.flatpak com.github.andrebfarias.extase-em-4r73
 
     - name: Upload Flatpak artifact
       uses: actions/upload-artifact@v4
