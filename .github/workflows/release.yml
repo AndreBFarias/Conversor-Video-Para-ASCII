@@ -115,7 +115,8 @@ jobs:
         
         # Copy assets
         cp debian/extase-em-4r73.desktop AppDir/usr/share/applications/
-        cp src/assets/logo.png AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+        mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps/
+        cp assets/logo.png AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
         
         # Install app into AppDir
         python3 -m venv venv
