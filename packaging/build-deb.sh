@@ -82,6 +82,11 @@ fi
 
 cd "$INSTALL_DIR"
 
+# CUDA libs do DaVinci Resolve (se disponivel)
+if [ -d "/opt/resolve/libs" ]; then
+    export LD_LIBRARY_PATH="/opt/resolve/libs:$LD_LIBRARY_PATH"
+fi
+
 if [ ! -d "venv" ] || [ ! -f "venv/bin/python3" ]; then
     show_error "Ambiente virtual nao encontrado.\nExecutando configuracao inicial..."
 
