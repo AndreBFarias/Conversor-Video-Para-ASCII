@@ -68,7 +68,7 @@ jobs:
     - name: Build Flatpak
       uses: flatpak/flatpak-github-actions/flatpak-builder@v6
       with:
-        manifest-path: packaging/com.github.andrebfarias.extase-em-4r73.yml
+        manifest-path: com.github.andrebfarias.extase-em-4r73.yml
         bundle: extase-em-4r73.flatpak
         cache-key: flatpak-builder-${{ github.sha }}
 
