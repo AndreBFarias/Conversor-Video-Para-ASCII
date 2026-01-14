@@ -37,6 +37,7 @@ build/
 dist/
 *.egg-info/
 *.egg
+*.deb
 
 # IDE/Config
 .vscode/

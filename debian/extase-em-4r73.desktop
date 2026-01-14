@@ -2,11 +2,11 @@
 Version=1.1
 Name=Extase em 4R73
 Comment=Conversor de Videos e Imagens para Arte ASCII
-Exec=/opt/extase-em-4r73/venv/bin/python3 /opt/extase-em-4r73/main.py
+Exec=/usr/bin/extase-em-4r73
 Icon=extase-em-4r73
 Terminal=false
 Type=Application
-Categories=Video;AudioVideo;
+Categories=Video;AudioVideo;Graphics;
 StartupNotify=true
 StartupWMClass=extase-em-4r73
-Path=/opt/extase-em-4r73
+Keywords=ASCII;Video;Converter;Art;Chroma;

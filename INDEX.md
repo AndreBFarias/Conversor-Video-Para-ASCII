@@ -26,7 +26,7 @@ Este arquivo serve como guia de navegação rápida para a estrutura do projeto.
 - `main.py`: Ponto de entrada da aplicação.
 - `install.sh`: Script de instalação automatizada (Ubuntu/Debian).
 - `uninstall.sh`: Remove a aplicação e limpa configurações.
-- `scripts/build_deb.sh`: Gera o pacote instalável `.deb`.
+- `packaging/build-deb.sh`: Gera o pacote instalável `.deb`.
 
 ---
 *Para detalhes técnicos profundos sobre a arquitetura, consulte o [Índice Técnico](docs/INDEX.md).*

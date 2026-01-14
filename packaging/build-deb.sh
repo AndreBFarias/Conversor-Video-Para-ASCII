@@ -61,11 +61,45 @@ echo "[4/5] Instalando arquivo .desktop..."
 cp "${PROJECT_DIR}/debian/extase-em-4r73.desktop" "${DEB_ROOT}/usr/share/applications/${PACKAGE_NAME}.desktop"
 
 echo "[5/5] Criando wrapper script..."
-cat > "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}" << EOF
+cat > "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}" << 'WRAPPER_EOF'
 #!/bin/bash
-cd /opt/${PACKAGE_NAME}
-exec ./venv/bin/python3 main.py "\$@"
-EOF
+INSTALL_DIR="/opt/extase-em-4r73"
+LOG_FILE="/tmp/extase-em-4r73.log"
+
+show_error() {
+    echo "$1" | tee -a "$LOG_FILE"
+    if command -v zenity &> /dev/null; then
+        zenity --error --title="Extase em 4R73" --text="$1" 2>/dev/null &
+    elif command -v notify-send &> /dev/null; then
+        notify-send "Extase em 4R73" "$1" 2>/dev/null &
+    fi
+}
+
+if [ ! -d "$INSTALL_DIR" ]; then
+    show_error "Diretorio de instalacao nao encontrado: $INSTALL_DIR\nReinstale o pacote: sudo apt reinstall extase-em-4r73"
+    exit 1
+fi
+
+cd "$INSTALL_DIR"
+
+if [ ! -d "venv" ] || [ ! -f "venv/bin/python3" ]; then
+    show_error "Ambiente virtual nao encontrado.\nExecutando configuracao inicial..."
+
+    if [ -f "/var/lib/dpkg/info/extase-em-4r73.postinst" ]; then
+        pkexec /var/lib/dpkg/info/extase-em-4r73.postinst configure 2>> "$LOG_FILE"
+    else
+        show_error "Falha na configuracao. Reinstale: sudo apt reinstall extase-em-4r73"
+        exit 1
+    fi
+
+    if [ ! -d "venv" ]; then
+        show_error "Falha ao criar ambiente virtual. Verifique: $LOG_FILE"
+        exit 1
+    fi
+fi
+
+exec ./venv/bin/python3 main.py "$@" 2>&1 | tee -a "$LOG_FILE"
+WRAPPER_EOF
 chmod 755 "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}"
 
 echo "Construindo pacote .deb..."
