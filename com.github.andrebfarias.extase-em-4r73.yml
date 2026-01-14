@@ -1,0 +1,60 @@
+app-id: com.github.andrebfarias.extase-em-4r73
+runtime: org.gnome.Platform
+runtime-version: '45'
+sdk: org.gnome.Sdk
+command: extase-em-4r73
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=all
+  - --filesystem=home
+  - --filesystem=/tmp
+  - --talk-name=org.freedesktop.Notifications
+
+modules:
+  - name: python3-numpy
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}" --prefix=${FLATPAK_DEST} numpy
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/3a/d0/edc009c27b406c4f9cbc79274d6e46d634d139075492ad055e3d68445925/numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        sha256: 666dbfb6ec68962c033a450943ded891bed2d54e6755e35e5835d63f4f6931d5
+
+  - name: python3-opencv
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}" --prefix=${FLATPAK_DEST} opencv-python-headless
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/d1/09/248f86a404567303cdf120e4a301f389b68e3b18e5c0cc428de327da609c/opencv_python_headless-4.10.0.84-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        sha256: 377d08a7e48a1405b5e84afcbe4798464ce7ee17081c1c23619c8b398ff18295
+
+  - name: extase-em-4r73
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/share/extase-em-4r73
+      - mkdir -p /app/share/extase-em-4r73/data_input
+      - mkdir -p /app/share/extase-em-4r73/data_output
+      - mkdir -p /app/share/extase-em-4r73/logs
+      - mkdir -p /app/bin
+      - cp -r src /app/share/extase-em-4r73/
+      - cp main.py /app/share/extase-em-4r73/
+      - cp config.ini /app/share/extase-em-4r73/
+      - cp -r assets /app/share/extase-em-4r73/
+      - install -Dm644 assets/logo-64.png /app/share/icons/hicolor/64x64/apps/com.github.andrebfarias.extase-em-4r73.png
+      - install -Dm644 assets/logo-128.png /app/share/icons/hicolor/128x128/apps/com.github.andrebfarias.extase-em-4r73.png
+      - install -Dm644 packaging/com.github.andrebfarias.extase-em-4r73.desktop /app/share/applications/com.github.andrebfarias.extase-em-4r73.desktop
+      - install -Dm644 packaging/com.github.andrebfarias.extase-em-4r73.metainfo.xml /app/share/metainfo/com.github.andrebfarias.extase-em-4r73.metainfo.xml
+      - |
+        cat > /app/bin/extase-em-4r73 << 'EOF'
+        #!/bin/bash
+        cd /app/share/extase-em-4r73
+        exec python3 main.py "$@"
+        EOF
+      - chmod +x /app/bin/extase-em-4r73
+    sources:
+      - type: dir
+        path: .

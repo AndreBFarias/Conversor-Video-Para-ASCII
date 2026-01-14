@@ -121,9 +121,9 @@ class PlaybackActionsMixin:
             elif platform.system() == "Darwin":
                 subprocess.Popen(["open", abs_path])
             else:
-                result = subprocess.run(["xdg-open", abs_path], check=False, capture_output=True, text=True)
+                result = subprocess.run(["xdg-open", abs_path], check=False, capture_output=True, text=True, encoding='utf-8', errors='replace')
                 if result.returncode != 0:
-                    result_gvfs = subprocess.run(["gvfs-open", abs_path], check=False, capture_output=True, text=True)
+                    result_gvfs = subprocess.run(["gvfs-open", abs_path], check=False, capture_output=True, text=True, encoding='utf-8', errors='replace')
                     if result_gvfs.returncode != 0:
                         raise OSError("xdg-open e gvfs-open falharam.")
         except FileNotFoundError:

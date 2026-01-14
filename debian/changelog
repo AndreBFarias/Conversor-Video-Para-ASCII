@@ -1,0 +1,63 @@
+extase-em-4r73 (2.3.0) unstable; urgency=medium
+
+  * Sprint 15: Impacto Visual Real
+    - PostFX com valores visiveis (bloom, chromatic, glitch)
+    - Audio Reactive com modulacoes completas
+    - Motion Blur baseado em Optical Flow
+    - Style Transfer com presets intensificados
+
+  * Sprint 14: Polimento Final
+    - Suite pytest com 97% cobertura
+    - Manual do usuario (docs/USER_MANUAL.md)
+    - Otimizacoes de performance (downscale, frame skip)
+
+  * Sprints 7A-13: Features Avancadas
+    - Async CUDA Streams (+15-20% FPS)
+    - Matrix Rain (Particle System GPU)
+    - PostFX Cyberpunk (Bloom, Scanlines, Glitch)
+    - Style Transfer (DoG/XDoG presets)
+    - Optical Flow (interpolacao de movimento)
+    - Audio-Reactive (FFT em tempo real)
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Tue, 14 Jan 2026 00:00:00 +0000
+
+extase-em-4r73 (2.2.0) unstable; urgency=medium
+
+  * Sprint 8: Infraestrutura
+    - Pacote .deb funcional
+    - Lazy loader para modulos pesados
+    - Documentacao Sphinx
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Mon, 13 Jan 2026 00:00:00 +0000
+
+extase-em-4r73 (2.1.0) unstable; urgency=medium
+
+  * Interface Renovada
+    - Nova ordem de secoes na interface
+    - Sistema de presets de luminancia
+    - Sistema de paletas para Pixel Art
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Tue, 31 Dec 2025 00:00:00 +0000
+
+extase-em-4r73 (2.0.0) unstable; urgency=medium
+
+  * Reestruturacao completa
+    - Sistema de presets de qualidade
+    - Modo Pixel Art completo
+    - Calibrador automatico de chroma key
+    - Sharpen filter e Lanczos resize
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Wed, 17 Dec 2025 00:00:00 +0000
+
+extase-em-4r73 (1.0.0) unstable; urgency=medium
+
+  * Initial release
+    - Conversao ASCII em tempo real com GPU (CUDA)
+    - Chroma key avancado
+    - Unicode Braille (4x resolucao)
+    - High Fidelity texture mode
+    - Temporal coherence (anti-flicker)
+    - Gravacao MP4/GIF/HTML
+    - Interface GTK3 moderna
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Mon, 01 Dec 2025 00:00:00 +0000

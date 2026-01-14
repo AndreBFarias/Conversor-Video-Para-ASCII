@@ -31,33 +31,78 @@ fi
 DESKTOP_FILE_PATH="${INSTALL_DIR}/${APP_NAME}.desktop"
 ICON_INSTALL_PATH="${ICON_INSTALL_DIR}/${ICON_NAME}.png"
 
-echo "[1/7] Atualizando selos arcanos (apt update)..."
+echo "[1/8] Atualizando selos arcanos (apt update)..."
 sudo apt update || { echo "ERRO: Falha ao atualizar repositorios apt."; exit 1; }
 
-echo "[2/7] Invocando dependencias (Python3, PIP, GTK, OpenCV, VTE, Kitty)..."
-sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-vte-2.91 kitty desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
+echo "[2/8] Invocando dependencias (Python3, PIP, GTK, OpenCV, VTE, Kitty, PortAudio)..."
+sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-vte-2.91 kitty desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev portaudio19-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
 
-echo "[3/7] Desenhando circulo de protecao (venv --system-site-packages)..."
+echo "[3/8] Desenhando circulo de protecao (venv --system-site-packages)..."
 if [ -d "${SCRIPT_DIR}/venv" ]; then
     echo "Removendo venv antigo..."
     rm -rf "${SCRIPT_DIR}/venv"
 fi
 python3 -m venv --system-site-packages "${SCRIPT_DIR}/venv" || { echo "ERRO: Falha ao criar ambiente virtual."; exit 1; }
 
-echo "[4/7] Instalando pacotes Python no venv (numpy, opencv-python)..."
+echo "[4/8] Instalando pacotes Python no venv..."
 echo "NOTA: PyGObject/GTK ja esta disponivel via pacotes do sistema (--system-site-packages)"
 if [ ! -f "${SCRIPT_DIR}/requirements.txt" ]; then
     echo "ERRO: requirements.txt nao encontrado em ${SCRIPT_DIR}!"
     exit 1
 fi
-"${SCRIPT_DIR}/venv/bin/pip" install --upgrade pip || echo "Aviso: Falha ao atualizar pip."
-"${SCRIPT_DIR}/venv/bin/pip" install -r "${SCRIPT_DIR}/requirements.txt" || { echo "ERRO: Falha ao instalar pacotes Python do requirements.txt."; exit 1; }
 
-echo "[5/7] Preparando os altares ('data_input' e 'data_output')..."
+if command -v nvidia-smi &> /dev/null; then
+    echo "   -> GPU NVIDIA detectada! Instalando suporte a CUDA (cupy-cuda12x)..."
+else
+    echo "   -> AVISO: GPU NVIDIA nao detectada. cupy pode falhar. Continuando instalacao..."
+fi
+
+"${SCRIPT_DIR}/venv/bin/pip" install --upgrade pip setuptools wheel || echo "Aviso: Falha ao atualizar ferramentas pip."
+
+echo "   -> Instalando dependencias basicas (opencv, numpy, pillow)..."
+"${SCRIPT_DIR}/venv/bin/pip" install opencv-python numpy Pillow || { echo "ERRO: Falha ao instalar dependencias basicas."; exit 1; }
+
+echo "   -> Tentando instalar suporte GPU (cupy-cuda12x)..."
+if command -v nvidia-smi &> /dev/null; then
+    if "${SCRIPT_DIR}/venv/bin/pip" install cupy-cuda12x 2>&1; then
+        echo "   -> cupy-cuda12x instalado com sucesso!"
+    else
+        echo "   -> AVISO: Falha ao instalar cupy-cuda12x. Continuando sem suporte GPU."
+        echo "   -> Para ativar GPU depois, execute: ${SCRIPT_DIR}/venv/bin/pip install cupy-cuda12x"
+    fi
+else
+    echo "   -> Pulando instalacao de cupy (GPU nao detectada)."
+fi
+
+echo "   -> Instalando MediaPipe para segmentacao automatica..."
+"${SCRIPT_DIR}/venv/bin/pip" install mediapipe || echo "Aviso: Falha ao instalar mediapipe. Auto Seg nao funcionara."
+
+echo "   -> Instalando PyAudio para audio-reactive..."
+"${SCRIPT_DIR}/venv/bin/pip" install pyaudio || echo "Aviso: Falha ao instalar pyaudio. Audio-reactive nao funcionara."
+
+echo "   -> Instalando Sphinx para documentacao..."
+"${SCRIPT_DIR}/venv/bin/pip" install sphinx sphinx_rtd_theme || echo "Aviso: Falha ao instalar sphinx."
+
+echo "   -> Instalando pytest para testes..."
+"${SCRIPT_DIR}/venv/bin/pip" install pytest pytest-cov coverage || echo "Aviso: Falha ao instalar pytest."
+
+echo "[5/8] Preparando os altares (data_input, data_output, .cache, logs, models)..."
 mkdir -p "${SCRIPT_DIR}/data_input" || echo "Aviso: Falha ao criar data_input."
 mkdir -p "${SCRIPT_DIR}/data_output" || echo "Aviso: Falha ao criar data_output."
+mkdir -p "${SCRIPT_DIR}/.cache" || echo "Aviso: Falha ao criar .cache (para atlas Braille)."
+mkdir -p "${SCRIPT_DIR}/logs" || echo "Aviso: Falha ao criar logs."
+mkdir -p "${SCRIPT_DIR}/assets/models" || echo "Aviso: Falha ao criar assets/models."
 
-echo "[6/7] Consagrando o icone em ${ICON_INSTALL_DIR}..."
+MODEL_URL="https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+MODEL_PATH="${SCRIPT_DIR}/assets/models/selfie_segmenter.tflite"
+if [ ! -f "${MODEL_PATH}" ]; then
+    echo "   -> Baixando modelo de segmentacao automatica..."
+    curl -L -o "${MODEL_PATH}" "${MODEL_URL}" || echo "Aviso: Falha ao baixar modelo. Auto Seg nao funcionara."
+else
+    echo "   -> Modelo de segmentacao ja existe."
+fi
+
+echo "[6/8] Consagrando o icone em ${ICON_INSTALL_DIR}..."
 if [ ! -f "${ICON_SOURCE_PATH}" ]; then
     echo "ERRO: Icone '${ICON_SOURCE_PATH}' nao encontrado!"
     exit 1
@@ -80,7 +125,7 @@ if command -v gtk-update-icon-cache &> /dev/null; then
     fi
 fi
 
-echo "[7/7] Forjando o sigilo de invocacao (${DESKTOP_FILE_PATH})..."
+echo "[7/8] Forjando o sigilo de invocacao (${DESKTOP_FILE_PATH})..."
 $SUDO_CMD mkdir -p "${INSTALL_DIR}"
 
 PYTHON_VENV_PATH="${SCRIPT_DIR}/venv/bin/python3"
@@ -114,6 +159,16 @@ if command -v update-desktop-database &> /dev/null; then
        echo "Atualizando database de aplicativos em ${DB_DIR_TO_UPDATE}..."
        $SUDO_CMD update-desktop-database "${DB_DIR_TO_UPDATE}" || echo "Aviso: Falha ao atualizar database de apps."
      fi
+fi
+
+echo "[8/8] Verificacao final..."
+if [ -f "${DESKTOP_FILE_PATH}" ] && [ -f "${ICON_INSTALL_PATH}" ] && [ -d "${SCRIPT_DIR}/venv" ]; then
+    echo "   -> Todos os componentes instalados com sucesso."
+else
+    echo "   -> AVISO: Alguns componentes podem nao ter sido instalados corretamente."
+    [ ! -f "${DESKTOP_FILE_PATH}" ] && echo "      - Falta: ${DESKTOP_FILE_PATH}"
+    [ ! -f "${ICON_INSTALL_PATH}" ] && echo "      - Falta: ${ICON_INSTALL_PATH}"
+    [ ! -d "${SCRIPT_DIR}/venv" ] && echo "      - Falta: ${SCRIPT_DIR}/venv"
 fi
 
 echo "=== Ritual Concluido ==="

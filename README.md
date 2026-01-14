@@ -17,8 +17,17 @@
 
 ---
 
-### Descricao
-Conversor de videos e imagens para arte ASCII colorida com suporte a chroma key (fundo verde), presets de qualidade, modo pixel art e player integrado com terminal VTE.
+### Descrição
+Conversor de vídeo para ASCII art em tempo real com aceleração GPU (CUDA), chroma key avançado, e modos especiais como Unicode Braille (4x resolução) e high fidelity texture.
+
+**Características Principais:**
+- Conversão em tempo real (30-60 FPS com GPU)
+- Chroma key avançado (remoção de fundo verde)
+- Unicode Braille (resolução 4x)
+- Temporal coherence (anti-flicker)
+- Gravação de MP4/GIF/HTML
+- Suporte webcam
+- Interface GTK3 moderna
 
 ---
 ### Interface
@@ -37,17 +46,52 @@ Conversor de videos e imagens para arte ASCII colorida com suporte a chroma key 
 
 ### Funcionalidades
 
-- **Conversao ASCII Colorida**: Transforma videos e imagens em arte ASCII com cores ANSI
-- **Chroma Key Integrado**: Calibrador GTK com preview em tempo real para remocao de fundo verde
-- **Presets de Qualidade**: Mobile, Low, Medium, High, Very High
-- **Modo Pixel Art**: Conversao alternativa com paletas retro (GameBoy, NES, SNES)
-- **Player Integrado**: Reproducao no terminal (kitty/gnome-terminal) ou janela GTK
-- **Gravacao**: Captura de screencast MP4 e exportacao ASCII
-- **Terminal VTE**: Preview em tempo real integrado ao calibrador
+### Funcionalidades Completas
 
-### Instalacao
+#### 🎥 Visualização & Renderização
+- **Conversão em Tempo Real**: Suporte a Webcam e Arquivos de Vídeo
+- **Aceleração GPU (CUDA)**: Pipeline otimizado com CuPy para alta performance (60+ FPS)
+- **Modos de Renderização**:
+    - **ASCII Colorido**: Caracteres ASCII com cores reais (ANSI 24-bit)
+    - **High Fidelity**: Mapeamento de textura baseado em MSE (Mean Squared Error)
+    - **Unicode Braille**: 4x mais resolução usando caracteres Braille
+    - **Pixel Art**: Paletas retro (GameBoy, NES, SNES, CGA, Monochrome)
+    - **Matrix Rain**: Efeito de chuva de caracteres com física de partículas na GPU
 
-#### Via Script (Recomendado)
+#### 🎬 Edição & Processamento
+- **Chroma Key Avançado**:
+    - Calibrador GUI em tempo real
+    - Remoção de fundo verde com ajustes finos (Erode/Dilate)
+    - **Batch Processing**: Calibração individual por vídeo em conversões em lote
+- **Formatos de Saída**:
+    - **MP4**: Vídeo ASCII renderizado com áudio original sincronizado
+    - **GIF**: Animações ASCII leves
+    - **HTML**: Player web standalone
+    - **TXT/ANSI**: Arte estática e sequências de texto
+
+#### 🛠️ Ferramentas
+- **Terminal VTE Integrado**: Preview fiel ao terminal do usuário
+- **Gravação de Screencast**: Capture a saída exatamente como vista na tela
+- **Segmentação Automática**: Remoção de fundo sem chroma key (MediaPipe)
+
+### Instalação
+
+#### Via Pacote .deb (Ubuntu/Debian)
+
+```bash
+# Baixar release mais recente
+wget https://github.com/AndreBFarias/Conversor-Video-Para-ASCII/releases/latest/download/extase-em-4r73_2.1.0_all.deb
+
+# Instalar
+sudo dpkg -i extase-em-4r73_2.1.0_all.deb
+sudo apt-get install -f  # Instalar dependências
+
+# Executar
+extase-em-4r73
+# ou procurar "Extase em 4R73" no menu de aplicativos
+```
+
+#### Via Script (Manual)
 
 ```bash
 git clone https://github.com/AndreBFarias/Conversor-Video-Para-ASCII.git
@@ -56,13 +100,22 @@ chmod +x install.sh
 ./install.sh
 ```
 
-#### Dependencias
+#### Requisitos
 
+**Obrigatórios:**
 - Python 3.10+
 - GTK 3.0
-- OpenCV
-- VTE 2.91
-- kitty (terminal recomendado)
+- NumPy, OpenCV
+- FFmpeg
+
+**Recomendados (para aceleração GPU):**
+- GPU NVIDIA (RTX 2000+ series)
+- CUDA 11.0+
+- CuPy
+
+**Opcionais:**
+- kitty terminal (melhor suporte ASCII)
+- gnome-terminal (alternativa)
 
 ### Uso
 

@@ -45,31 +45,54 @@ class App(
         self.window.set_title("Extase em 4R73")
         self.window.set_wmclass("extase-em-4r73", "Extase em 4R73")
         self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("key-press-event", self.on_key_press)
         self._apply_custom_css()
         self._setup_logo_and_title()
 
         self.builder.connect_signals(self)
         self.config = configparser.ConfigParser(interpolation=None)
         self.config_path = CONFIG_PATH
+        self.config_last_load = 0
 
         try:
             if not os.path.exists(self.config_path):
                 raise FileNotFoundError(f"Arquivo config.ini nao encontrado em '{self.config_path}'")
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 self.config.read_file(f)
+            self.config_last_load = os.path.getmtime(self.config_path)
             if not self.config.sections():
                 raise configparser.NoSectionError("Nenhuma secao lida (arquivo vazio?)")
 
             self.input_dir = self.config.get('Pastas', 'input_dir', fallback='videos_entrada')
             self.output_dir = self.config.get('Pastas', 'output_dir', fallback='videos_saida')
-            self.input_dir = os.path.abspath(os.path.join(ROOT_DIR, self.input_dir))
-            self.output_dir = os.path.abspath(os.path.join(ROOT_DIR, self.output_dir))
+            # Fix absolute paths if they are empty
+            if not self.input_dir:
+                self.input_dir = os.path.join(os.path.expanduser("~"), "Vídeos")
+            if not self.output_dir:
+                self.output_dir = os.path.join(ROOT_DIR, "data_output")
+                
+            self.input_dir = os.path.abspath(self.input_dir)
+            self.output_dir = os.path.abspath(self.output_dir)
             os.makedirs(self.input_dir, exist_ok=True)
             os.makedirs(self.output_dir, exist_ok=True)
+            
         except (FileNotFoundError, configparser.Error) as e:
-            self._show_init_error("Erro Critico de Configuracao", f"Nao foi possivel ler config.ini:\n{e}")
-            self.initialization_failed = True
-            return
+            self.logger.error(f"Configuracao corrompida ou ausente: {e}. Restaurando padrao...")
+            try:
+                import shutil
+                from .constants import DEFAULT_CONFIG_PATH
+                if os.path.exists(self.config_path):
+                    shutil.move(self.config_path, self.config_path + ".bak")
+                if os.path.exists(DEFAULT_CONFIG_PATH):
+                    shutil.copy2(DEFAULT_CONFIG_PATH, self.config_path)
+                    # Retry load
+                    with open(self.config_path, 'r', encoding='utf-8') as f:
+                        self.config.read_file(f)
+                    self.logger.info("Configuracao restaurada com sucesso.")
+            except Exception as restore_err:
+                 self._show_init_error("Erro Critico de Configuracao", f"Falha ao restaurar config:\n{restore_err}")
+                 self.initialization_failed = True
+                 return
 
         if not self._get_widgets():
             self.initialization_failed = True
@@ -82,6 +105,7 @@ class App(
         self._mode_widgets_created = False
 
         self._create_quality_preset_combo()
+        self._create_effects_tab()
         self.update_button_states()
         self.window.show_all()
 
@@ -180,6 +204,11 @@ class App(
             self.opt_dilate_spin = self.builder.get_object("opt_dilate_spin")
 
             self.conversion_progress = self.builder.get_object("conversion_progress")
+            self.preview_frame = self.builder.get_object("preview_frame")
+            self.preview_thumbnail = self.builder.get_object("preview_thumbnail")
+            
+            if self.preview_frame:
+                self.preview_frame.set_visible(False)
 
             self.opt_mode_ascii_radio = None
             self.opt_mode_pixelart_radio = None
@@ -195,7 +224,26 @@ class App(
             self.pref_output_folder = self.builder.get_object("pref_output_folder")
             self.pref_engine_combo = self.builder.get_object("pref_engine_combo")
             self.pref_quality_combo = self.builder.get_object("pref_quality_combo")
+            self.pref_quality_combo = self.builder.get_object("pref_quality_combo")
             self.pref_format_combo = self.builder.get_object("pref_format_combo")
+            self.pref_gpu_switch = self.builder.get_object("pref_gpu_switch")
+            self.pref_render_mode_combo = self.builder.get_object("pref_render_mode_combo")
+            self.pref_braille_switch = self.builder.get_object("pref_braille_switch")
+            self.pref_braille_threshold_scale = self.builder.get_object("pref_braille_threshold_scale")
+            self.pref_temporal_switch = self.builder.get_object("pref_temporal_switch")
+            self.pref_temporal_threshold_scale = self.builder.get_object("pref_temporal_threshold_scale")
+            self.pref_async_switch = self.builder.get_object("pref_async_switch")
+            self.pref_async_num_streams_spin = self.builder.get_object("pref_async_num_streams_spin")
+            self.pref_auto_seg_switch = self.builder.get_object("pref_auto_seg_switch")
+            self.pref_matrix_switch = self.builder.get_object("pref_matrix_switch")
+            self.pref_matrix_mode_combo = self.builder.get_object("pref_matrix_mode_combo")
+            self.pref_matrix_charset_combo = self.builder.get_object("pref_matrix_charset_combo")
+            self.pref_matrix_particles_spin = self.builder.get_object("pref_matrix_particles_spin")
+            self.pref_matrix_speed_scale = self.builder.get_object("pref_matrix_speed_scale")
+
+            self.opt_font_detection_switch = self.builder.get_object("opt_font_detection_switch")
+            self.opt_font_family_combo = self.builder.get_object("opt_font_family_combo")
+            self.opt_font_size_spin = self.builder.get_object("opt_font_size_spin")
 
             self.opt_luminance_preset_combo = self.builder.get_object("opt_luminance_preset_combo")
 
@@ -226,9 +274,29 @@ class App(
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
+            self.config_last_load = os.path.getmtime(self.config_path)
             self.logger.info("Configuracoes salvas com sucesso.")
         except Exception as e:
             self.logger.error(f"Erro ao salvar config: {e}")
+
+    def reload_config(self):
+        try:
+            for section in self.config.sections():
+                self.config.remove_section(section)
+            self.config.read(self.config_path, encoding='utf-8')
+            self.config_last_load = os.path.getmtime(self.config_path)
+            self.logger.info("Configuracoes recarregadas do disco.")
+        except Exception as e:
+            self.logger.error(f"Erro ao recarregar config: {e}")
+
+    def _check_config_reload(self):
+        try:
+            current_mtime = os.path.getmtime(self.config_path)
+            if current_mtime > self.config_last_load:
+                self.reload_config()
+                self.logger.info("Config recarregado automaticamente (modificado externamente)")
+        except Exception as e:
+            self.logger.error(f"Erro ao verificar reload de config: {e}")
 
     def _show_init_error(self, title: str, text: str):
         self.logger.error(f"Erro de Inicializacao: {title} - {text}")
@@ -264,6 +332,101 @@ class App(
         dialog.format_secondary_text(secondary_text)
         dialog.connect("response", lambda d, response_id: d.destroy())
         dialog.show_all()
+        return False
+
+    def _create_effects_tab(self):
+        try:
+            notebook = self.options_notebook
+            if not notebook:
+                self.logger.warning("options_notebook not found, skipping Effects tab")
+                return
+
+            effects_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+            effects_box.set_margin_top(10)
+            effects_box.set_margin_bottom(10)
+            effects_box.set_margin_start(10)
+            effects_box.set_margin_end(10)
+
+            title = Gtk.Label()
+            title.set_markup("<b>Matrix Rain (Chuva de Caracteres)</b>")
+            title.set_xalign(0)
+            effects_box.pack_start(title, False, False, 0)
+
+            effects_box.pack_start(Gtk.Separator(), False, False, 5)
+
+            switch_box = Gtk.Box(spacing=10)
+            switch_label = Gtk.Label(label="Ativar Matrix Rain:")
+            switch_label.set_xalign(0)
+            switch_box.pack_start(switch_label, True, True, 0)
+            self.pref_matrix_switch = Gtk.Switch()
+            self.pref_matrix_switch.set_active(False)
+            switch_box.pack_start(self.pref_matrix_switch, False, False, 0)
+            effects_box.pack_start(switch_box, False, False, 0)
+
+            mode_box = Gtk.Box(spacing=10)
+            mode_label = Gtk.Label(label="Modo:")
+            mode_label.set_xalign(0)
+            mode_box.pack_start(mode_label, False, False, 0)
+            self.pref_matrix_mode_combo = Gtk.ComboBoxText()
+            self.pref_matrix_mode_combo.append("overlay", "Overlay (Sobrepor)")
+            self.pref_matrix_mode_combo.append("replace", "Replace (Substituir fundo)")
+            self.pref_matrix_mode_combo.append("blend", "Blend (Misturar)")
+            self.pref_matrix_mode_combo.set_active(0)
+            mode_box.pack_start(self.pref_matrix_mode_combo, True, True, 0)
+            effects_box.pack_start(mode_box, False, False, 0)
+
+            charset_box = Gtk.Box(spacing=10)
+            charset_label = Gtk.Label(label="Char Set:")
+            charset_label.set_xalign(0)
+            charset_box.pack_start(charset_label, False, False, 0)
+            self.pref_matrix_charset_combo = Gtk.ComboBoxText()
+            self.pref_matrix_charset_combo.append("katakana", "Katakana")
+            self.pref_matrix_charset_combo.append("binary", "Binary")
+            self.pref_matrix_charset_combo.append("hex", "Hexadecimal")
+            self.pref_matrix_charset_combo.append("ascii", "ASCII")
+            self.pref_matrix_charset_combo.append("math", "Math")
+            self.pref_matrix_charset_combo.set_active(0)
+            charset_box.pack_start(self.pref_matrix_charset_combo, True, True, 0)
+            effects_box.pack_start(charset_box, False, False, 0)
+
+            particles_box = Gtk.Box(spacing=10)
+            particles_label = Gtk.Label(label="Num Particulas:")
+            particles_label.set_xalign(0)
+            particles_box.pack_start(particles_label, False, False, 0)
+            particles_adj = Gtk.Adjustment(value=5000, lower=1000, upper=15000, step_increment=500)
+            self.pref_matrix_particles_spin = Gtk.SpinButton()
+            self.pref_matrix_particles_spin.set_adjustment(particles_adj)
+            particles_box.pack_start(self.pref_matrix_particles_spin, True, True, 0)
+            effects_box.pack_start(particles_box, False, False, 0)
+
+            speed_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            speed_label = Gtk.Label(label="Velocidade:")
+            speed_label.set_xalign(0)
+            speed_vbox.pack_start(speed_label, False, False, 0)
+            speed_adj = Gtk.Adjustment(value=1.0, lower=0.5, upper=2.0, step_increment=0.1)
+            self.pref_matrix_speed_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=speed_adj)
+            self.pref_matrix_speed_scale.set_draw_value(True)
+            self.pref_matrix_speed_scale.set_value_pos(Gtk.PositionType.RIGHT)
+            speed_vbox.pack_start(self.pref_matrix_speed_scale, False, False, 0)
+            effects_box.pack_start(speed_vbox, False, False, 0)
+
+            tab_label = Gtk.Label(label="Efeitos")
+            notebook.append_page(effects_box, tab_label)
+
+            self.logger.info("Tab Efeitos criado programaticamente")
+        except Exception as e:
+            self.logger.error(f"Erro ao criar tab Efeitos: {e}")
+            self.pref_matrix_switch = None
+            self.pref_matrix_mode_combo = None
+            self.pref_matrix_charset_combo = None
+            self.pref_matrix_particles_spin = None
+            self.pref_matrix_speed_scale = None
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_q or event.keyval == Gdk.KEY_Q:
+            self.logger.info("Atalho 'Q' pressionado. Encerrando...")
+            Gtk.main_quit()
+            return True
         return False
 
     def on_quit_button_clicked(self, widget):

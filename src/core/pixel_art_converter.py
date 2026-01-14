@@ -6,7 +6,6 @@ import sys
 import numpy as np
 import configparser
 import argparse
-from sklearn.cluster import KMeans
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -17,31 +16,42 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 
 COLOR_SEPARATOR = "§"
 
+DEFAULT_PALETTE_16 = np.array([
+    [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
+    [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
+    [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 128],
+    [192, 192, 192], [128, 128, 0], [128, 0, 128], [0, 128, 128],
+], dtype=np.float32)
 
-def quantize_colors(image, n_colors=16, use_fixed_palette=False):
-    if use_fixed_palette:
-        palette = np.array([
-            [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
-            [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
-            [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 128],
-            [192, 192, 192], [128, 128, 0], [128, 0, 128], [0, 128, 128],
-        ], dtype=np.uint8)
-        palette = palette[:n_colors]
-    else:
-        h, w, c = image.shape
-        pixels = image.reshape((-1, 3)).astype(np.float32)
-        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
-        kmeans.fit(pixels)
-        palette = kmeans.cluster_centers_.astype(np.uint8)
 
+def quantize_colors(image, n_colors=16, use_fixed_palette=False, custom_palette=None):
     h, w, c = image.shape
-    pixels = image.reshape((-1, 3))
-    quantized = np.zeros_like(pixels)
+    pixels = image.reshape((-1, 3)).astype(np.float32)
 
-    for i, pixel in enumerate(pixels):
-        distances = np.linalg.norm(palette - pixel, axis=1)
-        nearest_color_idx = np.argmin(distances)
-        quantized[i] = palette[nearest_color_idx]
+    if use_fixed_palette:
+        if custom_palette is not None:
+            palette = np.array(custom_palette, dtype=np.float32)
+        else:
+            palette = DEFAULT_PALETTE_16[:min(n_colors, 16)]
+
+        n_pixels = pixels.shape[0]
+        labels = np.empty(n_pixels, dtype=np.int32)
+
+        chunk_size = 10000
+        for i in range(0, n_pixels, chunk_size):
+            end = min(i + chunk_size, n_pixels)
+            chunk = pixels[i:end]
+            dists = np.sum((chunk[:, np.newaxis, :] - palette[np.newaxis, :, :]) ** 2, axis=2)
+            labels[i:end] = np.argmin(dists, axis=1)
+
+        quantized = palette[labels].astype(np.uint8)
+    else:
+        n_colors = min(max(2, n_colors), 64)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        _, labels, centers = cv2.kmeans(
+            pixels, n_colors, None, criteria, 1, cv2.KMEANS_PP_CENTERS
+        )
+        quantized = centers[labels.flatten()].astype(np.uint8)
 
     return quantized.reshape((h, w, c))
 

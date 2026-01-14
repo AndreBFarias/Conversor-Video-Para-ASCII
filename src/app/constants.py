@@ -7,9 +7,23 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+# User Directories (XDG Standard)
+USER_HOME = os.path.expanduser("~")
+USER_CONFIG_DIR = os.path.join(USER_HOME, ".config", "extase-em-4r73")
+USER_DATA_DIR = os.path.join(USER_HOME, ".local", "share", "extase-em-4r73")
+USER_CACHE_DIR = os.path.join(USER_HOME, ".cache", "extase-em-4r73")
+
+# Ensure directories exist
+os.makedirs(USER_CONFIG_DIR, exist_ok=True)
+os.makedirs(USER_DATA_DIR, exist_ok=True)
+os.makedirs(USER_CACHE_DIR, exist_ok=True)
+
 UI_FILE = os.path.join(BASE_DIR, "gui", "main.glade")
 LOGO_FILE = os.path.join(ROOT_DIR, "assets", "logo.png")
-CONFIG_PATH = os.path.join(ROOT_DIR, "config.ini")
+
+# Config Paths
+DEFAULT_CONFIG_PATH = os.path.join(ROOT_DIR, "config.ini")
+CONFIG_PATH = os.path.join(USER_CONFIG_DIR, "config.ini")
 
 PYTHON_EXEC = sys.executable
 PLAYER_SCRIPT = os.path.join(BASE_DIR, "cli_player.py")
@@ -17,7 +31,6 @@ CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "converter.py")
 IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "image_converter.py")
 PIXEL_ART_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_converter.py")
 PIXEL_ART_IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_image_converter.py")
-CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "calibrator.py")
 GTK_CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "gtk_calibrator.py")
 REALTIME_SCRIPT = os.path.join(BASE_DIR, "core", "realtime_ascii.py")
 
@@ -172,6 +185,45 @@ FIXED_PALETTES = {
             (0, 255, 0), (50, 255, 50), (100, 255, 100), (200, 255, 200)
         ]
     },
+    'monogreen': {
+        'name': 'Monitor Verde (CRT)',
+        'colors': [
+            (0, 10, 0), (0, 30, 0), (0, 60, 0), (0, 90, 0),
+            (0, 120, 0), (0, 150, 0), (0, 180, 0), (0, 210, 0),
+            (0, 255, 0), (50, 255, 50), (100, 255, 100), (200, 255, 200)
+        ]
+    },
+}
+
+STYLE_PRESETS = {
+    'clean': {
+        'name': 'Clean (Padrão)',
+        'luminance_ramp': DEFAULT_LUMINANCE_RAMP,
+        'sobel': 100,
+        'sharpen_amount': 0.5,
+        'aspect': 0.95
+    },
+    'cyberpunk': {
+        'name': 'Cyberpunk (Neon)',
+        'luminance_ramp': "0110010101 ",  # Estilo Matrix/Binario
+        'sobel': 50,  # Mais detalhes
+        'sharpen_amount': 1.0, # Muito nitido
+        'aspect': 1.0
+    },
+    'retro': {
+        'name': 'Retro (Blocos)',
+        'luminance_ramp': "█▓▒░ ", # Blocos
+        'sobel': 150, # Menos ruido
+        'sharpen_amount': 0.0,
+        'aspect': 0.6
+    },
+    'high_contrast': {
+        'name': 'Alto Contraste',
+        'luminance_ramp': "@#%*+=-:. ",
+        'sobel': 80,
+        'sharpen_amount': 0.8,
+        'aspect': 0.95
+    }
 }
 
 VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.webm', '.gif')

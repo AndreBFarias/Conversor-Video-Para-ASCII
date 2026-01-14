@@ -1,132 +1,170 @@
-name: Release
+name: Build and Release
 
 on:
   push:
-    branches: [main, dev]
     tags:
       - 'v*'
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
 
 jobs:
-  validate:
+  test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 python3-pip python3-venv
 
-      - name: Install linters
-        run: pip install ruff
+    - name: Install test dependencies
+      run: |
+        python3 -m pip install --user pytest pytest-cov coverage numpy opencv-python-headless Pillow
 
-      - name: Run ruff
-        run: ruff check src/ --ignore E501,F401,E402
-
-      - name: Check Python syntax
-        run: find src -name "*.py" -exec python3 -m py_compile {} \;
+    - name: Run tests
+      run: |
+        python3 -m pytest tests/ -v --tb=short
 
   build-deb:
-    needs: validate
+    needs: test
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick dpkg-dev
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
 
-      - name: Build .deb package
-        env:
-          REF: ${{ github.ref }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          VERSION="2.1.0"
-          if [[ "$REF" == "refs/tags/"* ]]; then
-            VERSION="${REF_NAME#v}"
-          fi
-          echo "Building version: $VERSION"
-          chmod +x packaging/build-deb.sh
-          cd packaging && ./build-deb.sh "$VERSION"
+    - name: Extract version
+      id: version
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Upload .deb artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deb-package
-          path: packaging/*.deb
-          if-no-files-found: error
+    - name: Build .deb package
+      run: |
+        chmod +x packaging/build-deb.sh
+        ./packaging/build-deb.sh "${{ steps.version.outputs.version }}"
+
+    - name: Upload .deb artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-package
+        path: packaging/*.deb
 
   build-flatpak:
-    needs: validate
+    needs: test
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-    container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-45
-      options: --privileged
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Install ImageMagick
-        run: dnf install -y ImageMagick
+    - name: Install Flatpak dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y flatpak flatpak-builder
+        flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install --user -y flathub org.gnome.Platform//45 org.gnome.Sdk//45
 
-      - name: Prepare icons
-        run: |
-          chmod +x packaging/prepare-icons.sh
-          ./packaging/prepare-icons.sh
+    - name: Build Flatpak
+      run: |
+        flatpak-builder --user --force-clean --repo=repo build-dir com.github.andrebfarias.extase-em-4r73.yml
+        flatpak build-bundle repo extase-em-4r73.flatpak com.github.andrebfarias.extase-em-4r73
 
-      - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        with:
-          bundle: extase-em-4r73.flatpak
-          manifest-path: packaging/com.github.andrebfarias.extase-em-4r73.yml
-          cache-key: flatpak-builder-${{ github.sha }}
-
-      - name: Upload Flatpak artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-package
-          path: extase-em-4r73.flatpak
-          if-no-files-found: error
+    - name: Upload Flatpak artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: flatpak-package
+        path: extase-em-4r73.flatpak
 
   release:
     needs: [build-deb, build-flatpak]
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Download deb artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deb-package
-          path: ./release/
+    - name: Extract version
+      id: version
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Download flatpak artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: flatpak-package
-          path: ./release/
+    - name: Download .deb artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: deb-package
+        path: artifacts/
 
-      - name: List release files
-        run: ls -la ./release/
+    - name: Download Flatpak artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: flatpak-package
+        path: artifacts/
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ./release/*.deb
-            ./release/*.flatpak
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+    - name: List artifacts
+      run: ls -la artifacts/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          artifacts/*.deb
+          artifacts/*.flatpak
+        name: Extase em 4R73 ${{ github.ref_name }}
+        body: |
+          ## Extase em 4R73 ${{ github.ref_name }}
+
+          Conversor de videos para arte ASCII colorida com GPU CUDA.
+
+          ### Novidades nesta versao
+
+          **Efeitos Visuais (PostFX Cyberpunk)**
+          - Bloom (brilho neon)
+          - Chromatic Aberration (RGB shift)
+          - Scanlines CRT
+          - Glitch effect
+          - Motion Blur (Optical Flow)
+
+          **Audio Reactive**
+          - Modulacao por FFT em tempo real
+          - 3 bandas: Bass, Mids, Treble
+          - Efeitos respondem a musica
+
+          **Style Transfer**
+          - Presets: Sketch, Ink, Comic, Neon, Emboss, Cyberpunk
+          - DoG/XDoG edge detection
+          - Cyberpunk: neon magenta/ciano com bordas brilhantes
+
+          **Matrix Rain**
+          - Sistema de particulas GPU
+          - Charsets: Katakana, Binary, ASCII
+
+          ### Instalacao
+
+          **Flatpak (Recomendado)**
+          ```bash
+          flatpak install extase-em-4r73.flatpak
+          flatpak run com.github.andrebfarias.extase-em-4r73
+          ```
+
+          **Ubuntu/Debian (.deb)**
+          ```bash
+          sudo dpkg -i extase-em-4r73_${{ steps.version.outputs.version }}_all.deb
+          sudo apt-get install -f
+          ```
+
+          ### Requisitos
+          - Python 3.10+
+          - GTK 3.0
+          - GPU NVIDIA com CUDA 12.x (opcional, para aceleracao)
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
