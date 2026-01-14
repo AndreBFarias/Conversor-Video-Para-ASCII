@@ -3,6 +3,7 @@ from .conversion_actions import ConversionActionsMixin
 from .playback_actions import PlaybackActionsMixin
 from .calibration_actions import CalibrationActionsMixin
 from .options_actions import OptionsActionsMixin
+from .postfx_actions import PostFXActionsMixin
 
 __all__ = [
     'FileActionsMixin',
@@ -10,4 +11,5 @@ __all__ = [
     'PlaybackActionsMixin',
     'CalibrationActionsMixin',
     'OptionsActionsMixin',
+    'PostFXActionsMixin',
 ]
