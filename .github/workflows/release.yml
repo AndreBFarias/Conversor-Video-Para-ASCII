@@ -99,43 +99,63 @@ jobs:
         chmod +x linuxdeploy-plugin-python-x86_64.AppImage
 
     - name: Build AppImage
-      # Note: This requires a custom build script or usage of python-appimage command
-      # For simplicity, we assume a basic AppDir structure setup here or use a dedicated tool like 'appimage-builder' if available. 
-      # Since we don't have a dedicated AppImage recipe file in the repo yet, we'll try a generic approach or outline the placeholder.
-      # Ideally, we would use a tool like 'appimage-builder' or manual linuxdeploy steps. 
-      # Given constraints, we will use a basic manual approach simulation or valid generic steps.
-      # Let's use 'shiv' or similar for self-contained executable inside AppImage if easier, 
-      # BUT user requested proper AppImage. 
-      # Let's use a simple linuxdeploy run assuming 'main.py' entry point.
       run: |
-        # Setup AppDir
-        mkdir -p AppDir/usr/bin
+        # 1. Create a dummy setup.py to satisfy pip and linuxdeploy-plugin-python
+        echo "from setuptools import setup, find_packages" > setup.py
+        echo "setup(name='extase-em-4r73', version='${{ steps.version.outputs.version }}', packages=find_packages(), py_modules=['main'], install_requires=[])" >> setup.py
+        # Note: requirements are handled via pip install -r requirements.txt usually, but plugin checks this.
+        
+        # 2. Setup AppDir structure
         mkdir -p AppDir/usr/share/applications
         mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps
         
-        # Copy assets
+        # 3. Copy assets
         cp debian/extase-em-4r73.desktop AppDir/usr/share/applications/
-        mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps/
         cp assets/logo.png AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
         
-        # Install app into AppDir
-        python3 -m venv venv
-        source venv/bin/activate
-        pip install . # Assuming setup.py or pyproject.toml exists by now? Oh wait, we don't have one!
-        # Fallback: Copy source directly
+        # 4. Install dependencies and app into AppDir manually to be safe
+        # Create a site-packages directory in AppDir
+        mkdir -p AppDir/usr/lib/python3.10/site-packages
+        export PYTHONPATH=$PWD/AppDir/usr/lib/python3.10/site-packages:$PYTHONPATH
+        
+        # Install requirements
+        pip3 install --ignore-installed --target AppDir/usr/lib/python3.10/site-packages -r requirements.txt
+        
+        # Copy source code to AppDir
         mkdir -p AppDir/usr/src/extase-em-4r73
         cp -r src AppDir/usr/src/extase-em-4r73/
-        cp -r main.py AppDir/usr/src/extase-em-4r73/
-        cp requirements.txt AppDir/usr/src/extase-em-4r73/
+        cp main.py AppDir/usr/src/extase-em-4r73/
         
-        # Create launcher script
-        echo '#!/bin/bash' > AppDir/usr/bin/extase-em-4r73
-        echo 'export PYTHONPATH=$PYTHONPATH:$APPDIR/usr/src/extase-em-4r73' >> AppDir/usr/bin/extase-em-4r73
-        echo 'python3 $APPDIR/usr/src/extase-em-4r73/main.py "$@"' >> AppDir/usr/bin/extase-em-4r73
-        chmod +x AppDir/usr/bin/extase-em-4r73
+        # 5. Create AppRun script
+        cat > AppDir/AppRun <<EOF
+        #!/bin/bash
+        HERE="\$(dirname "\$(readlink -f "\${0}")")"
+        export PYTHONPATH="\$HERE/usr/lib/python3.10/site-packages:\$HERE/usr/src/extase-em-4r73:\$PYTHONPATH"
+        export LD_LIBRARY_PATH="\$HERE/usr/lib:\$LD_LIBRARY_PATH"
+        exec python3 "\$HERE/usr/src/extase-em-4r73/main.py" "\$@"
+        EOF
+        chmod +x AppDir/AppRun
         
-        # Run linuxdeploy
-        ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage --desktop-file AppDir/usr/share/applications/extase-em-4r73.desktop --icon-file AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+        # 6. Run linuxdeploy (without python plugin for now to avoid complexity, just bundling libs)
+        # We rely on system python being present on target or bundle it later. 
+        # For simplicity in this fix, we assume user has python (like .deb). 
+        # BUT user wanted AppImage to be self-contained? 
+        # The python plugin is what makes it self-contained. Let's try to use it with the setup.py we made.
+        
+        # RETRY with Plugin using the generated setup.py
+        # We need to clean AppDir/AppRun if we want plugin to generate it, 
+        # OR we keep our custom AppRun if we are doing manual mode.
+        # Let's try the PLUGIN mode one last time with the setup.py existing.
+        
+        rm AppDir/AppRun # Let plugin generate it if possible, or use ours if we don't use plugin.
+        
+        # Valid Standard AppImage Build with Plugin:
+        # pip install . --prefix=AppDir/usr
+        export PIP_PREFIX=AppDir/usr
+        pip3 install . -r requirements.txt
+        
+        # Run linuxdeploy with python plugin
+        ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin python --output appimage --desktop-file AppDir/usr/share/applications/extase-em-4r73.desktop --icon-file AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
 
     - name: Upload AppImage artifact
       uses: actions/upload-artifact@v4
