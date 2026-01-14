@@ -37,6 +37,7 @@ build/
 dist/
 *.egg-info/
 *.egg
+*.deb
 
 # IDE/Config
 .vscode/
@@ -52,10 +53,25 @@ Thumbs.db
 *.swo
 *~
 
-# Icones gerados automaticamente
-assets/logo-64.png
-assets/logo-128.png
-assets/logo-512.png
+# Icones gerados automaticamente (mantidos no git para Flatpak)
+
+# Modelos ML (baixar via script)
+assets/models/*.tflite
+assets/models/*.onnx
 
 # Logs de execucao
 *.log
+
+# Coverage
+.coverage
+htmlcov/
+
+# Packaging (gerado no CI)
+packaging/*.deb
+packaging/*.AppImage
+packaging/linuxdeploy*.AppImage
+packaging/AppDir/
+packaging/build/
+
+# Index marker
+.INDEX_NEEDS_UPDATE

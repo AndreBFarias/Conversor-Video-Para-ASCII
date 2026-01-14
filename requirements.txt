@@ -1,7 +1,16 @@
 # Dependencias Python para o Extase em 4R73
 # NOTA: PyGObject/GTK devem ser instalados via apt (python3-gi, python3-gi-cairo, gir1.2-gtk-3.0)
 
-opencv-python
-numpy
-scikit-learn
-scipy
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+# cupy-cuda12x (Instalado dinamicamente via script se GPU NVIDIA detectada)
+mediapipe
+pyaudio>=0.2.13
+sphinx==7.2.6
+sphinx_rtd_theme==2.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.1.0
+coverage>=7.4.0

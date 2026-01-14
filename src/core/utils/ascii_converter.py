@@ -19,16 +19,30 @@ def converter_frame_para_ascii(
     ramp_len = len(luminance_ramp)
     ramp_array = np.array(list(luminance_ramp))
 
-    brightness = gray_frame.astype(np.int32)
-    edge_boost = (magnitude_frame > sobel_threshold).astype(np.int32) * 100
-    brightness = np.clip(brightness + edge_boost, 0, 255)
+    lum_indices = ((gray_frame / 255) * (ramp_len - 1)).astype(np.int32)
+    chars = ramp_array[lum_indices].copy()
 
-    char_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
-    chars = ramp_array[char_indices]
+    angle_degrees = angle_frame * (180 / np.pi)
+    angle_degrees = (angle_degrees + 180) % 180
+
+    is_edge = magnitude_frame > sobel_threshold
+
+    slash_mask = is_edge & (((angle_degrees >= 22.5) & (angle_degrees < 67.5)) |
+                            ((angle_degrees >= 157.5) & (angle_degrees < 202.5)))
+    pipe_mask = is_edge & (((angle_degrees >= 67.5) & (angle_degrees < 112.5)) |
+                           ((angle_degrees >= 247.5) & (angle_degrees < 292.5)))
+    backslash_mask = is_edge & (((angle_degrees >= 112.5) & (angle_degrees < 157.5)) |
+                                ((angle_degrees >= 292.5) & (angle_degrees < 337.5)))
+    dash_mask = is_edge & ~(slash_mask | pipe_mask | backslash_mask)
+
+    chars[slash_mask] = '/'
+    chars[pipe_mask] = '|'
+    chars[backslash_mask] = '\\'
+    chars[dash_mask] = '-'
 
     ansi_codes = rgb_to_ansi256_vectorized(color_frame)
 
-    is_masked = mask == 255
+    is_masked = mask > 127
     chars[is_masked] = ' '
     ansi_codes[is_masked] = 232
 

@@ -147,13 +147,19 @@ def render_ascii_as_image(ascii_string, font_scale=ASCII_FONT_SCALE):
     # Draw characters
     for y, line in enumerate(parsed_lines):
         for x, (char, ansi_code) in enumerate(line):
-            if char.strip():  # Skip spaces
-                pos_x = x * ASCII_CHAR_WIDTH
-                pos_y = (y + 1) * ASCII_CHAR_HEIGHT - 4
-                color = ansi256_to_bgr(ansi_code)
-                
-                cv2.putText(canvas, char, (pos_x, pos_y), ASCII_FONT, 
+            pos_x = x * ASCII_CHAR_WIDTH
+            pos_y = y * ASCII_CHAR_HEIGHT
+            color = ansi256_to_bgr(ansi_code)
+
+            if char.strip():  # Non-space character
+                text_y = (y + 1) * ASCII_CHAR_HEIGHT - 4
+                cv2.putText(canvas, char, (pos_x, text_y), ASCII_FONT,
                            font_scale, color, ASCII_FONT_THICKNESS, cv2.LINE_AA)
+            else:  # Space - render as filled rectangle
+                cv2.rectangle(canvas,
+                            (pos_x, pos_y),
+                            (pos_x + ASCII_CHAR_WIDTH, pos_y + ASCII_CHAR_HEIGHT),
+                            color, -1)
     
     return canvas
 

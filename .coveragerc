@@ -1,0 +1,29 @@
+[run]
+source = src
+omit =
+    src/core/gtk_*.py
+    src/core/gpu_*.py
+    src/core/async_*.py
+    src/core/audio_*.py
+    src/core/auto_*.py
+    src/core/matrix_*.py
+    src/core/post_fx_*.py
+    src/core/optical_*.py
+    src/core/style_*.py
+    src/core/realtime_*.py
+    src/core/renderer.py
+    src/core/player.py
+    src/core/converter.py
+    src/core/*_converter.py
+    src/app/app.py
+    src/app/actions/*.py
+    src/gui/*
+    src/main.py
+    src/cli_player.py
+    */__pycache__/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError

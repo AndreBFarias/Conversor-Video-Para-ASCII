@@ -36,10 +36,10 @@ fi
 
 echo "[3/4] Desconsagrando o icone..."
 if [[ -f "${ICON_INSTALL_PATH_USER}" ]]; then
-    rm -f "${ICON_INSTALL_PATH_USER}" && echo "Icone do usuario removido." || echo "Aviso: Falha ao remover icone do usuario."
+    rm -f "${ICON_INSTALL_PATH_USER}" && echo "   -> Icone do usuario removido." || echo "   -> Aviso: Falha ao remover icone do usuario."
 fi
 if [[ -f "${ICON_INSTALL_PATH_SYSTEM}" ]]; then
-    $SUDO_CMD rm -f "${ICON_INSTALL_PATH_SYSTEM}" && echo "Icone do sistema removido." || echo "Aviso: Falha ao remover icone do sistema (Verifique permissoes sudo)."
+    $SUDO_CMD rm -f "${ICON_INSTALL_PATH_SYSTEM}" && echo "   -> Icone do sistema removido." || echo "   -> Aviso: Falha ao remover icone do sistema (Verifique permissoes sudo)."
 fi
 
 NEED_DB_UPDATE=false
@@ -48,22 +48,27 @@ NEED_ICON_UPDATE=false
 if command -v gtk-update-icon-cache &> /dev/null; then NEED_ICON_UPDATE=true; fi
 
 if $NEED_DB_UPDATE ; then
-    echo "Atualizando database de aplicativos..."
+    echo "   -> Atualizando database de aplicativos..."
     if [[ -d "${DESKTOP_ENTRY_DIR_USER}" ]]; then update-desktop-database "${DESKTOP_ENTRY_DIR_USER}" >/dev/null 2>&1; fi
     if [[ -d "${DESKTOP_ENTRY_DIR_SYSTEM}" ]]; then $SUDO_CMD update-desktop-database "${DESKTOP_ENTRY_DIR_SYSTEM}" >/dev/null 2>&1; fi
 fi
 if $NEED_ICON_UPDATE ; then
-     echo "Atualizando cache de icones..."
+     echo "   -> Atualizando cache de icones..."
      ICON_BASE_DIR_USER="$HOME/.local/share/icons/hicolor/"
      ICON_BASE_DIR_SYSTEM="/usr/local/share/icons/hicolor/"
      if [[ -d "$ICON_BASE_DIR_USER" ]]; then gtk-update-icon-cache "$ICON_BASE_DIR_USER" -f -t >/dev/null 2>&1; fi
      if [[ -d "$ICON_BASE_DIR_SYSTEM" ]]; then $SUDO_CMD gtk-update-icon-cache "$ICON_BASE_DIR_SYSTEM" -f -t >/dev/null 2>&1; fi
 fi
 
-echo "[4/4] Limpando cache Python e Logs..."
+echo "[4/4] Limpando cache Python, atlas GPU, logs e dados temporarios..."
 find "${SCRIPT_DIR}" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-rm -rf "${SCRIPT_DIR}/logs" 2>/dev/null
-rm -rf "${SCRIPT_DIR}/Dev_log" 2>/dev/null
+find "${SCRIPT_DIR}" -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+find "${SCRIPT_DIR}" -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+rm -rf "${SCRIPT_DIR}/.cache" 2>/dev/null && echo "   -> Atlas GPU (.cache) removido."
+rm -rf "${SCRIPT_DIR}/logs" 2>/dev/null && echo "   -> Logs removidos."
+rm -f "${SCRIPT_DIR}/*.stats" 2>/dev/null && echo "   -> Arquivos de profile removidos."
+rm -rf "${SCRIPT_DIR}/benchmark_output" 2>/dev/null && echo "   -> Benchmarks removidos."
+echo "   -> Limpeza concluida."
 
 echo "=== Banimento Concluido ==="
 echo "As dependencias do sistema (GTK, OpenCV) foram mantidas."

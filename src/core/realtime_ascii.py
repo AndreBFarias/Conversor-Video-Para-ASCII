@@ -71,6 +71,24 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
     return "\n".join(output_buffer) + ANSI_RESET
 
 
+def apply_chroma_key(frame, hsv_values):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    lower = np.array([hsv_values['h_min'], hsv_values['s_min'], hsv_values['v_min']])
+    upper = np.array([hsv_values['h_max'], hsv_values['s_max'], hsv_values['v_max']])
+    mask = cv2.inRange(hsv, lower, upper)
+
+    kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    mask = cv2.erode(mask, kernel_erode, iterations=hsv_values['erode'])
+    mask = cv2.dilate(mask, kernel_dilate, iterations=hsv_values['dilate'])
+
+    mask_inv = cv2.bitwise_not(mask)
+    result = np.zeros_like(frame)
+    result[mask_inv > 0] = frame[mask_inv > 0]
+
+    return result
+
+
 def run_realtime_ascii(config_path, video_path=None):
     config = configparser.ConfigParser(interpolation=None)
 
@@ -82,6 +100,26 @@ def run_realtime_ascii(config_path, video_path=None):
         return
 
     is_video_file = video_path is not None
+
+    chroma_enabled = False
+    hsv_values = {}
+    if 'ChromaKey' in config:
+        try:
+            hsv_values = {
+                'h_min': config.getint('ChromaKey', 'h_min', fallback=35),
+                'h_max': config.getint('ChromaKey', 'h_max', fallback=85),
+                's_min': config.getint('ChromaKey', 's_min', fallback=40),
+                's_max': config.getint('ChromaKey', 's_max', fallback=255),
+                'v_min': config.getint('ChromaKey', 'v_min', fallback=40),
+                'v_max': config.getint('ChromaKey', 'v_max', fallback=255),
+                'erode': config.getint('ChromaKey', 'erode', fallback=2),
+                'dilate': config.getint('ChromaKey', 'dilate', fallback=2)
+            }
+            chroma_enabled = True
+            print(f"Chroma Key ativado: H={hsv_values['h_min']}-{hsv_values['h_max']}")
+        except Exception as e:
+            print(f"Aviso: Erro ao carregar ChromaKey: {e}")
+            chroma_enabled = False
 
     try:
         term_size = os.get_terminal_size()
@@ -106,7 +144,7 @@ def run_realtime_ascii(config_path, video_path=None):
 
     try:
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
-        luminance_ramp = config.get('Conversor', 'luminance_ramp')
+        luminance_ramp = config.get('Conversor', 'luminance_ramp').rstrip('|')
 
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
@@ -164,6 +202,9 @@ def run_realtime_ascii(config_path, video_path=None):
             if sharpen_enabled:
                 frame_colorido = sharpen_frame(frame_colorido, sharpen_amount)
 
+            if chroma_enabled:
+                frame_colorido = apply_chroma_key(frame_colorido, hsv_values)
+
             grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
             resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
@@ -193,6 +234,8 @@ def run_realtime_ascii(config_path, video_path=None):
     finally:
         if cap.isOpened():
             cap.release()
+        cv2.destroyAllWindows()
+        time.sleep(0.3)
         os.system('cls' if os.name == 'nt' else 'clear')
         print(ANSI_RESET)
 

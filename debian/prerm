@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "remove" ]; then
+    echo "Removendo Extase em 4R73..."
+fi
+
+exit 0

@@ -1,0 +1,88 @@
+#!/bin/bash
+set -e
+
+INSTALL_DIR="/opt/extase-em-4r73"
+LOG_FILE="/var/log/extase-em-4r73-install.log"
+MODEL_URL="https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+MODEL_PATH="${INSTALL_DIR}/assets/models/selfie_segmenter.tflite"
+
+log_msg() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log_msg "=== Iniciando pos-instalacao do Extase em 4R73 ==="
+
+if [ -d "$INSTALL_DIR" ]; then
+    cd "$INSTALL_DIR"
+
+    log_msg "[1/5] Criando diretorios necessarios..."
+    mkdir -p data_input data_output logs assets/models .cache
+    chmod 755 data_input data_output logs
+
+    if [ ! -d "venv" ]; then
+        log_msg "[2/5] Criando ambiente virtual Python..."
+        if ! python3 -m venv --system-site-packages venv 2>> "$LOG_FILE"; then
+            log_msg "ERRO: Falha ao criar venv. Verifique se python3-venv esta instalado."
+            exit 1
+        fi
+
+        log_msg "[3/5] Atualizando pip..."
+        ./venv/bin/pip install --upgrade pip 2>> "$LOG_FILE" || log_msg "AVISO: Falha ao atualizar pip."
+
+        if [ -f "requirements.txt" ]; then
+            log_msg "[3/5] Instalando dependencias Python..."
+            if ! ./venv/bin/pip install -r requirements.txt 2>> "$LOG_FILE"; then
+                log_msg "AVISO: Algumas dependencias podem ter falhado. Verifique $LOG_FILE"
+            fi
+        fi
+
+        if command -v nvidia-smi &> /dev/null; then
+            log_msg "[3/5] GPU NVIDIA detectada. Instalando cupy-cuda12x..."
+            ./venv/bin/pip install cupy-cuda12x 2>> "$LOG_FILE" || log_msg "AVISO: Falha ao instalar cupy. GPU desabilitada."
+        fi
+    else
+        log_msg "[2/5] Ambiente virtual ja existe. Pulando criacao."
+    fi
+
+    log_msg "[4/5] Verificando modelo MediaPipe..."
+    mkdir -p "$(dirname "$MODEL_PATH")"
+    if [ ! -f "$MODEL_PATH" ]; then
+        log_msg "Baixando modelo de segmentacao automatica..."
+        if command -v curl &> /dev/null; then
+            if ! curl -L -o "$MODEL_PATH" "$MODEL_URL" 2>> "$LOG_FILE"; then
+                log_msg "AVISO: Falha ao baixar modelo MediaPipe. Auto Seg indisponivel."
+            else
+                log_msg "Modelo baixado com sucesso."
+            fi
+        elif command -v wget &> /dev/null; then
+            if ! wget -O "$MODEL_PATH" "$MODEL_URL" 2>> "$LOG_FILE"; then
+                log_msg "AVISO: Falha ao baixar modelo MediaPipe. Auto Seg indisponivel."
+            else
+                log_msg "Modelo baixado com sucesso."
+            fi
+        else
+            log_msg "AVISO: curl/wget nao encontrado. Auto Seg indisponivel."
+        fi
+    else
+        log_msg "Modelo MediaPipe ja existe."
+    fi
+
+    log_msg "[5/5] Ajustando permissoes..."
+    chmod -R 755 "$INSTALL_DIR"
+    if [ -d "$INSTALL_DIR/venv" ]; then
+        chmod +x "$INSTALL_DIR/venv/bin/python3" 2>/dev/null || true
+    fi
+fi
+
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+if command -v gtk-update-icon-cache &> /dev/null; then
+    gtk-update-icon-cache /usr/share/icons/hicolor -f -t 2>/dev/null || true
+fi
+
+log_msg "=== Pos-instalacao concluida ==="
+log_msg "Log completo em: $LOG_FILE"
+
+exit 0

@@ -19,7 +19,7 @@ def iniciar_conversao_imagem(image_path, output_dir, config):
         target_width = config.getint('Conversor', 'target_width')
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
-        luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP)
+        luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
         print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
         
         # Melhorias de nitidez

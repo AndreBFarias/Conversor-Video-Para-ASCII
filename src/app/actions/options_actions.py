@@ -2,7 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP, LUMINANCE_RAMPS, FIXED_PALETTES
+from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP, LUMINANCE_RAMPS, FIXED_PALETTES, STYLE_PRESETS
 
 
 class OptionsActionsMixin:
@@ -231,8 +231,36 @@ class OptionsActionsMixin:
         if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
             self.opt_fixed_palette_combo.set_sensitive(is_active)
 
+    def on_pref_style_combo_changed(self, combo):
+        preset_id = combo.get_active_id()
+        if not preset_id or preset_id not in STYLE_PRESETS:
+            return
+
+        preset = STYLE_PRESETS[preset_id]
+        
+        # Aplicar valores nos widgets
+        if hasattr(self, 'opt_sobel_spin') and self.opt_sobel_spin:
+             self.opt_sobel_spin.set_value(preset['sobel'])
+             
+        if hasattr(self, 'opt_aspect_spin') and self.opt_aspect_spin:
+             self.opt_aspect_spin.set_value(preset['aspect'])
+             
+        if 'sharpen_amount' in preset:
+             # Sharpen nao tem spin na UI padrao das options?
+             # Se nao tiver, setamos no config direto ao salvar, ou ignoramos visualmente?
+             # O Session Summary diz "sharpen_enabled = True" e "sharpen_amount = 0.5" 
+             # Mas nao vi widget para sharpen no view_file do options_actions.py (soh sobel e aspect)
+             # Vamos assumir que soh sobel/aspect/luminance estao expostos
+             pass
+             
+        if hasattr(self, 'opt_luminance_entry') and self.opt_luminance_entry:
+             self.opt_luminance_entry.set_text(preset['luminance_ramp'])
+
     def on_options_button_clicked(self, widget):
         try:
+            self._check_config_reload()
+            self.reload_config()
+
             loop_val_str = self.config.get('Player', 'loop', fallback='nao').lower()
             loop_val = loop_val_str in ['sim', 'yes', 'true', '1', 'on']
             self.opt_loop_check.set_active(loop_val)
@@ -247,7 +275,7 @@ class OptionsActionsMixin:
             self.opt_sobel_spin.set_value(sobel_val)
             self.opt_aspect_spin.set_value(aspect_val)
 
-            luminance_val = self.config.get('Conversor', 'luminance_ramp', fallback=DEFAULT_LUMINANCE_RAMP)
+            luminance_val = self.config.get('Conversor', 'luminance_ramp', fallback=DEFAULT_LUMINANCE_RAMP).rstrip('|')
             luminance_preset = self.config.get('Conversor', 'luminance_preset', fallback='standard')
             self.opt_luminance_entry.set_text(luminance_val)
 
@@ -334,8 +362,92 @@ class OptionsActionsMixin:
 
             if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
                 fmt = self.config.get('Output', 'format', fallback='txt')
-                fmt_map = {'txt': 0, 'html': 1, 'ansi': 2}
+                fmt_map = {'txt': 0, 'mp4': 1, 'gif': 2, 'html': 3}
                 self.pref_format_combo.set_active(fmt_map.get(fmt, 0))
+
+            if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
+                gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=False)
+                self.pref_gpu_switch.set_active(gpu_enabled)
+                
+            if hasattr(self, 'pref_render_mode_combo') and self.pref_render_mode_combo:
+                render_mode = self.config.get('Conversor', 'gpu_render_mode', fallback='fast')
+                self.pref_render_mode_combo.set_active_id(render_mode) or self.pref_render_mode_combo.set_active(0)
+
+            if hasattr(self, 'pref_braille_switch') and self.pref_braille_switch:
+                braille_enabled = self.config.getboolean('Conversor', 'braille_enabled', fallback=False)
+                self.pref_braille_switch.set_active(braille_enabled)
+
+            if hasattr(self, 'pref_braille_threshold_scale') and self.pref_braille_threshold_scale:
+                braille_threshold = self.config.getint('Conversor', 'braille_threshold', fallback=128)
+                self.pref_braille_threshold_scale.set_value(braille_threshold)
+
+            if hasattr(self, 'pref_temporal_switch') and self.pref_temporal_switch:
+                temporal_enabled = self.config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
+                self.pref_temporal_switch.set_active(temporal_enabled)
+
+            if hasattr(self, 'pref_temporal_threshold_scale') and self.pref_temporal_threshold_scale:
+                temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=20)
+                self.pref_temporal_threshold_scale.set_value(temporal_threshold)
+
+            if hasattr(self, 'pref_async_switch') and self.pref_async_switch:
+                async_enabled = self.config.getboolean('Conversor', 'gpu_async_enabled', fallback=True)
+                self.pref_async_switch.set_active(async_enabled)
+
+            if hasattr(self, 'pref_async_num_streams_spin') and self.pref_async_num_streams_spin:
+                num_streams = self.config.getint('Conversor', 'gpu_async_num_streams', fallback=4)
+                self.pref_async_num_streams_spin.set_value(num_streams)
+
+            if hasattr(self, 'pref_auto_seg_switch') and self.pref_auto_seg_switch:
+                auto_seg_enabled = self.config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+                self.pref_auto_seg_switch.set_active(auto_seg_enabled)
+
+            if hasattr(self, 'opt_font_detection_switch') and self.opt_font_detection_switch:
+                font_detection = self.config.getboolean('Preview', 'font_detection_enabled', fallback=True)
+                self.opt_font_detection_switch.set_active(font_detection)
+
+            if hasattr(self, 'opt_font_family_combo') and self.opt_font_family_combo:
+                from src.utils.terminal_font_detector import list_monospace_fonts
+
+                self.opt_font_family_combo.remove_all()
+
+                self.opt_font_family_combo.append_text('auto')
+
+                available_fonts = list_monospace_fonts()
+                for font in available_fonts:
+                    self.opt_font_family_combo.append_text(font)
+
+                font_family = self.config.get('Preview', 'font_family', fallback='auto')
+                entry = self.opt_font_family_combo.get_child()
+                if entry:
+                    entry.set_text(font_family)
+
+            if hasattr(self, 'opt_font_size_spin') and self.opt_font_size_spin:
+                font_size_str = self.config.get('Preview', 'font_size', fallback='auto')
+                if font_size_str == 'auto':
+                    self.opt_font_size_spin.set_value(12)
+                else:
+                    try:
+                        font_size = int(font_size_str)
+                        self.opt_font_size_spin.set_value(font_size)
+                    except ValueError:
+                        self.opt_font_size_spin.set_value(12)
+
+            if hasattr(self, 'pref_style_combo') and self.pref_style_combo:
+                style = self.config.get('Conversor', 'style_preset', fallback='clean')
+                # Map style IDs to combo index? Or use set_active_id for ComboBoxText
+                # GtkComboBoxText supports set_active_id
+                if not self.pref_style_combo.set_active_id(style):
+                    self.pref_style_combo.set_active(0) # Default to first if fail
+                
+                # Connect signal manually (disconnect first to avoid duplicates if re-opened?)
+                # Gtk signals don't automatically deduplicate. 
+                # Simpler: id = connect(). Store id? 
+                # Or just don't worry too much for now, or check if connected.
+                try:
+                    self.pref_style_combo.disconnect_by_func(self.on_pref_style_combo_changed)
+                except:
+                    pass
+                self.pref_style_combo.connect("changed", self.on_pref_style_combo_changed)
 
         except Exception as e:
             self.logger.error(f"Erro ao carregar opcoes: {e}")
@@ -374,6 +486,9 @@ class OptionsActionsMixin:
             self.pref_quality_combo.set_active(0)
         if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
             self.pref_format_combo.set_active(0)
+            
+        if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
+            self.pref_gpu_switch.set_active(False)
 
         if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
             self.opt_luminance_preset_combo.set_active(0)
@@ -397,6 +512,64 @@ class OptionsActionsMixin:
             self.config.set('Conversor', 'sobel_threshold', str(int(self.opt_sobel_spin.get_value())))
             self.config.set('Conversor', 'char_aspect_ratio', str(self.opt_aspect_spin.get_value()))
             self.config.set('Conversor', 'luminance_ramp', self.opt_luminance_entry.get_text())
+
+            if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
+                gpu_enabled = self.pref_gpu_switch.get_active()
+                self.config.set('Conversor', 'gpu_enabled', 'true' if gpu_enabled else 'false')
+
+            if hasattr(self, 'pref_render_mode_combo') and self.pref_render_mode_combo:
+                render_mode = self.pref_render_mode_combo.get_active_id() or 'fast'
+                self.config.set('Conversor', 'gpu_render_mode', render_mode)
+
+            if hasattr(self, 'pref_braille_switch') and self.pref_braille_switch:
+                braille_enabled = self.pref_braille_switch.get_active()
+                self.config.set('Conversor', 'braille_enabled', 'true' if braille_enabled else 'false')
+
+            if hasattr(self, 'pref_braille_threshold_scale') and self.pref_braille_threshold_scale:
+                braille_threshold = int(self.pref_braille_threshold_scale.get_value())
+                self.config.set('Conversor', 'braille_threshold', str(braille_threshold))
+
+            if hasattr(self, 'pref_temporal_switch') and self.pref_temporal_switch:
+                temporal_enabled = self.pref_temporal_switch.get_active()
+                self.config.set('Conversor', 'temporal_coherence_enabled', 'true' if temporal_enabled else 'false')
+
+            if hasattr(self, 'pref_temporal_threshold_scale') and self.pref_temporal_threshold_scale:
+                temporal_threshold = int(self.pref_temporal_threshold_scale.get_value())
+                self.config.set('Conversor', 'temporal_threshold', str(temporal_threshold))
+
+            if hasattr(self, 'pref_async_switch') and self.pref_async_switch:
+                async_enabled = self.pref_async_switch.get_active()
+                self.config.set('Conversor', 'gpu_async_enabled', 'true' if async_enabled else 'false')
+
+            if hasattr(self, 'pref_async_num_streams_spin') and self.pref_async_num_streams_spin:
+                num_streams = int(self.pref_async_num_streams_spin.get_value())
+                self.config.set('Conversor', 'gpu_async_num_streams', str(num_streams))
+
+            if hasattr(self, 'pref_auto_seg_switch') and self.pref_auto_seg_switch:
+                auto_seg_enabled = self.pref_auto_seg_switch.get_active()
+                self.config.set('Conversor', 'auto_seg_enabled', 'true' if auto_seg_enabled else 'false')
+
+            if 'Preview' not in self.config:
+                self.config.add_section('Preview')
+
+            if hasattr(self, 'opt_font_detection_switch') and self.opt_font_detection_switch:
+                font_detection = self.opt_font_detection_switch.get_active()
+                self.config.set('Preview', 'font_detection_enabled', 'true' if font_detection else 'false')
+
+            if hasattr(self, 'opt_font_family_combo') and self.opt_font_family_combo:
+                entry = self.opt_font_family_combo.get_child()
+                if entry:
+                    font_family = entry.get_text().strip()
+                else:
+                    font_family = self.opt_font_family_combo.get_active_text() or 'auto'
+
+                if not font_family:
+                    font_family = 'auto'
+                self.config.set('Preview', 'font_family', font_family)
+
+            if hasattr(self, 'opt_font_size_spin') and self.opt_font_size_spin:
+                font_size = int(self.opt_font_size_spin.get_value())
+                self.config.set('Preview', 'font_size', str(font_size))
 
             if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
                 preset_id = self.opt_luminance_preset_combo.get_active_id()
@@ -478,10 +651,20 @@ class OptionsActionsMixin:
                     if hasattr(self, 'quality_combo') and self.quality_combo:
                         self.quality_combo.set_active(active)
 
+            if hasattr(self, 'pref_style_combo') and self.pref_style_combo:
+                style_id = self.pref_style_combo.get_active_id()
+                if style_id:
+                     self.config.set('Conversor', 'style_preset', style_id)
+                     # Apply hidden properties form style preset (sharpen)
+                     if style_id in STYLE_PRESETS:
+                         preset = STYLE_PRESETS[style_id]
+                         if 'sharpen_amount' in preset:
+                             self.config.set('Conversor', 'sharpen_amount', str(preset['sharpen_amount']))
+
             if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
                 if 'Output' not in self.config:
                     self.config.add_section('Output')
-                fmt_list = ['txt', 'html', 'ansi']
+                fmt_list = ['txt', 'mp4', 'gif', 'html']
                 active = self.pref_format_combo.get_active()
                 if 0 <= active < len(fmt_list):
                     self.config.set('Output', 'format', fmt_list[active])
@@ -511,7 +694,7 @@ class OptionsActionsMixin:
         if video_to_test and hasattr(self, '_is_video_file') and self._is_video_file(video_to_test):
             cmd_args = ["--video", video_to_test]
 
-        self._launch_calibrator_in_terminal(cmd_args)
+        self._launch_gtk_calibrator(cmd_args)
 
     def on_test_chroma_clicked(self, widget):
         try:
@@ -534,4 +717,4 @@ class OptionsActionsMixin:
         if video_to_test and hasattr(self, '_is_video_file') and self._is_video_file(video_to_test):
             cmd_args = ["--video", video_to_test]
 
-        self._launch_calibrator_in_terminal(cmd_args)
+        self._launch_gtk_calibrator(cmd_args)

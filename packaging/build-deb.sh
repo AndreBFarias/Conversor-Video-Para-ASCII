@@ -20,11 +20,20 @@ mkdir -p "${DEB_ROOT}/usr/share/icons/hicolor/128x128/apps"
 mkdir -p "${DEB_ROOT}/usr/bin"
 
 echo "[1/5] Copiando arquivos de controle..."
-cp "${SCRIPT_DIR}/deb/DEBIAN/control" "${DEB_ROOT}/DEBIAN/"
-cp "${SCRIPT_DIR}/deb/DEBIAN/postinst" "${DEB_ROOT}/DEBIAN/"
-cp "${SCRIPT_DIR}/deb/DEBIAN/postrm" "${DEB_ROOT}/DEBIAN/"
+cp "${PROJECT_DIR}/debian/control" "${DEB_ROOT}/DEBIAN/"
+cp "${PROJECT_DIR}/debian/postinst" "${DEB_ROOT}/DEBIAN/"
+# Check if postrm exists before copying
+if [ -f "${PROJECT_DIR}/debian/postrm" ]; then
+    cp "${PROJECT_DIR}/debian/postrm" "${DEB_ROOT}/DEBIAN/"
+    chmod 755 "${DEB_ROOT}/DEBIAN/postrm"
+fi
+
+if [ -f "${PROJECT_DIR}/debian/prerm" ]; then
+    cp "${PROJECT_DIR}/debian/prerm" "${DEB_ROOT}/DEBIAN/"
+    chmod 755 "${DEB_ROOT}/DEBIAN/prerm"
+fi
+
 chmod 755 "${DEB_ROOT}/DEBIAN/postinst"
-chmod 755 "${DEB_ROOT}/DEBIAN/postrm"
 
 # Update version in control file
 sed -i "s/^Version: .*/Version: ${VERSION}/" "${DEB_ROOT}/DEBIAN/control"
@@ -48,28 +57,54 @@ else
     cp "${PROJECT_DIR}/assets/logo.png" "${DEB_ROOT}/usr/share/icons/hicolor/64x64/apps/${PACKAGE_NAME}.png"
 fi
 
-echo "[4/5] Criando arquivo .desktop..."
-cat > "${DEB_ROOT}/usr/share/applications/${PACKAGE_NAME}.desktop" << EOF
-[Desktop Entry]
-Version=1.1
-Name=Extase em 4R73
-Comment=Conversor de Videos e Imagens para Arte ASCII
-Exec=/opt/${PACKAGE_NAME}/venv/bin/python3 /opt/${PACKAGE_NAME}/main.py
-Icon=${PACKAGE_NAME}
-Terminal=false
-Type=Application
-Categories=Video;AudioVideo;
-StartupNotify=true
-StartupWMClass=${PACKAGE_NAME}
-Path=/opt/${PACKAGE_NAME}
-EOF
+echo "[4/5] Instalando arquivo .desktop..."
+cp "${PROJECT_DIR}/debian/extase-em-4r73.desktop" "${DEB_ROOT}/usr/share/applications/${PACKAGE_NAME}.desktop"
 
 echo "[5/5] Criando wrapper script..."
-cat > "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}" << EOF
+cat > "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}" << 'WRAPPER_EOF'
 #!/bin/bash
-cd /opt/${PACKAGE_NAME}
-exec ./venv/bin/python3 main.py "\$@"
-EOF
+INSTALL_DIR="/opt/extase-em-4r73"
+LOG_FILE="/tmp/extase-em-4r73.log"
+
+show_error() {
+    echo "$1" | tee -a "$LOG_FILE"
+    if command -v zenity &> /dev/null; then
+        zenity --error --title="Extase em 4R73" --text="$1" 2>/dev/null &
+    elif command -v notify-send &> /dev/null; then
+        notify-send "Extase em 4R73" "$1" 2>/dev/null &
+    fi
+}
+
+if [ ! -d "$INSTALL_DIR" ]; then
+    show_error "Diretorio de instalacao nao encontrado: $INSTALL_DIR\nReinstale o pacote: sudo apt reinstall extase-em-4r73"
+    exit 1
+fi
+
+cd "$INSTALL_DIR"
+
+# CUDA libs do DaVinci Resolve (se disponivel)
+if [ -d "/opt/resolve/libs" ]; then
+    export LD_LIBRARY_PATH="/opt/resolve/libs:$LD_LIBRARY_PATH"
+fi
+
+if [ ! -d "venv" ] || [ ! -f "venv/bin/python3" ]; then
+    show_error "Ambiente virtual nao encontrado.\nExecutando configuracao inicial..."
+
+    if [ -f "/var/lib/dpkg/info/extase-em-4r73.postinst" ]; then
+        pkexec /var/lib/dpkg/info/extase-em-4r73.postinst configure 2>> "$LOG_FILE"
+    else
+        show_error "Falha na configuracao. Reinstale: sudo apt reinstall extase-em-4r73"
+        exit 1
+    fi
+
+    if [ ! -d "venv" ]; then
+        show_error "Falha ao criar ambiente virtual. Verifique: $LOG_FILE"
+        exit 1
+    fi
+fi
+
+exec ./venv/bin/python3 main.py "$@" 2>&1 | tee -a "$LOG_FILE"
+WRAPPER_EOF
 chmod 755 "${DEB_ROOT}/usr/bin/${PACKAGE_NAME}"
 
 echo "Construindo pacote .deb..."

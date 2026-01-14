@@ -14,33 +14,46 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
 
 
-def iniciar_conversao(video_path, output_dir, config):
+def iniciar_conversao(video_path, output_dir, config, chroma_override=None):
     try:
         target_width = config.getint('Conversor', 'target_width')
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
-        
+
         # Melhorias de nitidez
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
-        
-        # LER RAMPA DO CONFIG.INI (importante para caracteres personalizados!)
-        luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP)
-        print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
-        
-        lower_green = np.array([
-            config.getint('ChromaKey', 'h_min'),
-            config.getint('ChromaKey', 's_min'),
-            config.getint('ChromaKey', 'v_min')
-        ])
-        upper_green = np.array([
-            config.getint('ChromaKey', 'h_max'),
-            config.getint('ChromaKey', 's_max'),
-            config.getint('ChromaKey', 'v_max')
-        ])
 
-        erode_size = config.getint('ChromaKey', 'erode', fallback=2)
-        dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
+        # LER RAMPA DO CONFIG.INI (importante para caracteres personalizados!)
+        luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
+        print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
+
+        if chroma_override:
+            lower_green = np.array([
+                chroma_override['h_min'],
+                chroma_override['s_min'],
+                chroma_override['v_min']
+            ])
+            upper_green = np.array([
+                chroma_override['h_max'],
+                chroma_override['s_max'],
+                chroma_override['v_max']
+            ])
+            erode_size = chroma_override.get('erode', 2)
+            dilate_size = chroma_override.get('dilate', 2)
+        else:
+            lower_green = np.array([
+                config.getint('ChromaKey', 'h_min'),
+                config.getint('ChromaKey', 's_min'),
+                config.getint('ChromaKey', 'v_min')
+            ])
+            upper_green = np.array([
+                config.getint('ChromaKey', 'h_max'),
+                config.getint('ChromaKey', 's_max'),
+                config.getint('ChromaKey', 'v_max')
+            ])
+            erode_size = config.getint('ChromaKey', 'erode', fallback=2)
+            dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
     except Exception as e:
         raise ValueError(f"Erro ao ler o config.ini. Erro: {e}")
 
@@ -119,6 +132,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Executor de Conversao ASCII (CLI)")
     parser.add_argument("--video", required=True, help="Caminho do video para converter.")
     parser.add_argument("--config", required=True, help="Caminho para o config.ini.")
+    parser.add_argument("--h-min", type=int, default=None, help="ChromaKey H min override")
+    parser.add_argument("--h-max", type=int, default=None, help="ChromaKey H max override")
+    parser.add_argument("--s-min", type=int, default=None, help="ChromaKey S min override")
+    parser.add_argument("--s-max", type=int, default=None, help="ChromaKey S max override")
+    parser.add_argument("--v-min", type=int, default=None, help="ChromaKey V min override")
+    parser.add_argument("--v-max", type=int, default=None, help="ChromaKey V max override")
+    parser.add_argument("--erode", type=int, default=None, help="ChromaKey erode override")
+    parser.add_argument("--dilate", type=int, default=None, help="ChromaKey dilate override")
     args = parser.parse_args()
 
     if not os.path.exists(args.config):
@@ -133,11 +154,24 @@ if __name__ == "__main__":
             config.add_section('Conversor')
         config.set('Conversor', 'luminance_ramp', LUMINANCE_RAMP)
 
+    chroma_override = None
+    if args.h_min is not None:
+        chroma_override = {
+            'h_min': args.h_min,
+            'h_max': args.h_max if args.h_max is not None else config.getint('ChromaKey', 'h_max', fallback=85),
+            's_min': args.s_min if args.s_min is not None else config.getint('ChromaKey', 's_min', fallback=40),
+            's_max': args.s_max if args.s_max is not None else config.getint('ChromaKey', 's_max', fallback=255),
+            'v_min': args.v_min if args.v_min is not None else config.getint('ChromaKey', 'v_min', fallback=40),
+            'v_max': args.v_max if args.v_max is not None else config.getint('ChromaKey', 'v_max', fallback=255),
+            'erode': args.erode if args.erode is not None else config.getint('ChromaKey', 'erode', fallback=2),
+            'dilate': args.dilate if args.dilate is not None else config.getint('ChromaKey', 'dilate', fallback=2)
+        }
+
     output_dir = config['Pastas']['output_dir']
 
     try:
         print(f"Iniciando conversao (CLI) para: {args.video}")
-        output_file = iniciar_conversao(args.video, output_dir, config)
+        output_file = iniciar_conversao(args.video, output_dir, config, chroma_override=chroma_override)
         print(f"Conversao (CLI) concluida: {output_file}")
     except Exception as e:
         print(f"Erro na conversao (CLI): {e}")

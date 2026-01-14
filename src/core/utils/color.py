@@ -19,8 +19,24 @@ def rgb_to_ansi256_vectorized(color_frame: np.ndarray) -> np.ndarray:
     g = color_frame[:, :, 1].astype(np.int32)
     r = color_frame[:, :, 2].astype(np.int32)
 
+    # Detect grayscale pixels (r == g == b)
+    is_gray = (r == g) & (g == b)
+
+    # Initialize output with color conversion
     ansi_r = (r * 5) // 255
     ansi_g = (g * 5) // 255
     ansi_b = (b * 5) // 255
+    result = 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
 
-    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
+    # Handle grayscale pixels specially
+    gray_value = r[is_gray]
+
+    # Map grayscale to ANSI 232-255 range (24 shades)
+    gray_ansi = np.where(
+        gray_value < 8, 16,
+        np.where(gray_value > 248, 231,
+                 232 + ((gray_value - 8) * 23 // 247)))
+
+    result[is_gray] = gray_ansi
+
+    return result
