@@ -7,25 +7,23 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 python3-pip python3-venv
 
     - name: Install test dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 libgirepository1.0-dev libcairo2-dev
-        pip install pytest pytest-cov coverage numpy opencv-python Pillow PyGObject
+        python3 -m pip install --user pytest pytest-cov coverage numpy opencv-python-headless Pillow
 
     - name: Run tests
       run: |
-        pytest tests/ -v --tb=short
+        python3 -m pytest tests/ -v --tb=short
 
   build:
     needs: test
