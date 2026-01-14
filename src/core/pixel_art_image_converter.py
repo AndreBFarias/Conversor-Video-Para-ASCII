@@ -6,7 +6,6 @@ import sys
 import numpy as np
 import configparser
 import argparse
-from sklearn.cluster import KMeans
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -17,62 +16,41 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 
 COLOR_SEPARATOR = "§"
 
+DEFAULT_PALETTE_16 = np.array([
+    [0, 0, 0],
+    [255, 255, 255],
+    [255, 0, 0],
+    [0, 255, 0],
+    [0, 0, 255],
+    [255, 255, 0],
+    [255, 0, 255],
+    [0, 255, 255],
+    [128, 0, 0],
+    [0, 128, 0],
+    [0, 0, 128],
+    [128, 128, 128],
+    [192, 192, 192],
+    [128, 128, 0],
+    [128, 0, 128],
+    [0, 128, 128],
+], dtype=np.float32)
+
 
 def quantize_colors(image, n_colors=16, use_fixed_palette=False):
-    """
-    Reduce image to a limited color palette using k-means clustering
-    
-    Args:
-        image: BGR image
-        n_colors: number of colors in the palette
-        use_fixed_palette: if True, use a fixed retro palette instead of adaptive
-    
-    Returns:
-        Quantized image in BGR format
-    """
-    if use_fixed_palette:
-        # Fixed retro palette (similar to old games)
-        palette = np.array([
-            [0, 0, 0],       # Black
-            [255, 255, 255], # White
-            [255, 0, 0],     # Red
-            [0, 255, 0],     # Green
-            [0, 0, 255],     # Blue
-            [255, 255, 0],   # Yellow
-            [255, 0, 255],   # Magenta
-            [0, 255, 255],   # Cyan
-            [128, 0, 0],     # Dark Red
-            [0, 128, 0],     # Dark Green
-            [0, 0, 128],     # Dark Blue
-            [128, 128, 128], # Gray
-            [192, 192, 192], # Light Gray
-            [128, 128, 0],   # Olive
-            [128, 0, 128],   # Purple
-            [0, 128, 128],   # Teal
-        ], dtype=np.uint8)
-        
-        # Limit palette to requested size
-        palette = palette[:n_colors]
-    else:
-        # Adaptive palette using k-means
-        h, w, c = image.shape
-        pixels = image.reshape((-1, 3)).astype(np.float32)
-        
-        # Use k-means to find dominant colors
-        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
-        kmeans.fit(pixels)
-        palette = kmeans.cluster_centers_.astype(np.uint8)
-    
-    # Map each pixel to nearest palette color
     h, w, c = image.shape
-    pixels = image.reshape((-1, 3))
-    
-    quantized = np.zeros_like(pixels)
-    for i, pixel in enumerate(pixels):
-        distances = np.linalg.norm(palette - pixel, axis=1)
-        nearest_color_idx = np.argmin(distances)
-        quantized[i] = palette[nearest_color_idx]
-    
+    pixels = image.reshape((-1, 3)).astype(np.float32)
+
+    if use_fixed_palette:
+        palette = DEFAULT_PALETTE_16[:min(n_colors, 16)]
+        dists = np.sum((pixels[:, np.newaxis, :] - palette[np.newaxis, :, :]) ** 2, axis=2)
+        labels = np.argmin(dists, axis=1)
+        quantized = palette[labels].astype(np.uint8)
+    else:
+        n_colors = min(max(2, n_colors), 64)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        _, labels, centers = cv2.kmeans(pixels, n_colors, None, criteria, 3, cv2.KMEANS_PP_CENTERS)
+        quantized = centers[labels.flatten()].astype(np.uint8)
+
     return quantized.reshape((h, w, c))
 
 

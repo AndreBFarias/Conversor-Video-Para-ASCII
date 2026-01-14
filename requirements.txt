@@ -3,9 +3,9 @@
 
 opencv-python>=4.8.0
 numpy>=1.24.0
-scikit-learn>=1.3.0
 Pillow>=10.0.0
-# cupy-cuda11x>=13.0.0 (Instalado dinamicamente via script)
+# cupy-cuda12x (Instalado dinamicamente via script se GPU NVIDIA detectada)
 mediapipe
+pyaudio>=0.2.13
 sphinx==7.2.6
 sphinx_rtd_theme==2.0.0

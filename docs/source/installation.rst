@@ -53,9 +53,9 @@ Obrigatórios
 Recomendados (para GPU)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- GPU NVIDIA (RTX 2000+ series)
-- CUDA 11.0 ou superior
-- CuPy (instalado automaticamente via pip)
+- GPU NVIDIA (RTX 2000+ series ou superior)
+- CUDA 12.0 ou superior
+- CuPy (instalado automaticamente via install.sh)
 
 Opcionais
 ^^^^^^^^^
@@ -110,4 +110,4 @@ Para ativar GPU:
    sudo apt install nvidia-cuda-toolkit
 
    # Instalar CuPy
-   pip install cupy-cuda11x  # ou cupy-cuda12x, conforme sua versão CUDA
+   pip install cupy-cuda12x  # Para CUDA 12.x

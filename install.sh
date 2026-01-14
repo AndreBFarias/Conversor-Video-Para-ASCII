@@ -31,20 +31,20 @@ fi
 DESKTOP_FILE_PATH="${INSTALL_DIR}/${APP_NAME}.desktop"
 ICON_INSTALL_PATH="${ICON_INSTALL_DIR}/${ICON_NAME}.png"
 
-echo "[1/7] Atualizando selos arcanos (apt update)..."
+echo "[1/8] Atualizando selos arcanos (apt update)..."
 sudo apt update || { echo "ERRO: Falha ao atualizar repositorios apt."; exit 1; }
 
-echo "[2/7] Invocando dependencias (Python3, PIP, GTK, OpenCV, VTE, Kitty)..."
-sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-vte-2.91 kitty desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
+echo "[2/8] Invocando dependencias (Python3, PIP, GTK, OpenCV, VTE, Kitty, PortAudio)..."
+sudo apt install -y python3-pip python3-venv python3-opencv python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-vte-2.91 kitty desktop-file-utils imagemagick libgirepository1.0-dev libcairo2-dev portaudio19-dev || { echo "ERRO: Falha ao instalar dependencias do sistema."; exit 1; }
 
-echo "[3/7] Desenhando circulo de protecao (venv --system-site-packages)..."
+echo "[3/8] Desenhando circulo de protecao (venv --system-site-packages)..."
 if [ -d "${SCRIPT_DIR}/venv" ]; then
     echo "Removendo venv antigo..."
     rm -rf "${SCRIPT_DIR}/venv"
 fi
 python3 -m venv --system-site-packages "${SCRIPT_DIR}/venv" || { echo "ERRO: Falha ao criar ambiente virtual."; exit 1; }
 
-echo "[4/7] Instalando pacotes Python no venv..."
+echo "[4/8] Instalando pacotes Python no venv..."
 echo "NOTA: PyGObject/GTK ja esta disponivel via pacotes do sistema (--system-site-packages)"
 if [ ! -f "${SCRIPT_DIR}/requirements.txt" ]; then
     echo "ERRO: requirements.txt nao encontrado em ${SCRIPT_DIR}!"
@@ -59,8 +59,8 @@ fi
 
 "${SCRIPT_DIR}/venv/bin/pip" install --upgrade pip setuptools wheel || echo "Aviso: Falha ao atualizar ferramentas pip."
 
-echo "   -> Instalando dependencias basicas (opencv, numpy, pillow, scikit-learn)..."
-"${SCRIPT_DIR}/venv/bin/pip" install opencv-python numpy Pillow scikit-learn || { echo "ERRO: Falha ao instalar dependencias basicas."; exit 1; }
+echo "   -> Instalando dependencias basicas (opencv, numpy, pillow)..."
+"${SCRIPT_DIR}/venv/bin/pip" install opencv-python numpy Pillow || { echo "ERRO: Falha ao instalar dependencias basicas."; exit 1; }
 
 echo "   -> Tentando instalar suporte GPU (cupy-cuda12x)..."
 if command -v nvidia-smi &> /dev/null; then
@@ -76,6 +76,9 @@ fi
 
 echo "   -> Instalando MediaPipe para segmentacao automatica..."
 "${SCRIPT_DIR}/venv/bin/pip" install mediapipe || echo "Aviso: Falha ao instalar mediapipe. Auto Seg nao funcionara."
+
+echo "   -> Instalando PyAudio para audio-reactive..."
+"${SCRIPT_DIR}/venv/bin/pip" install pyaudio || echo "Aviso: Falha ao instalar pyaudio. Audio-reactive nao funcionara."
 
 echo "[5/8] Preparando os altares (data_input, data_output, .cache, logs, models)..."
 mkdir -p "${SCRIPT_DIR}/data_input" || echo "Aviso: Falha ao criar data_input."
@@ -150,6 +153,16 @@ if command -v update-desktop-database &> /dev/null; then
        echo "Atualizando database de aplicativos em ${DB_DIR_TO_UPDATE}..."
        $SUDO_CMD update-desktop-database "${DB_DIR_TO_UPDATE}" || echo "Aviso: Falha ao atualizar database de apps."
      fi
+fi
+
+echo "[8/8] Verificacao final..."
+if [ -f "${DESKTOP_FILE_PATH}" ] && [ -f "${ICON_INSTALL_PATH}" ] && [ -d "${SCRIPT_DIR}/venv" ]; then
+    echo "   -> Todos os componentes instalados com sucesso."
+else
+    echo "   -> AVISO: Alguns componentes podem nao ter sido instalados corretamente."
+    [ ! -f "${DESKTOP_FILE_PATH}" ] && echo "      - Falta: ${DESKTOP_FILE_PATH}"
+    [ ! -f "${ICON_INSTALL_PATH}" ] && echo "      - Falta: ${ICON_INSTALL_PATH}"
+    [ ! -d "${SCRIPT_DIR}/venv" ] && echo "      - Falta: ${SCRIPT_DIR}/venv"
 fi
 
 echo "=== Ritual Concluido ==="

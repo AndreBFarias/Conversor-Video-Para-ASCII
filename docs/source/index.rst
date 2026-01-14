@@ -16,9 +16,22 @@ Conversor de vídeo para ASCII art em tempo real com aceleração GPU.
 - Chroma key avançado (remoção de fundo verde)
 - Unicode Braille (resolução 4x)
 - Temporal coherence (anti-flicker)
-- Gravação de MP4/GIF/HTML
+- Gravação de MP4/TXT
 - Suporte webcam
 - Interface GTK3 moderna
+
+**Modos de Conversão:**
+
+- ASCII Art clássico com múltiplas rampas de luminância
+- Pixel Art com paletas customizáveis (Game Boy, CGA, NES, PICO-8, Dracula, etc.)
+- Matrix Rain com sistema de partículas GPU
+
+**Efeitos Pós-Processamento (PostFX):**
+
+- Bloom (brilho neon com Gaussian blur)
+- Chromatic Aberration (RGB shift cyberpunk)
+- Scanlines CRT (efeito monitor antigo)
+- Glitch effect (distorção aleatória)
 
 .. toctree::
    :maxdepth: 2

@@ -91,6 +91,18 @@
     <property name="lower">0.05</property><property name="upper">0.5</property><property name="value">0.1</property>
     <property name="step-increment">0.05</property><property name="page-increment">0.1</property>
   </object>
+  <object class="GtkAdjustment" id="adj_audio_bass">
+    <property name="lower">0.1</property><property name="upper">3.0</property><property name="value">1.0</property>
+    <property name="step-increment">0.1</property><property name="page-increment">0.5</property>
+  </object>
+  <object class="GtkAdjustment" id="adj_audio_mids">
+    <property name="lower">0.1</property><property name="upper">3.0</property><property name="value">1.0</property>
+    <property name="step-increment">0.1</property><property name="page-increment">0.5</property>
+  </object>
+  <object class="GtkAdjustment" id="adj_audio_treble">
+    <property name="lower">0.1</property><property name="upper">3.0</property><property name="value">1.0</property>
+    <property name="step-increment">0.1</property><property name="page-increment">0.5</property>
+  </object>
 
   <object class="GtkWindow" id="calibrator_window">
     <property name="can-focus">False</property>
@@ -191,6 +203,61 @@
                 <child><object class="GtkCheckButton" id="chk_chromatic"><property name="visible">True</property><property name="label">Chrom</property><property name="tooltip-text">Aberracao cromatica</property><signal name="toggled" handler="on_postfx_changed"/></object></child>
                 <child><object class="GtkCheckButton" id="chk_scanlines"><property name="visible">True</property><property name="label">Scan</property><property name="tooltip-text">Scanlines CRT</property><signal name="toggled" handler="on_postfx_changed"/></object></child>
                 <child><object class="GtkCheckButton" id="chk_glitch"><property name="visible">True</property><property name="label">Glitch</property><property name="tooltip-text">Distorcao aleatoria</property><signal name="toggled" handler="on_postfx_changed"/></object></child>
+              </object>
+            </child>
+
+            <!-- ILHA: Style Transfer -->
+            <child>
+              <object class="GtkBox" id="island_style">
+                <property name="visible">True</property>
+                <property name="spacing">2</property>
+                <property name="halign">fill</property>
+                <style><class name="island-fx"/></style>
+                <child><object class="GtkCheckButton" id="chk_style"><property name="visible">True</property><property name="tooltip-text">Ativar Style Transfer</property><signal name="toggled" handler="on_style_changed"/></object></child>
+                <child>
+                  <object class="GtkComboBoxText" id="combo_style_preset">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Preset de estilo</property>
+                    <signal name="changed" handler="on_style_changed"/>
+                  </object>
+                </child>
+              </object>
+            </child>
+
+            <!-- ILHA: Optical Flow -->
+            <child>
+              <object class="GtkBox" id="island_optical_flow">
+                <property name="visible">True</property>
+                <property name="spacing">2</property>
+                <property name="halign">fill</property>
+                <style><class name="island-fx"/></style>
+                <child><object class="GtkCheckButton" id="chk_optical_flow"><property name="visible">True</property><property name="label">OF</property><property name="tooltip-text">Optical Flow Interpolation</property><signal name="toggled" handler="on_optical_flow_changed"/></object></child>
+                <child>
+                  <object class="GtkComboBoxText" id="combo_optical_flow_fps">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Target FPS</property>
+                    <items>
+                      <item id="30">30 FPS</item>
+                      <item id="60">60 FPS</item>
+                      <item id="120">120 FPS</item>
+                    </items>
+                    <property name="active">0</property>
+                    <signal name="changed" handler="on_optical_flow_changed"/>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="combo_optical_flow_quality">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text">Qualidade</property>
+                    <items>
+                      <item id="fast">Fast</item>
+                      <item id="medium">Med</item>
+                      <item id="high">High</item>
+                    </items>
+                    <property name="active">1</property>
+                    <signal name="changed" handler="on_optical_flow_changed"/>
+                  </object>
+                </child>
               </object>
             </child>
 
@@ -490,8 +557,8 @@
               <object class="GtkBox" id="island_gpu">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">2</property>
-                <property name="valign">start</property>
+                <property name="spacing">4</property>
+                <property name="vexpand">True</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">GPU</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
@@ -518,6 +585,7 @@
                   </object>
                 </child>
               </object>
+              <packing><property name="expand">False</property><property name="fill">True</property></packing>
             </child>
 
             <!-- Matrix Rain -->
@@ -525,8 +593,8 @@
               <object class="GtkBox" id="island_matrix">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">2</property>
-                <property name="valign">start</property>
+                <property name="spacing">4</property>
+                <property name="vexpand">True</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">Matrix Rain</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
@@ -578,6 +646,49 @@
                   </object>
                 </child>
               </object>
+              <packing><property name="expand">False</property><property name="fill">True</property></packing>
+            </child>
+
+            <!-- Audio Reactive -->
+            <child>
+              <object class="GtkBox" id="island_audio">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">6</property>
+                <property name="vexpand">True</property>
+                <style><class name="island-hsv"/></style>
+                <!-- Header com checkbox -->
+                <child>
+                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">8</property>
+                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Audio Reactive</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object></child>
+                    <child><object class="GtkCheckButton" id="chk_audio"><property name="visible">True</property><property name="active">False</property><property name="tooltip-text">Captura microfone. Para loopback: pavucontrol</property><signal name="toggled" handler="on_audio_settings_changed"/></object></child>
+                  </object>
+                  <packing><property name="expand">False</property></packing>
+                </child>
+                <!-- Grid de sliders -->
+                <child>
+                  <object class="GtkGrid">
+                    <property name="visible">True</property>
+                    <property name="row-spacing">4</property>
+                    <property name="column-spacing">8</property>
+                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Bass</property><property name="halign">end</property><property name="width-chars">6</property></object><packing><property name="left-attach">0</property><property name="top-attach">0</property></packing></child>
+                    <child><object class="GtkScale" id="scale_audio_bass"><property name="visible">True</property><property name="hexpand">True</property><property name="adjustment">adj_audio_bass</property><property name="digits">1</property><property name="value-pos">right</property><signal name="value-changed" handler="on_audio_settings_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">0</property></packing></child>
+                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Mids</property><property name="halign">end</property><property name="width-chars">6</property></object><packing><property name="left-attach">0</property><property name="top-attach">1</property></packing></child>
+                    <child><object class="GtkScale" id="scale_audio_mids"><property name="visible">True</property><property name="hexpand">True</property><property name="adjustment">adj_audio_mids</property><property name="digits">1</property><property name="value-pos">right</property><signal name="value-changed" handler="on_audio_settings_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">1</property></packing></child>
+                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Treble</property><property name="halign">end</property><property name="width-chars">6</property></object><packing><property name="left-attach">0</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkScale" id="scale_audio_treble"><property name="visible">True</property><property name="hexpand">True</property><property name="adjustment">adj_audio_treble</property><property name="digits">1</property><property name="value-pos">right</property><signal name="value-changed" handler="on_audio_settings_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">2</property></packing></child>
+                  </object>
+                </child>
+                <!-- Checkboxes modulacao -->
+                <child>
+                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">12</property><property name="halign">center</property>
+                    <child><object class="GtkCheckButton" id="chk_audio_bloom"><property name="visible">True</property><property name="label">Bloom</property><property name="tooltip-text">Bass modula Bloom</property><signal name="toggled" handler="on_audio_settings_changed"/></object></child>
+                    <child><object class="GtkCheckButton" id="chk_audio_glitch"><property name="visible">True</property><property name="label">Glitch</property><property name="tooltip-text">Treble modula Glitch</property><signal name="toggled" handler="on_audio_settings_changed"/></object></child>
+                    <child><object class="GtkCheckButton" id="chk_audio_chrom"><property name="visible">True</property><property name="label">Chrom</property><property name="tooltip-text">Bass modula Chromatic</property><signal name="toggled" handler="on_audio_settings_changed"/></object></child>
+                  </object>
+                </child>
+              </object>
+              <packing><property name="expand">False</property><property name="fill">True</property></packing>
             </child>
 
           </object>

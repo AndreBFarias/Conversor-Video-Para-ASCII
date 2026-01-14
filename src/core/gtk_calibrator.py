@@ -44,6 +44,28 @@ except Exception as e:
     print(f"PostFX nao disponivel: {e}")
 
 try:
+    from src.core.style_transfer import StyleTransferProcessor, StyleConfig, STYLE_PRESETS
+    STYLE_TRANSFER_AVAILABLE = True
+except Exception as e:
+    STYLE_TRANSFER_AVAILABLE = False
+    STYLE_PRESETS = {}
+    print(f"Style Transfer nao disponivel: {e}")
+
+try:
+    from src.core.optical_flow import OpticalFlowInterpolator, OpticalFlowConfig
+    OPTICAL_FLOW_AVAILABLE = True
+except Exception as e:
+    OPTICAL_FLOW_AVAILABLE = False
+    print(f"Optical Flow nao disponivel: {e}")
+
+try:
+    from src.core.audio_analyzer import AudioAnalyzer, AudioConfig, AudioReactiveModulator
+    AUDIO_AVAILABLE = True
+except Exception as e:
+    AUDIO_AVAILABLE = False
+    print(f"Audio Reactive nao disponivel: {e}")
+
+try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
     AUTO_SEG_AVAILABLE = auto_seg_available()
 except Exception as e:
@@ -130,6 +152,20 @@ class GTKCalibrator:
         self.postfx_enabled = False
         self.postfx_processor = None
         self.postfx_config = None
+
+        self.style_enabled = False
+        self.style_preset = 'none'
+        self.style_processor = None
+
+        self.optical_flow_enabled = False
+        self.optical_flow_interpolator = None
+
+        self.audio_enabled = False
+        self.audio_analyzer = None
+        self.audio_modulator = None
+        self.audio_modulate_bloom = True
+        self.audio_modulate_glitch = True
+        self.audio_modulate_chromatic = True
 
         self.terminal_font = None
         self.config_last_load = 0
@@ -439,6 +475,24 @@ class GTKCalibrator:
         self.chk_scanlines = self.builder.get_object("chk_scanlines")
         self.chk_glitch = self.builder.get_object("chk_glitch")
         self._init_postfx()
+
+        self.chk_style = self.builder.get_object("chk_style")
+        self.combo_style_preset = self.builder.get_object("combo_style_preset")
+        self._init_style()
+
+        self.chk_optical_flow = self.builder.get_object("chk_optical_flow")
+        self.combo_optical_flow_fps = self.builder.get_object("combo_optical_flow_fps")
+        self.combo_optical_flow_quality = self.builder.get_object("combo_optical_flow_quality")
+        self._init_optical_flow()
+
+        self.chk_audio = self.builder.get_object("chk_audio")
+        self.scale_audio_bass = self.builder.get_object("scale_audio_bass")
+        self.scale_audio_mids = self.builder.get_object("scale_audio_mids")
+        self.scale_audio_treble = self.builder.get_object("scale_audio_treble")
+        self.chk_audio_bloom = self.builder.get_object("chk_audio_bloom")
+        self.chk_audio_glitch = self.builder.get_object("chk_audio_glitch")
+        self.chk_audio_chrom = self.builder.get_object("chk_audio_chrom")
+        self._init_audio()
 
         self.event_ascii = self.builder.get_object("event_ascii")
         if self.event_ascii:
@@ -893,11 +947,16 @@ class GTKCalibrator:
     def _render_pixelart_to_image(self, resized_color, resized_mask, frame_h, frame_w) -> np.ndarray:
         n_colors = self.pixel_art_config.get('color_palette_size', 16)
         use_fixed = self.pixel_art_config.get('use_fixed_palette', False)
+        palette_name = self.pixel_art_config.get('fixed_palette_name', None)
+
+        custom_palette = None
+        if use_fixed and palette_name and palette_name in FIXED_PALETTES:
+            custom_palette = FIXED_PALETTES[palette_name]['colors']
 
         height, width = resized_color.shape[:2]
 
         try:
-            quantized = quantize_colors(resized_color, n_colors, use_fixed_palette=use_fixed)
+            quantized = quantize_colors(resized_color, n_colors, use_fixed_palette=use_fixed, custom_palette=custom_palette)
         except Exception:
             quantized = resized_color
 
@@ -993,6 +1052,10 @@ class GTKCalibrator:
             resized_color = cv2.resize(frame, self.target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask, self.target_dimensions, interpolation=cv2.INTER_NEAREST)
 
+            if self.style_enabled and self.style_processor:
+                resized_color = self.style_processor.process(resized_color)
+                resized_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+
             sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
             sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)
             magnitude = np.hypot(sobel_x, sobel_y)
@@ -1026,6 +1089,9 @@ class GTKCalibrator:
 
             if self.matrix_enabled and self.matrix_rain_instance:
                 result_image = self._apply_matrix_rain(result_image, resized_mask)
+
+            if self.audio_enabled and self.audio_modulator and self.postfx_processor:
+                self._apply_audio_modulation()
 
             if self.postfx_enabled and self.postfx_processor:
                 result_image = self.postfx_processor.process(result_image)
@@ -1798,6 +1864,39 @@ class GTKCalibrator:
                 )
                 self.postfx_processor = PostFXProcessor(self.postfx_config)
 
+    def _init_style(self):
+        if not STYLE_TRANSFER_AVAILABLE:
+            if self.chk_style:
+                self.chk_style.set_sensitive(False)
+            if self.combo_style_preset:
+                self.combo_style_preset.set_sensitive(False)
+            return
+
+        if self.combo_style_preset:
+            self.combo_style_preset.remove_all()
+            for preset_id, preset_data in STYLE_PRESETS.items():
+                self.combo_style_preset.append(preset_id, preset_data['name'])
+            self.combo_style_preset.set_active_id('none')
+            self.combo_style_preset.set_sensitive(False)
+
+        if 'Style' in self.config:
+            style_enabled = self.config.getboolean('Style', 'style_enabled', fallback=False)
+            style_preset = self.config.get('Style', 'style_preset', fallback='none')
+
+            if self.chk_style:
+                self.chk_style.set_active(style_enabled)
+            if self.combo_style_preset:
+                self.combo_style_preset.set_active_id(style_preset)
+                self.combo_style_preset.set_sensitive(style_enabled)
+
+            self.style_enabled = style_enabled and style_preset != 'none'
+            self.style_preset = style_preset
+
+            if self.style_enabled:
+                self.style_processor = StyleTransferProcessor()
+                self.style_processor.config.style_enabled = True
+                self.style_processor.set_preset(self.style_preset)
+
     def on_postfx_changed(self, widget):
         if self._block_signals:
             return
@@ -1837,6 +1936,234 @@ class GTKCalibrator:
             self._set_status(f"FX: {' | '.join(effects)}")
         else:
             self._set_status("FX: Desativado")
+
+    def on_style_changed(self, widget):
+        if self._block_signals:
+            return
+
+        style_enabled = self.chk_style.get_active() if self.chk_style else False
+        preset_id = None
+
+        if self.combo_style_preset:
+            preset_id = self.combo_style_preset.get_active_id()
+
+        self.style_enabled = style_enabled and preset_id and preset_id != 'none'
+        self.style_preset = preset_id or 'none'
+
+        if self.style_enabled and STYLE_TRANSFER_AVAILABLE:
+            if self.style_processor is None:
+                self.style_processor = StyleTransferProcessor()
+
+            self.style_processor.config.style_enabled = True
+            self.style_processor.set_preset(self.style_preset)
+
+            if preset_id in STYLE_PRESETS:
+                self._set_status(f"Style: {STYLE_PRESETS[preset_id]['name']}")
+        else:
+            if self.style_processor:
+                self.style_processor.config.style_enabled = False
+            self._set_status("Style: Desativado")
+
+        if self.combo_style_preset:
+            self.combo_style_preset.set_sensitive(style_enabled)
+
+    def _init_optical_flow(self):
+        if not OPTICAL_FLOW_AVAILABLE:
+            if self.chk_optical_flow:
+                self.chk_optical_flow.set_sensitive(False)
+            if self.combo_optical_flow_fps:
+                self.combo_optical_flow_fps.set_sensitive(False)
+            if self.combo_optical_flow_quality:
+                self.combo_optical_flow_quality.set_sensitive(False)
+            return
+
+        if self.combo_optical_flow_fps:
+            self.combo_optical_flow_fps.set_sensitive(False)
+        if self.combo_optical_flow_quality:
+            self.combo_optical_flow_quality.set_sensitive(False)
+
+        if 'OpticalFlow' in self.config:
+            of_enabled = self.config.getboolean('OpticalFlow', 'enabled', fallback=False)
+            of_fps = self.config.get('OpticalFlow', 'target_fps', fallback='30')
+            of_quality = self.config.get('OpticalFlow', 'quality', fallback='medium')
+
+            if self.chk_optical_flow:
+                self.chk_optical_flow.set_active(of_enabled)
+            if self.combo_optical_flow_fps:
+                self.combo_optical_flow_fps.set_active_id(of_fps)
+                self.combo_optical_flow_fps.set_sensitive(of_enabled)
+            if self.combo_optical_flow_quality:
+                self.combo_optical_flow_quality.set_active_id(of_quality)
+                self.combo_optical_flow_quality.set_sensitive(of_enabled)
+
+            self.optical_flow_enabled = of_enabled
+            if of_enabled:
+                of_config = OpticalFlowConfig(
+                    enabled=True,
+                    target_fps=int(of_fps),
+                    quality=of_quality
+                )
+                self.optical_flow_interpolator = OpticalFlowInterpolator(of_config)
+
+    def on_optical_flow_changed(self, widget):
+        if self._block_signals:
+            return
+
+        of_enabled = self.chk_optical_flow.get_active() if self.chk_optical_flow else False
+        of_fps = self.combo_optical_flow_fps.get_active_id() if self.combo_optical_flow_fps else '30'
+        of_quality = self.combo_optical_flow_quality.get_active_id() if self.combo_optical_flow_quality else 'medium'
+
+        self.optical_flow_enabled = of_enabled
+
+        if of_enabled and OPTICAL_FLOW_AVAILABLE:
+            of_config = OpticalFlowConfig(
+                enabled=True,
+                target_fps=int(of_fps) if of_fps else 30,
+                quality=of_quality or 'medium'
+            )
+            self.optical_flow_interpolator = OpticalFlowInterpolator(of_config)
+            self._set_status(f"Optical Flow: {of_fps} FPS ({of_quality})")
+        else:
+            self.optical_flow_interpolator = None
+            self._set_status("Optical Flow: Desativado")
+
+        if self.combo_optical_flow_fps:
+            self.combo_optical_flow_fps.set_sensitive(of_enabled)
+        if self.combo_optical_flow_quality:
+            self.combo_optical_flow_quality.set_sensitive(of_enabled)
+
+    def _init_audio(self):
+        if not AUDIO_AVAILABLE:
+            if self.chk_audio:
+                self.chk_audio.set_sensitive(False)
+            return
+
+        widgets = [self.scale_audio_bass, self.scale_audio_mids, self.scale_audio_treble,
+                   self.chk_audio_bloom, self.chk_audio_glitch, self.chk_audio_chrom]
+        for w in widgets:
+            if w:
+                w.set_sensitive(False)
+
+        if self.chk_audio_bloom:
+            self.chk_audio_bloom.set_active(True)
+        if self.chk_audio_glitch:
+            self.chk_audio_glitch.set_active(True)
+        if self.chk_audio_chrom:
+            self.chk_audio_chrom.set_active(True)
+
+        if 'Audio' in self.config:
+            audio_enabled = self.config.getboolean('Audio', 'enabled', fallback=False)
+            bass_sens = self.config.getfloat('Audio', 'bass_sensitivity', fallback=1.0)
+            mids_sens = self.config.getfloat('Audio', 'mids_sensitivity', fallback=1.0)
+            treble_sens = self.config.getfloat('Audio', 'treble_sensitivity', fallback=1.0)
+
+            if self.chk_audio:
+                self.chk_audio.set_active(audio_enabled)
+            if self.scale_audio_bass:
+                self.scale_audio_bass.set_value(bass_sens)
+            if self.scale_audio_mids:
+                self.scale_audio_mids.set_value(mids_sens)
+            if self.scale_audio_treble:
+                self.scale_audio_treble.set_value(treble_sens)
+
+            if audio_enabled:
+                self._start_audio_analyzer()
+
+    def _start_audio_analyzer(self):
+        if not AUDIO_AVAILABLE:
+            return
+
+        bass_sens = self.scale_audio_bass.get_value() if self.scale_audio_bass else 1.0
+        mids_sens = self.scale_audio_mids.get_value() if self.scale_audio_mids else 1.0
+        treble_sens = self.scale_audio_treble.get_value() if self.scale_audio_treble else 1.0
+
+        audio_config = AudioConfig(
+            enabled=True,
+            bass_sensitivity=bass_sens,
+            mids_sensitivity=mids_sens,
+            treble_sensitivity=treble_sens
+        )
+
+        self.audio_analyzer = AudioAnalyzer(audio_config)
+        self.audio_modulator = AudioReactiveModulator(self.audio_analyzer)
+
+        if self.audio_analyzer.start():
+            self.audio_enabled = True
+            self._set_status("Audio Reactive: Ativado")
+        else:
+            self.audio_enabled = False
+            self._set_status("Audio Reactive: Falha ao iniciar")
+
+    def _stop_audio_analyzer(self):
+        if self.audio_analyzer:
+            self.audio_analyzer.stop()
+            self.audio_analyzer = None
+        self.audio_modulator = None
+        self.audio_enabled = False
+
+    def on_audio_settings_changed(self, widget):
+        if self._block_signals:
+            return
+
+        audio_enabled = self.chk_audio.get_active() if self.chk_audio else False
+
+        widgets = [self.scale_audio_bass, self.scale_audio_mids, self.scale_audio_treble,
+                   self.chk_audio_bloom, self.chk_audio_glitch, self.chk_audio_chrom]
+        for w in widgets:
+            if w:
+                w.set_sensitive(audio_enabled)
+
+        self.audio_modulate_bloom = self.chk_audio_bloom.get_active() if self.chk_audio_bloom else True
+        self.audio_modulate_glitch = self.chk_audio_glitch.get_active() if self.chk_audio_glitch else True
+        self.audio_modulate_chromatic = self.chk_audio_chrom.get_active() if self.chk_audio_chrom else True
+
+        if audio_enabled and not self.audio_enabled:
+            self._start_audio_analyzer()
+            if POSTFX_AVAILABLE:
+                if self.postfx_processor is None:
+                    self.postfx_config = PostFXConfig()
+                    self.postfx_processor = PostFXProcessor(self.postfx_config)
+                self.postfx_config.bloom_enabled = self.audio_modulate_bloom
+                self.postfx_config.chromatic_enabled = self.audio_modulate_chromatic
+                self.postfx_config.glitch_enabled = self.audio_modulate_glitch
+                self.postfx_enabled = True
+        elif not audio_enabled and self.audio_enabled:
+            self._stop_audio_analyzer()
+            self._set_status("Audio Reactive: Desativado")
+
+        if self.audio_analyzer and self.audio_analyzer.config:
+            if self.scale_audio_bass:
+                self.audio_analyzer.config.bass_sensitivity = self.scale_audio_bass.get_value()
+            if self.scale_audio_mids:
+                self.audio_analyzer.config.mids_sensitivity = self.scale_audio_mids.get_value()
+            if self.scale_audio_treble:
+                self.audio_analyzer.config.treble_sensitivity = self.scale_audio_treble.get_value()
+
+        if self.audio_enabled and self.postfx_config:
+            self.postfx_config.bloom_enabled = self.audio_modulate_bloom
+            self.postfx_config.chromatic_enabled = self.audio_modulate_chromatic
+            self.postfx_config.glitch_enabled = self.audio_modulate_glitch
+
+    def _apply_audio_modulation(self):
+        if not self.audio_modulator or not self.postfx_processor:
+            return
+
+        if self.audio_modulate_bloom and self.postfx_processor.config:
+            bloom_intensity = self.audio_modulator.get_bloom_intensity()
+            self.postfx_processor.config.bloom_intensity = bloom_intensity
+
+        if self.audio_modulate_chromatic and self.postfx_processor.config:
+            chrom_intensity = self.audio_modulator.get_chromatic_intensity()
+            self.postfx_processor.config.chromatic_shift = int(chrom_intensity)
+
+        if self.audio_modulate_glitch and self.postfx_processor.config:
+            glitch_prob = self.audio_modulator.get_glitch_probability()
+            if glitch_prob > 0.1:
+                self.postfx_processor.config.glitch_enabled = True
+                self.postfx_processor.config.glitch_intensity = glitch_prob
+            else:
+                if not self.chk_glitch.get_active():
+                    self.postfx_processor.config.glitch_enabled = False
 
     def on_resolution_changed(self, widget):
         if self._block_signals:
@@ -1959,6 +2286,33 @@ class GTKCalibrator:
         self.config.set('PostFX', 'scanlines_enabled', str(scanlines).lower())
         self.config.set('PostFX', 'glitch_enabled', str(glitch).lower())
 
+        if not self.config.has_section('Style'):
+            self.config.add_section('Style')
+        style_enabled = self.chk_style.get_active() if self.chk_style else False
+        style_preset = self.combo_style_preset.get_active_id() if self.combo_style_preset else 'none'
+        self.config.set('Style', 'style_enabled', str(style_enabled).lower())
+        self.config.set('Style', 'style_preset', style_preset or 'none')
+
+        if not self.config.has_section('OpticalFlow'):
+            self.config.add_section('OpticalFlow')
+        of_enabled = self.chk_optical_flow.get_active() if self.chk_optical_flow else False
+        of_fps = self.combo_optical_flow_fps.get_active_id() if self.combo_optical_flow_fps else '30'
+        of_quality = self.combo_optical_flow_quality.get_active_id() if self.combo_optical_flow_quality else 'medium'
+        self.config.set('OpticalFlow', 'enabled', str(of_enabled).lower())
+        self.config.set('OpticalFlow', 'target_fps', of_fps or '30')
+        self.config.set('OpticalFlow', 'quality', of_quality or 'medium')
+
+        if not self.config.has_section('Audio'):
+            self.config.add_section('Audio')
+        audio_enabled = self.chk_audio.get_active() if self.chk_audio else False
+        bass_sens = self.scale_audio_bass.get_value() if self.scale_audio_bass else 1.0
+        mids_sens = self.scale_audio_mids.get_value() if self.scale_audio_mids else 1.0
+        treble_sens = self.scale_audio_treble.get_value() if self.scale_audio_treble else 1.0
+        self.config.set('Audio', 'enabled', str(audio_enabled).lower())
+        self.config.set('Audio', 'bass_sensitivity', str(bass_sens))
+        self.config.set('Audio', 'mids_sensitivity', str(mids_sens))
+        self.config.set('Audio', 'treble_sensitivity', str(treble_sens))
+
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
@@ -2036,6 +2390,9 @@ class GTKCalibrator:
 
         if hasattr(self, 'matrix_rain') and self.matrix_rain:
             self.matrix_rain = None
+
+        if self.audio_analyzer:
+            self._stop_audio_analyzer()
 
         if self.cap:
             self.cap.release()

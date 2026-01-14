@@ -42,36 +42,34 @@ Modo textura MSE, Unicode Braille (4x resolucao), anti-flicker.
 - Scanlines CRT
 - Glitch effect (distorcao aleatoria)
 
+### Sprint 11: Neural ASCII (Style Transfer)
+`style_transfer.py` com estilizacao pre-conversao:
+- DoG/XDoG edge detection
+- 6 presets: None, Sketch, Comic, Ink, Neon, Emboss
+- Parametros: sigma, tau, edge_strength
+- Integrado na toolbar do calibrador
+
+### Sprint 12: Optical Flow (Interpolacao de Movimento)
+`optical_flow.py` com interpolacao de frames:
+- Farneback Optical Flow (CPU e GPU)
+- 3 presets de qualidade: Fast, Medium, High
+- Target FPS configuravel: 30, 60, 120
+- Frame warping bidirecional com blending
+- Integrado na toolbar do calibrador
+
+### Sprint 13: Audio-Reactive ASCII
+`audio_analyzer.py` com analise de audio em tempo real:
+- FFT com CuPy (GPU) ou NumPy (CPU fallback)
+- 3 bandas de frequencia: Bass (20-250Hz), Mids (250-4kHz), Treble (4k-16kHz)
+- Smoothing exponencial para transicoes suaves
+- Modulacao de efeitos PostFX: Bloom, Glitch, Chromatic
+- Sensibilidade configuravel por banda
+- Captura via PyAudio (loopback/mic)
+- Integrado na Row 4 do calibrador
+
 ---
 
 ## Sprints Futuras
-
-### Sprint 11: Neural ASCII (Style Transfer)
-**Foco:** Estilizar video antes de ASCII
-**Features:**
-- DoG/XDoG edge detection
-- Style presets: Sketch, Comic, Oil, Pencil
-- Mini CNN opcional (ONNX)
-**Tecnologias:** cupyx.scipy.ndimage, ONNX Runtime
-**Duracao:** 5-7 dias
-
-### Sprint 12: Optical Flow (Interpolacao de Movimento)
-**Foco:** Suavizar videos de baixo FPS
-**Features:**
-- 15 fps -> 30/60 fps interpolation
-- OpenCV CUDA Farneback
-- Warping baseado em flow vectors
-**Tecnologias:** cv2.cuda optical flow
-**Duracao:** 4-6 dias
-
-### Sprint 13: Audio-Reactive ASCII
-**Foco:** Caracteres reagem a musica
-**Features:**
-- FFT na GPU (frequencias bass/mids/treble)
-- Modulacao de brightness, intensity, color, bloom
-- Visualizador de espectro
-**Tecnologias:** PyAudio, CuPy FFT
-**Duracao:** 3-5 dias
 
 ### Sprint 14: Polimento Final e Release
 **Foco:** Versao 1.0.0 publica
@@ -101,11 +99,11 @@ Modo textura MSE, Unicode Braille (4x resolucao), anti-flicker.
 
 ## Proximos Passos
 
-1. Testar Sprint 10 (PostFX) com videos reais
-2. Iniciar Sprint 11 (Neural ASCII) ou Sprint 14 (Release)
+1. Testar Sprint 13 (Audio-Reactive) com musica
+2. Iniciar Sprint 14 (Polimento Final e Release)
 3. Criar issues no GitHub para cada sprint restante
 4. Manter Dev_log atualizado
 
 ---
 
-**Ultima Atualizacao:** 2026-01-14
+**Ultima Atualizacao:** 2026-01-14 (Sprint 13 concluida)

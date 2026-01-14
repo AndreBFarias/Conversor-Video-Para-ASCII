@@ -6,7 +6,6 @@ import sys
 import numpy as np
 import configparser
 import argparse
-from sklearn.cluster import KMeans
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -17,41 +16,34 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 
 COLOR_SEPARATOR = "§"
 
+DEFAULT_PALETTE_16 = np.array([
+    [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
+    [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
+    [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 128],
+    [192, 192, 192], [128, 128, 0], [128, 0, 128], [0, 128, 128],
+], dtype=np.float32)
 
-def quantize_colors(image, n_colors=16, use_fixed_palette=False):
-    if use_fixed_palette:
-        palette = np.array([
-            [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
-            [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
-            [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 128],
-            [192, 192, 192], [128, 128, 0], [128, 0, 128], [0, 128, 128],
-        ], dtype=np.uint8)
-        palette = palette[:n_colors]
-    else:
-        h, w, c = image.shape
-        pixels = image.reshape((-1, 3)).astype(np.float32)
 
-        max_samples = 1000
-        if len(pixels) > max_samples:
-            indices = np.random.choice(len(pixels), max_samples, replace=False)
-            sample_pixels = pixels[indices]
-        else:
-            sample_pixels = pixels
-
-        n_colors = min(n_colors, len(sample_pixels))
-        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=1, max_iter=100)
-        kmeans.fit(sample_pixels)
-        palette = kmeans.cluster_centers_.astype(np.uint8)
-
+def quantize_colors(image, n_colors=16, use_fixed_palette=False, custom_palette=None):
     h, w, c = image.shape
     pixels = image.reshape((-1, 3)).astype(np.float32)
 
-    distances = np.linalg.norm(
-        pixels[:, np.newaxis, :] - palette[np.newaxis, :, :],
-        axis=2
-    )
-    nearest_indices = np.argmin(distances, axis=1)
-    quantized = palette[nearest_indices]
+    if use_fixed_palette:
+        if custom_palette is not None:
+            palette = np.array(custom_palette, dtype=np.float32)
+        else:
+            palette = DEFAULT_PALETTE_16[:min(n_colors, 16)]
+
+        dists = np.sum((pixels[:, np.newaxis, :] - palette[np.newaxis, :, :]) ** 2, axis=2)
+        labels = np.argmin(dists, axis=1)
+        quantized = palette[labels].astype(np.uint8)
+    else:
+        n_colors = min(max(2, n_colors), 64)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        _, labels, centers = cv2.kmeans(
+            pixels, n_colors, None, criteria, 1, cv2.KMEANS_PP_CENTERS
+        )
+        quantized = centers[labels.flatten()].astype(np.uint8)
 
     return quantized.reshape((h, w, c))
 
