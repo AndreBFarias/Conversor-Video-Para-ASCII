@@ -19,10 +19,30 @@
   </object>
   <object class="GtkAdjustment" id="adjustment_sobel">
     <property name="lower">0</property>
+    <property name="upper">20</property>
+    <property name="value">3</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">2</property>
+  </object>
+  <object class="GtkAdjustment" id="braille_threshold_adj">
+    <property name="lower">0</property>
     <property name="upper">255</property>
-    <property name="value">100</property>
-    <property name="step-increment">5</property>
+    <property name="step-increment">1</property>
     <property name="page-increment">10</property>
+    <property name="value">128</property>
+  </object>
+  <object class="GtkAdjustment" id="temporal_threshold_adj">
+    <property name="lower">0</property>
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">5</property>
+    <property name="value">20</property>
+  </object>
+  <object class="GtkAdjustment" id="async_num_streams_adj">
+    <property name="lower">1</property>
+    <property name="upper">16</property>
+    <property name="step-increment">1</property>
+    <property name="value">4</property>
   </object>
   <object class="GtkAdjustment" id="adjustment_aspect">
     <property name="lower">0.01</property>
@@ -86,27 +106,6 @@
     <property name="value">2</property>
     <property name="step-increment">1</property>
     <property name="page-increment">1</property>
-  </object>
-  <object class="GtkAdjustment" id="braille_threshold_adj">
-    <property name="lower">0</property>
-    <property name="upper">255</property>
-    <property name="value">128</property>
-    <property name="step-increment">5</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="temporal_threshold_adj">
-    <property name="lower">5</property>
-    <property name="upper">50</property>
-    <property name="value">20</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">5</property>
-  </object>
-  <object class="GtkAdjustment" id="async_num_streams_adj">
-    <property name="lower">2</property>
-    <property name="upper">8</property>
-    <property name="value">4</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">2</property>
   </object>
   <object class="GtkAdjustment" id="adjustment_font_size">
     <property name="lower">6</property>
@@ -834,7 +833,393 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
 
-            <!-- TAB 1: PLAYER -->
+            <!-- TAB 1: PREFERENCIAS (Moved to Start) -->
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="margin">10</property>
+                <property name="spacing">10</property>
+
+                <child>
+                  <object class="GtkGrid">
+                    <property name="visible">True</property>
+                    <property name="row-spacing">8</property>
+                    <property name="column-spacing">10</property>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Pasta de Entrada:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">0</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkFileChooserButton" id="pref_input_folder">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="action">select-folder</property>
+                        <property name="title" translatable="yes">Selecionar pasta de entrada</property>
+                        <property name="hexpand">True</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">0</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Pasta de Saída:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">1</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkFileChooserButton" id="pref_output_folder">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="action">select-folder</property>
+                        <property name="title" translatable="yes">Selecionar pasta de saída</property>
+                        <property name="hexpand">True</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">1</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Tema da Interface:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">2</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_theme_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="dark" translatable="yes">Escuro (Padrão)</item>
+                          <item id="light" translatable="yes">Claro</item>
+                        </items>
+                        <signal name="changed" handler="on_theme_combo_changed" swapped="no"/>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">2</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Motor Gráfico Padrão:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_engine_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="ascii" translatable="yes">ASCII Art (CPU/GPU)</item>
+                          <item id="pixelart" translatable="yes">Pixel Art (Retro)</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">3</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Preset de Qualidade:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">4</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_quality_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="custom" translatable="yes">Customizado</item>
+                          <item id="mobile" translatable="yes">Mobile (Rápido)</item>
+                          <item id="low" translatable="yes">Baixa (Low Specs)</item>
+                          <item id="medium" translatable="yes">Média (Balanceado)</item>
+                          <item id="high" translatable="yes">Alta (Qualidade)</item>
+                          <item id="veryhigh" translatable="yes">Ultra (4K/High-End)</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
+                    </child>
+                    
+                    <child>
+                        <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Estilo Visual:</property>
+                            <property name="xalign">1</property>
+                        </object>
+                        <packing><property name="left-attach">0</property><property name="top-attach">5</property></packing>
+                    </child>
+                    <child>
+                        <object class="GtkComboBoxText" id="pref_style_combo">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <items>
+                                <item id="clean" translatable="yes">Limpo (Clean)</item>
+                                <item id="retro" translatable="yes">Retro (Scanlines)</item>
+                                <item id="cyber" translatable="yes">Cyberpunk (Glow)</item>
+                                <item id="paper" translatable="yes">Papel (Ink)</item>
+                            </items>
+                        </object>
+                        <packing><property name="left-attach">1</property><property name="top-attach">5</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Formato de Saída:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">6</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="pref_format_combo">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active">0</property>
+                        <property name="hexpand">True</property>
+                        <items>
+                          <item id="txt" translatable="yes">Texto (.txt)</item>
+                          <item id="mp4" translatable="yes">Vídeo (.mp4)</item>
+                          <item id="gif" translatable="yes">GIF Animado (.gif)</item>
+                          <item id="html" translatable="yes">HTML Web (.html)</item>
+                        </items>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">6</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Aceleração GPU:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">7</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkSwitch" id="pref_gpu_switch">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="halign">start</property>
+                        <property name="valign">center</property>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">7</property></packing>
+                    </child>
+                    
+                    <child>
+                        <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Modo Render GPU:</property>
+                            <property name="xalign">1</property>
+                        </object>
+                        <packing><property name="left-attach">0</property><property name="top-attach">8</property></packing>
+                    </child>
+                    <child>
+                        <object class="GtkComboBoxText" id="pref_render_mode_combo">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="hexpand">True</property>
+                            <items>
+                                <item id="fast" translatable="yes">Rápido (Fast)</item>
+                                <item id="balanced" translatable="yes">Balanceado</item>
+                                <item id="high_quality" translatable="yes">Alta Qualidade</item>
+                            </items>
+                        </object>
+                        <packing><property name="left-attach">1</property><property name="top-attach">8</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Modo Braille (High-Res):</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">9</property></packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">5</property>
+                        <child>
+                            <object class="GtkSwitch" id="pref_braille_switch">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="halign">start</property>
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Threshold:</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkScale" id="pref_braille_threshold_scale">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="digits">0</property>
+                                <property name="draw-value">True</property>
+                                <property name="value-pos">top</property>
+                                <property name="adjustment">braille_threshold_adj</property>
+                            </object>
+                        </child>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">9</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Coerência Temporal (Denoise):</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">10</property></packing>
+                    </child>
+                    <child>
+                       <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">5</property>
+                        <child>
+                            <object class="GtkSwitch" id="pref_temporal_switch">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="halign">start</property>
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Meta-Threshold:</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkScale" id="pref_temporal_threshold_scale">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="digits">0</property>
+                                <property name="draw-value">True</property>
+                                <property name="value-pos">top</property>
+                                <property name="adjustment">temporal_threshold_adj</property>
+                            </object>
+                        </child>
+                      </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">10</property></packing>
+                    </child>
+
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Processamento Assim.:</property>
+                        <property name="xalign">1</property>
+                      </object>
+                      <packing><property name="left-attach">0</property><property name="top-attach">11</property></packing>
+                    </child>
+                    <child>
+                        <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">5</property>
+                            <child>
+                                <object class="GtkSwitch" id="pref_async_switch">
+                                    <property name="visible">True</property>
+                                    <property name="active">True</property>
+                                    <property name="halign">start</property>
+                                    <property name="valign">center</property>
+                                </object>
+                            </child>
+                            <child>
+                                <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">Streams:</property>
+                                </object>
+                            </child>
+                            <child>
+                                <object class="GtkSpinButton" id="pref_async_num_streams_spin">
+                                    <property name="visible">True</property>
+                                    <property name="width-chars">2</property>
+                                    <property name="adjustment">async_num_streams_adj</property>
+                                </object>
+                            </child>
+                        </object>
+                      <packing><property name="left-attach">1</property><property name="top-attach">11</property></packing>
+                    </child>
+                    
+                    <child>
+                        <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Segmentação Automática (Beta):</property>
+                            <property name="xalign">1</property>
+                        </object>
+                        <packing><property name="left-attach">0</property><property name="top-attach">12</property></packing>
+                    </child>
+                    <child>
+                        <object class="GtkSwitch" id="pref_auto_seg_switch">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="halign">start</property>
+                            <property name="valign">center</property>
+                            <property name="tooltip-text" translatable="yes">Remove automaticamente o fundo sem usar Chroma Key (Experimental)</property>
+                        </object>
+                        <packing><property name="left-attach">1</property><property name="top-attach">12</property></packing>
+                    </child>
+
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Versão 1.5.0 - Build: FogStripper</property>
+                    <style>
+                      <class name="dim-label"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="pack-type">end</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Preferências</property>
+              </object>
+              <packing>
+                <property name="tab-fill">False</property>
+              </packing>
+            </child>
+
+            <!-- TAB 2: PLAYER -->
             <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
@@ -1328,351 +1713,6 @@ Erode remove ruído, Dilate preenche buracos.</property>
               </packing>
             </child>
 
-            <!-- TAB: PREFERENCIAS -->
-            <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="orientation">vertical</property>
-                <property name="margin">10</property>
-                <property name="spacing">10</property>
-
-                <child>
-                  <object class="GtkGrid">
-                    <property name="visible">True</property>
-                    <property name="row-spacing">8</property>
-                    <property name="column-spacing">10</property>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Pasta de Entrada:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">0</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkFileChooserButton" id="pref_input_folder">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="action">select-folder</property>
-                        <property name="title" translatable="yes">Selecionar pasta de entrada</property>
-                        <property name="hexpand">True</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">0</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Pasta de Saída:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">1</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkFileChooserButton" id="pref_output_folder">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="action">select-folder</property>
-                        <property name="title" translatable="yes">Selecionar pasta de saída</property>
-                        <property name="hexpand">True</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">1</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Motor Gráfico Padrão:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">2</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="pref_engine_combo">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="active">0</property>
-                        <property name="hexpand">True</property>
-                        <items>
-                          <item id="ascii" translatable="yes">ASCII Art</item>
-                          <item id="pixelart" translatable="yes">Pixel Art</item>
-                        </items>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">2</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Qualidade Padrão:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">3</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="pref_quality_combo">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="active">0</property>
-                        <property name="hexpand">True</property>
-                        <items>
-                          <item id="custom" translatable="yes">Custom (Manual)</item>
-                          <item id="mobile" translatable="yes">Mobile</item>
-                          <item id="low" translatable="yes">Low</item>
-                          <item id="medium" translatable="yes">Medium</item>
-                          <item id="high" translatable="yes">High</item>
-                          <item id="veryhigh" translatable="yes">Very High</item>
-                        </items>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">3</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Estilo Visual:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">4</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="pref_style_combo">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="active">0</property>
-                        <property name="hexpand">True</property>
-                        <items>
-                          <item id="clean" translatable="yes">Clean (Padrão)</item>
-                          <item id="cyberpunk" translatable="yes">Cyberpunk (Binário)</item>
-                          <item id="retro" translatable="yes">Retro (Blocos)</item>
-                          <item id="high_contrast" translatable="yes">Alto Contraste</item>
-                        </items>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Formato de Saída:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">5</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="pref_format_combo">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="active">0</property>
-                        <property name="hexpand">True</property>
-                        <items>
-                          <item id="txt" translatable="yes">TXT (ASCII Texto)</item>
-                          <item id="mp4" translatable="yes">MP4 (ASCII Video)</item>
-                          <item id="gif" translatable="yes">GIF (ASCII Animado)</item>
-                          <item id="html" translatable="yes">HTML (Player Web)</item>
-                        </items>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">5</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Aceleração (GPU):</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">6</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSwitch" id="pref_gpu_switch">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">center</property>
-                        <property name="tooltip-text" translatable="yes">Ativar aceleração CUDA (Requer NVIDIA GPU)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">6</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Modo Render (GPU):</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">7</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="pref_render_mode_combo">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="active">0</property>
-                        <property name="hexpand">True</property>
-                        <items>
-                          <item id="fast" translatable="yes">Rápido (Luminância)</item>
-                          <item id="high_fidelity" translatable="yes">Alta Fidelidade (Textura)</item>
-                        </items>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">7</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Unicode Braille:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">8</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSwitch" id="pref_braille_switch">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">center</property>
-                        <property name="tooltip-text" translatable="yes">Ativar renderização Braille (Resolução 4x maior)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">8</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Threshold Braille:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">9</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="pref_braille_threshold_scale">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="hexpand">True</property>
-                        <property name="adjustment">braille_threshold_adj</property>
-                        <property name="draw-value">True</property>
-                        <property name="value-pos">right</property>
-                        <property name="tooltip-text" translatable="yes">Sensibilidade do Braille (0-255)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">9</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Anti-Flicker:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">10</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSwitch" id="pref_temporal_switch">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">center</property>
-                        <property name="tooltip-text" translatable="yes">Ativar estabilização temporal (reduz oscilação)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">10</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Sensibilidade:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">11</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="pref_temporal_threshold_scale">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="hexpand">True</property>
-                        <property name="adjustment">temporal_threshold_adj</property>
-                        <property name="draw-value">True</property>
-                        <property name="value-pos">right</property>
-                        <property name="tooltip-text" translatable="yes">Threshold de mudança (10-50)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">11</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Async Streams:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">12</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSwitch" id="pref_async_switch">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">center</property>
-                        <property name="active">True</property>
-                        <property name="tooltip-text" translatable="yes">Ativar processamento paralelo (+15-20% FPS)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">12</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Num Streams:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">13</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSpinButton" id="pref_async_num_streams_spin">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="adjustment">async_num_streams_adj</property>
-                        <property name="value">4</property>
-                        <property name="tooltip-text" translatable="yes">Número de CUDA streams (2-8)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">13</property></packing>
-                    </child>
-
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Auto Segmentação:</property>
-                        <property name="xalign">1</property>
-                      </object>
-                      <packing><property name="left-attach">0</property><property name="top-attach">14</property></packing>
-                    </child>
-                    <child>
-                      <object class="GtkSwitch" id="pref_auto_seg_switch">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">center</property>
-                        <property name="tooltip-text" translatable="yes">Segmentação automática via ML (não precisa chroma key)</property>
-                      </object>
-                      <packing><property name="left-attach">1</property><property name="top-attach">14</property></packing>
-                    </child>
-                  </object>
-
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-              </object>
-            </child>
-            <child type="tab">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Preferências</property>
-              </object>
-              <packing>
-                <property name="tab-fill">False</property>
-              </packing>
-            </child>
 
             <!-- TAB 5: TERMINAL -->
             <child>

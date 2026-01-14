@@ -365,6 +365,10 @@ class OptionsActionsMixin:
                 fmt_map = {'txt': 0, 'mp4': 1, 'gif': 2, 'html': 3}
                 self.pref_format_combo.set_active(fmt_map.get(fmt, 0))
 
+            if hasattr(self, 'pref_theme_combo') and self.pref_theme_combo:
+                current_theme = self.config.get('Interface', 'theme', fallback='dark')
+                self.pref_theme_combo.set_active_id(current_theme)
+
             if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
                 gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=False)
                 self.pref_gpu_switch.set_active(gpu_enabled)
@@ -486,6 +490,10 @@ class OptionsActionsMixin:
             self.pref_quality_combo.set_active(0)
         if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
             self.pref_format_combo.set_active(0)
+
+        if hasattr(self, 'pref_theme_combo') and self.pref_theme_combo:
+            self.pref_theme_combo.set_active_id('dark')
+
             
         if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
             self.pref_gpu_switch.set_active(False)
@@ -665,9 +673,15 @@ class OptionsActionsMixin:
                 if 'Output' not in self.config:
                     self.config.add_section('Output')
                 fmt_list = ['txt', 'mp4', 'gif', 'html']
-                active = self.pref_format_combo.get_active()
                 if 0 <= active < len(fmt_list):
                     self.config.set('Output', 'format', fmt_list[active])
+
+            if hasattr(self, 'pref_theme_combo') and self.pref_theme_combo:
+                current_theme_id = self.pref_theme_combo.get_active_id()
+                if current_theme_id:
+                    if 'Interface' not in self.config:
+                        self.config.add_section('Interface')
+                    self.config.set('Interface', 'theme', current_theme_id)
 
             self.save_config()
 

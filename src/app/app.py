@@ -26,6 +26,14 @@ class App(
         self.initialization_failed = False
         self.builder = Gtk.Builder()
 
+        # Initialize Color Provider EARLY
+        self.color_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            self.color_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1
+        )
+
         try:
             if not os.path.exists(UI_FILE):
                 ui_rel_path = os.path.relpath(UI_FILE, ROOT_DIR)
@@ -47,12 +55,15 @@ class App(
         self.window.connect("destroy", Gtk.main_quit)
         self.window.connect("key-press-event", self.on_key_press)
         self._apply_custom_css()
-        self._setup_logo_and_title()
 
         self.builder.connect_signals(self)
         self.config = configparser.ConfigParser(interpolation=None)
         self.config_path = CONFIG_PATH
         self.config_last_load = 0
+        
+        # Initialize defaults to prevent AttributeError
+        self.input_dir = os.path.join(os.path.expanduser("~"), "Vídeos")
+        self.output_dir = os.path.join(ROOT_DIR, "data_output")
 
         try:
             if not os.path.exists(self.config_path):
@@ -63,13 +74,11 @@ class App(
             if not self.config.sections():
                 raise configparser.NoSectionError("Nenhuma secao lida (arquivo vazio?)")
 
-            self.input_dir = self.config.get('Pastas', 'input_dir', fallback='videos_entrada')
-            self.output_dir = self.config.get('Pastas', 'output_dir', fallback='videos_saida')
-            # Fix absolute paths if they are empty
-            if not self.input_dir:
-                self.input_dir = os.path.join(os.path.expanduser("~"), "Vídeos")
-            if not self.output_dir:
-                self.output_dir = os.path.join(ROOT_DIR, "data_output")
+            input_dir_cfg = self.config.get('Pastas', 'input_dir', fallback=None)
+            output_dir_cfg = self.config.get('Pastas', 'output_dir', fallback=None)
+            
+            if input_dir_cfg: self.input_dir = input_dir_cfg
+            if output_dir_cfg: self.output_dir = output_dir_cfg
                 
             self.input_dir = os.path.abspath(self.input_dir)
             self.output_dir = os.path.abspath(self.output_dir)
@@ -94,10 +103,12 @@ class App(
                  self.initialization_failed = True
                  return
 
+        self._setup_logo_and_title()
+
         if not self._get_widgets():
             self.initialization_failed = True
             return
-
+        
         self.selected_file_path = None
         self.selected_folder_path = None
         self.selected_ascii_path = None
@@ -110,39 +121,22 @@ class App(
         self.window.show_all()
 
     def _apply_custom_css(self):
+        # Base layout CSS (Theme neutral)
         css = b"""
-        progressbar {
-            min-height: 28px;
-        }
-        progressbar trough {
-            min-height: 28px;
-        }
-        progressbar progress {
-            min-height: 28px;
-        }
+        progressbar { min-height: 28px; }
+        progressbar trough { min-height: 28px; }
+        progressbar progress { min-height: 28px; }
+        
         #config_button_large {
-            background: none;
-            border: none;
-            box-shadow: none;
+            background: none; 
+            border: none; 
+            box-shadow: none; 
             margin-bottom: 12px;
         }
-        #config_button_large:hover {
-            background: alpha(@theme_fg_color, 0.1);
-        }
-        #convert_button, #convert_all_button {
-            border: 2px solid #81c995;
-            color: #81c995;
-        }
-        #convert_button:disabled, #convert_all_button:disabled {
-            border: 2px solid #81c995;
-            color: #81c995;
-            opacity: 0.6;
-        }
-        #convert_button:hover, #convert_all_button:hover {
-            background: alpha(#81c995, 0.2);
-        }
-        .file-selected {
-            color: #81c995;
+        
+        switch slider {
+            min-height: 20px;
+            min-width: 20px;
         }
         """
         provider = Gtk.CssProvider()
@@ -156,19 +150,161 @@ class App(
     def _setup_logo_and_title(self):
         try:
             logo_widget = self.builder.get_object("logo_image")
-            title_widget = self.builder.get_object("title_label")
-            if logo_widget and title_widget:
-                if os.path.exists(LOGO_FILE):
-                    pixbuf_logo = GdkPixbuf.Pixbuf.new_from_file_at_size(LOGO_FILE, 77, 77)
-                    logo_widget.set_from_pixbuf(pixbuf_logo)
-                    pixbuf_icon = GdkPixbuf.Pixbuf.new_from_file(LOGO_FILE)
-                    self.window.set_icon(pixbuf_icon)
-                title_widget.set_markup(
-                    "<span font_desc='Sans Bold 24' foreground='#EAEAEA'>"
-                    "Êxtase em <span foreground='#81c995'>4R73</span></span>"
-                )
+            if logo_widget and os.path.exists(LOGO_FILE):
+                pixbuf_logo = GdkPixbuf.Pixbuf.new_from_file_at_size(LOGO_FILE, 77, 77)
+                logo_widget.set_from_pixbuf(pixbuf_logo)
+                pixbuf_icon = GdkPixbuf.Pixbuf.new_from_file(LOGO_FILE)
+                self.window.set_icon(pixbuf_icon)
+            
+            # Initial theme application (defaults to dark)
+            current_theme = self.config.get('Interface', 'theme', fallback='dark')
+            self._apply_theme(current_theme)
+
         except Exception as e:
             self.logger.warning(f"Erro ao carregar assets: {e}")
+
+    def _apply_theme(self, theme_mode: str):
+        settings = Gtk.Settings.get_default()
+        title_widget = self.builder.get_object("title_label")
+        
+        if theme_mode == 'light':
+            settings.set_property("gtk-application-prefer-dark-theme", False)
+            # settings.set_property("gtk-theme-name", "Adwaita") # Removed to respect system theme
+            # Clear custom dark colors
+            self.color_provider.load_from_data(b"")
+            if title_widget:
+                # Reset title to plain black or default
+                title_widget.set_markup('<span font_weight="bold" size="x-large">Êxtase em 4R73</span>')
+                context = title_widget.get_style_context()
+                context.remove_class("dim-label") # Ensure it sees default color
+
+        else:
+            settings.set_property("gtk-application-prefer-dark-theme", True)
+            # settings.set_property("gtk-theme-name", "Adwaita-dark") # Removed to respect system theme
+            
+            if title_widget:
+                 # Pango Markup for dual-color title
+                 # Halo white "Êxtase em" and Neon Green "4R73"
+                 markup = '<span font_weight="bold" size="x-large" foreground="#ffffff">Êxtase em </span><span font_weight="bold" size="x-large" foreground="#00ce93">4R73</span>'
+                 title_widget.set_markup(markup)
+            
+            # Apply Custom Dark Theme Colors
+            # Apply Custom Dark Theme Colors
+            dark_css = """
+            /* Main Window Background */
+            window, .background {
+                background-color: #24232d;
+            }
+            
+            /* Motor Gráfico (Radio Buttons as Toggles) */
+            #radio_mode_ascii, #radio_mode_pixelart {
+                background-image: none;
+                border: 1px solid alpha(#ffffff, 0.1);
+                color: #eeeeee;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            #radio_mode_ascii:checked, #radio_mode_pixelart:checked {
+                background-color: #713d90;
+                border-color: #713d90;
+                color: #ffffff;
+            }
+            #radio_mode_ascii:hover:not(:checked), #radio_mode_pixelart:hover:not(:checked) {
+                 background-color: alpha(#ffffff, 0.05);
+            }
+            
+            /* Switches/Toggles (Active state) */
+            switch:checked slider {
+                background-color: #713d90;
+                border-color: #713d90;
+                color: #ffffff;
+            }
+            switch:checked {
+                 background-color: alpha(#713d90, 0.5);
+                 border-color: #713d90;
+            }
+
+            /* Progress Bar */
+            #conversion_progress progress {
+                background-color: #418a69;
+                border: none;
+            }
+            #conversion_progress trough {
+                border-color: #418a69;
+                background-color: alpha(#000000, 0.2);
+            }
+            
+            /* File/Folder and Conversion Buttons (Green Borders) */
+            /* Explicitly target the buttons we want to look "Green" */
+            #select_file_button, #select_folder_button, #select_ascii_button,
+            #convert_button, #convert_all_button {
+                 border: 2px solid #418a69;
+                 border-radius: 4px;
+                 color: #ffffff; 
+                 background-image: none;
+                 background-color: alpha(#418a69, 0.05); /* Slight tint */
+                 box-shadow: none;
+            }
+            #select_file_button:hover, #select_folder_button:hover, #select_ascii_button:hover,
+            #convert_button:hover, #convert_all_button:hover {
+                 background-color: alpha(#418a69, 0.2);
+            }
+            #convert_button:disabled, #convert_all_button:disabled {
+                 border-color: alpha(#418a69, 0.3);
+                 color: alpha(#ffffff, 0.3);
+                 background-color: transparent;
+            }
+            
+            /* Selected File Highlights */
+            .file-selected {
+                color: #418a69;
+                font-weight: bold;
+            }
+            
+            /* Labels Headers */
+            label.title-label {
+                 color: #00ce93;
+            }
+            
+            /* Section Frames/Labels if needed */
+            frame > border {
+                 border-color: alpha(#ffffff, 0.1);
+            }
+            """
+            self.color_provider.load_from_data(dark_css.encode('utf-8'))
+        
+        self._update_title_color(theme_mode)
+
+    def _update_title_color(self, theme_mode: str):
+        # Deprecated logic, now handled by CSS, but keeping for safety if CSS fails or for specific labels
+        title_widget = self.builder.get_object("title_label")
+        if not title_widget:
+            return
+
+        # Extase em (White in Dark, Black in Light)
+        text_color = "#333333" if theme_mode == 'light' else "#EAEAEA"
+        
+        markup = (
+            f"<span font_desc='Sans Bold 24' foreground='{text_color}'>"
+            "Êxtase em <span foreground='#81c995'>4R73</span></span>"
+        )
+        title_widget.set_markup(markup)
+    
+    def on_theme_combo_changed(self, combo):
+        active_id = combo.get_active_id()
+        if active_id:
+            logger_msg = f"Tema alterado para: {active_id}"
+            self.logger.info(logger_msg)
+            
+            # Apply immediately
+            self._apply_theme(active_id)
+            
+            # Save preference
+            if 'Interface' not in self.config:
+                self.config.add_section('Interface')
+            self.config.set('Interface', 'theme', active_id)
+            self.save_config()
+
 
     def _get_widgets(self) -> bool:
         try:
@@ -222,6 +358,7 @@ class App(
 
             self.pref_input_folder = self.builder.get_object("pref_input_folder")
             self.pref_output_folder = self.builder.get_object("pref_output_folder")
+            self.pref_theme_combo = self.builder.get_object("pref_theme_combo")
             self.pref_engine_combo = self.builder.get_object("pref_engine_combo")
             self.pref_quality_combo = self.builder.get_object("pref_quality_combo")
             self.pref_quality_combo = self.builder.get_object("pref_quality_combo")
