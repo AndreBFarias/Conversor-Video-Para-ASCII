@@ -12,7 +12,7 @@ sys.path.insert(0, BASE_DIR)
 
 from src.app.constants import (
     CONFIG_PATH, ROOT_DIR, CONVERTER_SCRIPT, IMAGE_CONVERTER_SCRIPT,
-    PLAYER_SCRIPT, CALIBRATOR_SCRIPT, REALTIME_SCRIPT,
+    PLAYER_SCRIPT, GTK_CALIBRATOR_SCRIPT, REALTIME_SCRIPT,
     VIDEO_EXTENSIONS, IMAGE_EXTENSIONS, QUALITY_PRESETS
 )
 
@@ -138,7 +138,7 @@ class TUISimulator:
             ('converter.py', CONVERTER_SCRIPT),
             ('image_converter.py', IMAGE_CONVERTER_SCRIPT),
             ('cli_player.py', PLAYER_SCRIPT),
-            ('calibrator.py', CALIBRATOR_SCRIPT),
+            ('gtk_calibrator.py', GTK_CALIBRATOR_SCRIPT),
             ('realtime_ascii.py', REALTIME_SCRIPT),
         ]
         for name, path in scripts:
