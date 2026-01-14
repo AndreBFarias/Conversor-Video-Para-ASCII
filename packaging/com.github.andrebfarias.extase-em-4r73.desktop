@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.1
+Name=Extase em 4R73
+GenericName=ASCII Video Converter
+Comment=Conversor de videos para arte ASCII colorida
+Comment[pt_BR]=Conversor de videos para arte ASCII colorida
+Exec=extase-em-4r73
+Icon=com.github.andrebfarias.extase-em-4r73
+Terminal=false
+Type=Application
+Categories=Video;AudioVideo;Graphics;
+Keywords=ascii;video;converter;art;pixel;
+StartupNotify=true

@@ -25,25 +25,17 @@ jobs:
       run: |
         python3 -m pytest tests/ -v --tb=short
 
-  build:
+  build-deb:
     needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-
     - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg imagemagick curl python3-venv
+        sudo apt-get install -y imagemagick
 
     - name: Extract version
       id: version
@@ -57,20 +49,73 @@ jobs:
         chmod +x packaging/build-deb.sh
         ./packaging/build-deb.sh "${{ steps.version.outputs.version }}"
 
-    - name: Build AppImage
+    - name: Upload .deb artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-package
+        path: packaging/*.deb
+
+  build-flatpak:
+    needs: test
+    runs-on: ubuntu-22.04
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-45
+      options: --privileged
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Flatpak
+      uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+      with:
+        manifest-path: packaging/com.github.andrebfarias.extase-em-4r73.yml
+        bundle: extase-em-4r73.flatpak
+        cache-key: flatpak-builder-${{ github.sha }}
+
+    - name: Upload Flatpak artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: flatpak-package
+        path: extase-em-4r73.flatpak
+
+  release:
+    needs: [build-deb, build-flatpak]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Extract version
+      id: version
       run: |
-        chmod +x packaging/build-appimage.sh
-        ./packaging/build-appimage.sh "${{ steps.version.outputs.version }}" || echo "AppImage build failed, continuing..."
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Download .deb artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: deb-package
+        path: artifacts/
+
+    - name: Download Flatpak artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: flatpak-package
+        path: artifacts/
 
     - name: List artifacts
-      run: ls -la packaging/
+      run: ls -la artifacts/
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          packaging/*.deb
-          packaging/*.AppImage
+          artifacts/*.deb
+          artifacts/*.flatpak
         name: Extase em 4R73 ${{ github.ref_name }}
         body: |
           ## Extase em 4R73 ${{ github.ref_name }}
@@ -102,16 +147,16 @@ jobs:
 
           ### Instalacao
 
+          **Flatpak (Recomendado)**
+          ```bash
+          flatpak install extase-em-4r73.flatpak
+          flatpak run com.github.andrebfarias.extase-em-4r73
+          ```
+
           **Ubuntu/Debian (.deb)**
           ```bash
           sudo dpkg -i extase-em-4r73_${{ steps.version.outputs.version }}_all.deb
           sudo apt-get install -f
-          ```
-
-          **AppImage (Universal)**
-          ```bash
-          chmod +x Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage
-          ./Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage
           ```
 
           ### Requisitos
