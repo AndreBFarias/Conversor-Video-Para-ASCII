@@ -87,6 +87,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Extract version
+      id: version
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -100,80 +107,74 @@ jobs:
 
     - name: Build AppImage
       run: |
-        # 1. Create a dummy setup.py to satisfy pip and linuxdeploy-plugin-python
-        echo "from setuptools import setup, find_packages" > setup.py
-        echo "setup(name='extase-em-4r73', version='${{ steps.version.outputs.version }}', packages=find_packages(), py_modules=['main'], install_requires=[], entry_points={'console_scripts': ['extase-em-4r73=main:main']})" >> setup.py
-        # Note: requirements are handled via pip install -r requirements.txt usually, but plugin checks this.
-        
-        # 2. Setup AppDir structure
+        # 1. Create AppDir structure
+        mkdir -p AppDir/usr/bin
         mkdir -p AppDir/usr/share/applications
         mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps
-        
-        # 3. Copy assets
-        cp debian/extase-em-4r73.desktop AppDir/usr/share/applications/
-        mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps/
-        # Resize icon to 64x64 to match directory standard (linuxdeploy strictness)
-        convert assets/logo.png -resize 64x64! AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
-        
-        # 4. Install dependencies and app into AppDir manually to be safe
-        # Create a site-packages directory in AppDir
         mkdir -p AppDir/usr/lib/python3.10/site-packages
-        export PYTHONPATH=$PWD/AppDir/usr/lib/python3.10/site-packages:$PYTHONPATH
-        
-        # Install requirements
-        pip3 install --ignore-installed --prefix AppDir/usr -r requirements.txt
-        
-        # Copy source code to AppDir
         mkdir -p AppDir/usr/src/extase-em-4r73
+
+        # 2. Create desktop file for AppImage (relative Exec path)
+        cat > AppDir/usr/share/applications/extase-em-4r73.desktop << 'DESKTOP'
+        [Desktop Entry]
+        Version=1.1
+        Name=Extase em 4R73
+        Comment=Conversor de Videos e Imagens para Arte ASCII
+        Exec=extase-em-4r73
+        Icon=extase-em-4r73
+        Terminal=false
+        Type=Application
+        Categories=Video;AudioVideo;Graphics;
+        StartupNotify=true
+        DESKTOP
+        sed -i 's/^        //' AppDir/usr/share/applications/extase-em-4r73.desktop
+
+        # 3. Copy and resize icon
+        convert assets/logo.png -resize 64x64! AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+
+        # 4. Install Python dependencies into AppDir
+        pip3 install --ignore-installed --prefix AppDir/usr -r requirements.txt
+
+        # 5. Copy source code
         cp -r src AppDir/usr/src/extase-em-4r73/
+        cp -r assets AppDir/usr/src/extase-em-4r73/
         cp main.py AppDir/usr/src/extase-em-4r73/
-        
-        # 5. Create AppRun script AND manual executable for .desktop
-        # Create the bin directory
-        mkdir -p AppDir/usr/bin
-        
-        # Create standard executable script that linuxdeploy matches with Exec=/usr/bin/extase-em-4r73
-        cat > AppDir/usr/bin/extase-em-4r73 <<EOF
+        cp config.ini AppDir/usr/src/extase-em-4r73/
+
+        # 6. Create launcher in usr/bin
+        cat > AppDir/usr/bin/extase-em-4r73 << 'LAUNCHER'
         #!/bin/bash
-        # This script is a stub for linuxdeploy to find. The actual entry point is managed by AppRun or python.
-        # But we need it to exist and be executable.
-        exec python3 -m main "\$@"
-        EOF
+        HERE="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+        APPDIR="$(dirname "$(dirname "$HERE")")"
+        export PYTHONPATH="$APPDIR/usr/lib/python3.10/site-packages:$APPDIR/usr/src/extase-em-4r73:$PYTHONPATH"
+        LIBDIRS=$(find "$APPDIR/usr/lib/python3.10/site-packages" -name "*.libs" -type d 2>/dev/null | tr '\n' ':')
+        export LD_LIBRARY_PATH="$LIBDIRS$APPDIR/usr/lib:$LD_LIBRARY_PATH"
+        cd "$APPDIR/usr/src/extase-em-4r73"
+        exec python3 "$APPDIR/usr/src/extase-em-4r73/main.py" "$@"
+        LAUNCHER
+        sed -i 's/^        //' AppDir/usr/bin/extase-em-4r73
         chmod +x AppDir/usr/bin/extase-em-4r73
 
-        # Create AppRun (root entry point for AppImage)
-        cat > AppDir/AppRun <<EOF
+        # 7. Create AppRun (root entry point)
+        cat > AppDir/AppRun << 'APPRUN'
         #!/bin/bash
-        HERE="\$(dirname "\$(readlink -f "\${0}")")"
-        export PYTHONPATH="\$HERE/usr/lib/python3.10/site-packages:\$HERE/usr/src/extase-em-4r73:\$PYTHONPATH"
-        export LD_LIBRARY_PATH="\$HERE/usr/lib:\$LD_LIBRARY_PATH"
-        exec python3 "\$HERE/usr/src/extase-em-4r73/main.py" "\$@"
-        EOF
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        export PYTHONPATH="$HERE/usr/lib/python3.10/site-packages:$HERE/usr/src/extase-em-4r73:$PYTHONPATH"
+        LIBDIRS=$(find "$HERE/usr/lib/python3.10/site-packages" -name "*.libs" -type d 2>/dev/null | tr '\n' ':')
+        export LD_LIBRARY_PATH="$LIBDIRS$HERE/usr/lib:$LD_LIBRARY_PATH"
+        cd "$HERE/usr/src/extase-em-4r73"
+        exec python3 "$HERE/usr/src/extase-em-4r73/main.py" "$@"
+        APPRUN
+        sed -i 's/^        //' AppDir/AppRun
         chmod +x AppDir/AppRun
-        
-        # 6. Run linuxdeploy (without python plugin for now to avoid complexity, just bundling libs)
-        # We rely on system python being present on target or bundle it later. 
-        # For simplicity in this fix, we assume user has python (like .deb). 
-        # BUT user wanted AppImage to be self-contained? 
-        # The python plugin is what makes it self-contained. Let's try to use it with the setup.py we made.
-        
-        # RETRY with Plugin using the generated setup.py
-        # We need to clean AppDir/AppRun if we want plugin to generate it, 
-        # OR we keep our custom AppRun if we are doing manual mode.
-        # Let's try the PLUGIN mode one last time with the setup.py existing.
-        
-        rm AppDir/AppRun # Let plugin generate it if possible, or use ours if we don't use plugin.
-        
-        # Valid Standard AppImage Build with Plugin:
-        # pip install . --prefix=AppDir/usr
-        export PIP_PREFIX=AppDir/usr
-        pip3 install . -r requirements.txt
-        
-        # Run linuxdeploy with python plugin
-        # We export LD_LIBRARY_PATH so linuxdeploy can find the libs that pip installed (pillow.libs, opencv_python.libs)
-        export LD_LIBRARY_PATH=$PWD/AppDir/usr/lib/python3.10/site-packages/pillow.libs:$PWD/AppDir/usr/lib/python3.10/site-packages/opencv_python.libs:$LD_LIBRARY_PATH
 
-        ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin python --output appimage --desktop-file AppDir/usr/share/applications/extase-em-4r73.desktop --icon-file AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+        # 8. Run linuxdeploy to generate AppImage
+        ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage \
+          --desktop-file AppDir/usr/share/applications/extase-em-4r73.desktop \
+          --icon-file AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+
+        # 9. Rename output to standardized name
+        mv Extase_em_4R73*.AppImage Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage || true
 
     - name: Upload AppImage artifact
       uses: actions/upload-artifact@v4
@@ -263,6 +264,6 @@ jobs:
           - Python 3.10+
           - GTK 3.0
           - GPU NVIDIA com CUDA 12.x (opcional, para aceleracao)
-        generate_release_notes: true
+        generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
