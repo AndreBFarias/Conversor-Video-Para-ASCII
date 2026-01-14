@@ -90,7 +90,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip python3-venv python3-gi python3-gi-cairo gir1.2-gtk-3.0 imagemagick portaudio19-dev libfuse2
+        sudo apt-get install -y python3-pip python3-venv python3-gi python3-gi-cairo gir1.2-gtk-3.0 imagemagick portaudio19-dev libfuse2 libwebp-dev
         # Install linuxdeploy
         wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
@@ -155,6 +155,9 @@ jobs:
         pip3 install . -r requirements.txt
         
         # Run linuxdeploy with python plugin
+        # We export LD_LIBRARY_PATH so linuxdeploy can find the libs that pip installed (pillow.libs, opencv_python.libs)
+        export LD_LIBRARY_PATH=$PWD/AppDir/usr/lib/python3.10/site-packages/pillow.libs:$PWD/AppDir/usr/lib/python3.10/site-packages/opencv_python.libs:$LD_LIBRARY_PATH
+
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin python --output appimage --desktop-file AppDir/usr/share/applications/extase-em-4r73.desktop --icon-file AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
 
     - name: Upload AppImage artifact
