@@ -1794,17 +1794,17 @@ class GTKCalibrator:
             if self.postfx_enabled:
                 self.postfx_config = PostFXConfig(
                     bloom_enabled=bloom_enabled,
-                    bloom_intensity=self.config.getfloat('PostFX', 'bloom_intensity', fallback=0.3),
-                    bloom_radius=self.config.getint('PostFX', 'bloom_radius', fallback=5),
-                    bloom_threshold=self.config.getint('PostFX', 'bloom_threshold', fallback=200),
+                    bloom_intensity=self.config.getfloat('PostFX', 'bloom_intensity', fallback=0.6),
+                    bloom_radius=self.config.getint('PostFX', 'bloom_radius', fallback=15),
+                    bloom_threshold=self.config.getint('PostFX', 'bloom_threshold', fallback=150),
                     chromatic_enabled=chromatic_enabled,
-                    chromatic_shift=self.config.getint('PostFX', 'chromatic_shift', fallback=2),
+                    chromatic_shift=self.config.getint('PostFX', 'chromatic_shift', fallback=5),
                     scanlines_enabled=scanlines_enabled,
-                    scanlines_intensity=self.config.getfloat('PostFX', 'scanlines_intensity', fallback=0.3),
-                    scanlines_spacing=self.config.getint('PostFX', 'scanlines_spacing', fallback=2),
+                    scanlines_intensity=self.config.getfloat('PostFX', 'scanlines_intensity', fallback=0.5),
+                    scanlines_spacing=self.config.getint('PostFX', 'scanlines_spacing', fallback=3),
                     glitch_enabled=glitch_enabled,
-                    glitch_intensity=self.config.getfloat('PostFX', 'glitch_intensity', fallback=0.1),
-                    glitch_block_size=self.config.getint('PostFX', 'glitch_block_size', fallback=8)
+                    glitch_intensity=self.config.getfloat('PostFX', 'glitch_intensity', fallback=0.3),
+                    glitch_block_size=self.config.getint('PostFX', 'glitch_block_size', fallback=16)
                 )
                 self.postfx_processor = PostFXProcessor(self.postfx_config)
 
