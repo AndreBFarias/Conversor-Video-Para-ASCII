@@ -111,7 +111,9 @@ jobs:
         
         # 3. Copy assets
         cp debian/extase-em-4r73.desktop AppDir/usr/share/applications/
-        cp assets/logo.png AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
+        mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps/
+        # Resize icon to 64x64 to match directory standard (linuxdeploy strictness)
+        convert assets/logo.png -resize 64x64! AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
         
         # 4. Install dependencies and app into AppDir manually to be safe
         # Create a site-packages directory in AppDir
