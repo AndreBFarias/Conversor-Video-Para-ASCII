@@ -128,7 +128,20 @@ jobs:
         cp -r src AppDir/usr/src/extase-em-4r73/
         cp main.py AppDir/usr/src/extase-em-4r73/
         
-        # 5. Create AppRun script
+        # 5. Create AppRun script AND manual executable for .desktop
+        # Create the bin directory
+        mkdir -p AppDir/usr/bin
+        
+        # Create standard executable script that linuxdeploy matches with Exec=/usr/bin/extase-em-4r73
+        cat > AppDir/usr/bin/extase-em-4r73 <<EOF
+        #!/bin/bash
+        # This script is a stub for linuxdeploy to find. The actual entry point is managed by AppRun or python.
+        # But we need it to exist and be executable.
+        exec python3 -m main "\$@"
+        EOF
+        chmod +x AppDir/usr/bin/extase-em-4r73
+
+        # Create AppRun (root entry point for AppImage)
         cat > AppDir/AppRun <<EOF
         #!/bin/bash
         HERE="\$(dirname "\$(readlink -f "\${0}")")"
