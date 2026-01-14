@@ -140,7 +140,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: appimage-package
-        path: *.AppImage
+        path: '*.AppImage'
 
   release:
     needs: [build-deb, build-flatpak, build-appimage]
