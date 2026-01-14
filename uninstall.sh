@@ -23,10 +23,30 @@ if [[ -f "${DESKTOP_FILE_PATH_SYSTEM}" || -f "${ICON_INSTALL_PATH_SYSTEM}" ]]; t
     fi
 fi
 
-echo "[1/4] Quebrando o circulo de protecao (venv)..."
+
+
+echo "[1/5] Exorcizando pacotes do sistema (DEB/Flatpak)..."
+if dpkg -l | grep -q "extase-em-4r73"; then
+    echo "   -> Removendo pacote .deb (requer sudo)..."
+    if [[ -z "$SUDO_CMD" ]]; then SUDO_CMD="sudo"; fi # Force sudo for apt
+    $SUDO_CMD apt remove -y extase-em-4r73 || echo "   -> Aviso: Falha ao remover pacote .deb."
+else
+    echo "   -> Pacote .deb nao encontrado."
+fi
+
+if command -v flatpak &> /dev/null; then
+    if flatpak list | grep -q "com.github.andrebfarias.extase-em-4r73"; then
+        echo "   -> Removendo Flatpak..."
+        flatpak uninstall -y com.github.andrebfarias.extase-em-4r73 || echo "   -> Aviso: Falha ao remover Flatpak."
+    else
+        echo "   -> Flatpak nao encontrado."
+    fi
+fi
+
+echo "[2/5] Quebrando o circulo de protecao (venv)..."
 rm -rf "${SCRIPT_DIR}/venv"
 
-echo "[2/4] Apagando o sigilo de invocacao (.desktop)..."
+echo "[3/5] Apagando o sigilo de invocacao (.desktop)..."
 if [[ -f "${DESKTOP_FILE_PATH_USER}" ]]; then
     rm -f "${DESKTOP_FILE_PATH_USER}" && echo "Lancador do usuario removido." || echo "Aviso: Falha ao remover lancador do usuario."
 fi
@@ -34,7 +54,7 @@ if [[ -f "${DESKTOP_FILE_PATH_SYSTEM}" ]]; then
     $SUDO_CMD rm -f "${DESKTOP_FILE_PATH_SYSTEM}" && echo "Lancador do sistema removido." || echo "Aviso: Falha ao remover lancador do sistema (Verifique permissoes sudo)."
 fi
 
-echo "[3/4] Desconsagrando o icone..."
+echo "[4/5] Desconsagrando o icone..."
 if [[ -f "${ICON_INSTALL_PATH_USER}" ]]; then
     rm -f "${ICON_INSTALL_PATH_USER}" && echo "   -> Icone do usuario removido." || echo "   -> Aviso: Falha ao remover icone do usuario."
 fi
@@ -60,7 +80,10 @@ if $NEED_ICON_UPDATE ; then
      if [[ -d "$ICON_BASE_DIR_SYSTEM" ]]; then $SUDO_CMD gtk-update-icon-cache "$ICON_BASE_DIR_SYSTEM" -f -t >/dev/null 2>&1; fi
 fi
 
-echo "[4/4] Limpando cache Python, atlas GPU, logs e dados temporarios..."
+echo "[5/5] Limpando cache Python, atlas GPU, logs e dados temporarios..."
+# User Config/Cache specifics
+rm -rf "${HOME}/.config/extase-em-4r73" 2>/dev/null && echo "   -> Configurações (~/.config/extase-em-4r73) removidas."
+rm -rf "${HOME}/.cache/extase-em-4r73" 2>/dev/null && echo "   -> Cache do usuário (~/.cache/extase-em-4r73) removido."
 find "${SCRIPT_DIR}" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find "${SCRIPT_DIR}" -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 find "${SCRIPT_DIR}" -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true

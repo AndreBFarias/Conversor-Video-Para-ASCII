@@ -44,6 +44,20 @@ if [ -d "${SCRIPT_DIR}/venv" ]; then
 fi
 python3 -m venv --system-site-packages "${SCRIPT_DIR}/venv" || { echo "ERRO: Falha ao criar ambiente virtual."; exit 1; }
 
+echo "   -> Verificando acesso ao GTK no venv..."
+if ! "${SCRIPT_DIR}/venv/bin/python3" -c "import gi; print('GTK bindings OK')" &> /dev/null; then
+    echo "ERRO: O modulo 'gi' nao foi encontrado dentro do venv."
+    echo "      Isso geralmente significa que 'python3-gi' nao esta instalado ou o venv nao foi criado com acesso aos pacotes do sistema."
+    echo "      Tentando corrigir instalando dependencias novamente..."
+    sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0
+    
+    # Re-check
+    if ! "${SCRIPT_DIR}/venv/bin/python3" -c "import gi" &> /dev/null; then
+         echo "FATAL: Ainda nao foi possivel acessar 'gi' no venv. Abortando."
+         exit 1
+    fi
+fi
+
 echo "[4/8] Instalando pacotes Python no venv..."
 echo "NOTA: PyGObject/GTK ja esta disponivel via pacotes do sistema (--system-site-packages)"
 if [ ! -f "${SCRIPT_DIR}/requirements.txt" ]; then
