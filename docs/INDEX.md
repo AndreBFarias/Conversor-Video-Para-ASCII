@@ -659,34 +659,55 @@ Cenario C: Conversao em lote (Sprint 4)
 - Toggle "Async Streams" na interface (Preferencias → GPU)
 - Ganho esperado: +15-20% FPS (30 → 35-36 fps)
 
+### Sprint 9: Matrix Rain (Particle System GPU)
+- Sistema de particulas GPU com 2500+ particulas
+- Modos: Katakana, Binary, Symbols
+- Fisica: gravidade, velocidade configuravel
+- Overlay sobre video ou standalone
+
+### Sprint 10: Pos-Processamento Cyberpunk (PostFX)
+- Bloom neon com threshold e radius ajustaveis
+- Chromatic aberration (separacao RGB)
+- Scanlines CRT com intensidade e espacamento
+- Glitch digital com block size configuravel
+
+### Sprint 11: Audio Reactive
+- Analise FFT em tempo real (PyAudio)
+- Modulacao por frequencia: Bass, Mids, Treble
+- Sensibilidade ajustavel por banda
+- Smoothing para transicoes suaves
+
+### Sprint 12: Optical Flow
+- Interpolacao de frames via OpenCV
+- 15 FPS para 30/60 FPS
+- Motion blur opcional
+- Presets de qualidade (low, medium, high)
+
+### Sprint 13: Sistema de Temas
+- Tema Dark (Dracula-inspired) como padrao
+- Tema Light disponivel
+- Persistencia em config.ini [Interface]
+- CSS customizado para GTK widgets
+
+### Sprint 14: Deploy Multiplataforma
+- AppImage funcional com dependencias bundled
+- Flatpak com manifest completo
+- Pacote .deb para Ubuntu/Debian
+- Workflow GitHub Actions automatizado
+
 ---
 
 ## Sprints Futuras
 
-### Sprint 9: Matrix Rain (Particle System GPU)
-- 5000+ particulas GPU
-- Fisica: gravidade, colisao com mascara
-- Modos: Overlay, Replace, Blend
-
-### Sprint 10: Pos-Processamento Cyberpunk
-- Bloom neon, chromatic aberration, scanlines, glitch
-
-### Sprint 11: Neural ASCII (Style Transfer)
+### Sprint 15: Neural ASCII (Style Transfer)
 - DoG/XDoG edge detection
 - Presets: Sketch, Comic, Oil, Pencil
+- Integracao com modelos pre-treinados
 
-### Sprint 12: Optical Flow (Interpolacao)
-- 15 fps → 60 fps
-- OpenCV CUDA Farneback
-
-### Sprint 13: Audio-Reactive ASCII
-- FFT GPU, modulacao brightness/intensity/color/bloom
-- Visualizador de espectro
-
-### Sprint 14: Polimento Final e Release 1.0.0
+### Sprint 16: Polimento Final e Release 1.0.0
 - Testes completos (pytest)
-- Profiling, otimizacoes
-- Release GitHub: .deb, AppImage
+- Profiling e otimizacoes finais
+- Documentacao completa
 - Marketing: YouTube, Reddit, Hacker News
 
 ---
@@ -710,4 +731,4 @@ Permitir que qualquer desenvolvedor (ou IA) entenda o projeto sem precisar ler t
 
 ---
 
-**Ultima Atualizacao:** 2026-01-13 (Sprint 7B concluida - Async CUDA Streams)
+**Ultima Atualizacao:** 2026-01-14 (Sprint 14 concluida - Deploy Multiplataforma)
