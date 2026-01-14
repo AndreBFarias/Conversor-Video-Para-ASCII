@@ -64,3 +64,17 @@ assets/models/*.onnx
 
 # Logs de execucao
 *.log
+
+# Coverage
+.coverage
+htmlcov/
+
+# Packaging (gerado no CI)
+packaging/*.deb
+packaging/*.AppImage
+packaging/linuxdeploy*.AppImage
+packaging/AppDir/
+packaging/build/
+
+# Index marker
+.INDEX_NEEDS_UPDATE

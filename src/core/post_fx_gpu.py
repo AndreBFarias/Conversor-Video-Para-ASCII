@@ -15,20 +15,28 @@ except ImportError:
 @dataclass
 class PostFXConfig:
     bloom_enabled: bool = False
-    bloom_intensity: float = 0.6
-    bloom_radius: int = 15
-    bloom_threshold: int = 150
+    bloom_intensity: float = 1.2
+    bloom_radius: int = 21
+    bloom_threshold: int = 80
 
     chromatic_enabled: bool = False
-    chromatic_shift: int = 5
+    chromatic_shift: int = 12
 
     scanlines_enabled: bool = False
-    scanlines_intensity: float = 0.5
-    scanlines_spacing: int = 3
+    scanlines_intensity: float = 0.7
+    scanlines_spacing: int = 2
 
     glitch_enabled: bool = False
-    glitch_intensity: float = 0.3
-    glitch_block_size: int = 16
+    glitch_intensity: float = 0.6
+    glitch_block_size: int = 8
+
+    brightness_enabled: bool = False
+    brightness_multiplier: float = 1.0
+
+    color_shift_enabled: bool = False
+    color_shift_r: float = 0.0
+    color_shift_g: float = 0.0
+    color_shift_b: float = 0.0
 
 
 class PostFXProcessor:
@@ -46,11 +54,19 @@ class PostFXProcessor:
             self.config.bloom_enabled,
             self.config.chromatic_enabled,
             self.config.scanlines_enabled,
-            self.config.glitch_enabled
+            self.config.glitch_enabled,
+            self.config.brightness_enabled,
+            self.config.color_shift_enabled
         ]):
             return frame
 
         result = frame.copy()
+
+        if self.config.brightness_enabled:
+            result = self._apply_brightness(result)
+
+        if self.config.color_shift_enabled:
+            result = self._apply_color_shift(result)
 
         if self.config.glitch_enabled:
             result = self._apply_glitch(result)
@@ -65,6 +81,27 @@ class PostFXProcessor:
             result = self._apply_scanlines(result)
 
         return result
+
+    def _apply_brightness(self, frame: np.ndarray) -> np.ndarray:
+        mult = self.config.brightness_multiplier
+        if mult == 1.0:
+            return frame
+        result = frame.astype(np.float32) * mult
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    def _apply_color_shift(self, frame: np.ndarray) -> np.ndarray:
+        r_shift = self.config.color_shift_r
+        g_shift = self.config.color_shift_g
+        b_shift = self.config.color_shift_b
+
+        if r_shift == 0 and g_shift == 0 and b_shift == 0:
+            return frame
+
+        result = frame.astype(np.float32)
+        result[:, :, 2] = result[:, :, 2] * (1 + r_shift)
+        result[:, :, 1] = result[:, :, 1] * (1 + g_shift)
+        result[:, :, 0] = result[:, :, 0] * (1 + b_shift)
+        return np.clip(result, 0, 255).astype(np.uint8)
 
     def _apply_bloom(self, frame: np.ndarray) -> np.ndarray:
         if self.use_gpu and not self._gpu_bloom_failed:

@@ -996,10 +996,26 @@ class GTKCalibrator:
         w, h = self.target_dimensions
         complexity = w * h
 
+        active_effects = 0
+        if self.style_enabled and self.style_preset != 'none':
+            active_effects += 1
+        if self.optical_flow_enabled:
+            active_effects += 1
+        if self.matrix_enabled:
+            active_effects += 1
+        if self.postfx_enabled:
+            active_effects += 1
+        if self.conversion_mode == MODE_PIXELART:
+            active_effects += 1
+
         skip_frames = 1
         if not self.is_recording_mp4:
-            if complexity > 6000:
+            if active_effects >= 4:
+                skip_frames = 4
+            elif active_effects >= 3:
                 skip_frames = 3
+            elif active_effects >= 2 or complexity > 6000:
+                skip_frames = 2
             elif complexity > 4000:
                 skip_frames = 2
 
@@ -1021,6 +1037,10 @@ class GTKCalibrator:
 
         if self.converter_config.get('sharpen_enabled', True):
             frame = sharpen_frame(frame, self.converter_config.get('sharpen_amount', 0.5))
+
+        if self.optical_flow_enabled and self.optical_flow_interpolator:
+            if self._frame_counter % 2 == 0:
+                frame = self.optical_flow_interpolator.apply_motion_blur(frame)
 
         self.current_frame = frame.copy()
 
@@ -2019,10 +2039,13 @@ class GTKCalibrator:
             of_config = OpticalFlowConfig(
                 enabled=True,
                 target_fps=int(of_fps) if of_fps else 30,
-                quality=of_quality or 'medium'
+                quality=of_quality or 'fast',
+                motion_blur_enabled=True,
+                motion_blur_intensity=0.5,
+                motion_blur_samples=3
             )
             self.optical_flow_interpolator = OpticalFlowInterpolator(of_config)
-            self._set_status(f"Optical Flow: {of_fps} FPS ({of_quality})")
+            self._set_status(f"Motion Blur: ON")
         else:
             self.optical_flow_interpolator = None
             self._set_status("Optical Flow: Desativado")
@@ -2150,20 +2173,34 @@ class GTKCalibrator:
 
         if self.audio_modulate_bloom and self.postfx_processor.config:
             bloom_intensity = self.audio_modulator.get_bloom_intensity()
-            self.postfx_processor.config.bloom_intensity = bloom_intensity
+            self.postfx_processor.config.bloom_intensity = bloom_intensity * 1.5
 
         if self.audio_modulate_chromatic and self.postfx_processor.config:
             chrom_intensity = self.audio_modulator.get_chromatic_intensity()
-            self.postfx_processor.config.chromatic_shift = int(chrom_intensity)
+            self.postfx_processor.config.chromatic_shift = int(chrom_intensity * 3)
 
         if self.audio_modulate_glitch and self.postfx_processor.config:
             glitch_prob = self.audio_modulator.get_glitch_probability()
-            if glitch_prob > 0.1:
+            if glitch_prob > 0.05:
                 self.postfx_processor.config.glitch_enabled = True
-                self.postfx_processor.config.glitch_intensity = glitch_prob
+                self.postfx_processor.config.glitch_intensity = glitch_prob * 2
             else:
                 if not self.chk_glitch.get_active():
                     self.postfx_processor.config.glitch_enabled = False
+
+        if self.postfx_processor.config:
+            brightness = self.audio_modulator.get_brightness_multiplier()
+            self.postfx_processor.config.brightness_enabled = True
+            self.postfx_processor.config.brightness_multiplier = brightness
+
+            r_shift, g_shift, b_shift = self.audio_modulator.get_color_shift()
+            if abs(r_shift) > 0.05 or abs(g_shift) > 0.05 or abs(b_shift) > 0.05:
+                self.postfx_processor.config.color_shift_enabled = True
+                self.postfx_processor.config.color_shift_r = r_shift * 2
+                self.postfx_processor.config.color_shift_g = g_shift * 2
+                self.postfx_processor.config.color_shift_b = b_shift * 2
+            else:
+                self.postfx_processor.config.color_shift_enabled = False
 
     def on_resolution_changed(self, widget):
         if self._block_signals:

@@ -15,32 +15,38 @@ class OpticalFlowConfig:
     enabled: bool = False
     target_fps: int = 30
     quality: str = 'medium'
+    motion_blur_enabled: bool = False
+    motion_blur_intensity: float = 0.5
+    motion_blur_samples: int = 5
 
 
 QUALITY_PRESETS = {
     'fast': {
         'pyr_scale': 0.5,
-        'levels': 2,
-        'winsize': 10,
-        'iterations': 2,
+        'levels': 1,
+        'winsize': 5,
+        'iterations': 1,
         'poly_n': 5,
-        'poly_sigma': 1.1
+        'poly_sigma': 1.1,
+        'downscale': 0.25
     },
     'medium': {
         'pyr_scale': 0.5,
-        'levels': 3,
-        'winsize': 15,
-        'iterations': 3,
+        'levels': 2,
+        'winsize': 8,
+        'iterations': 2,
         'poly_n': 5,
-        'poly_sigma': 1.2
+        'poly_sigma': 1.2,
+        'downscale': 0.35
     },
     'high': {
         'pyr_scale': 0.5,
-        'levels': 4,
-        'winsize': 20,
-        'iterations': 5,
-        'poly_n': 7,
-        'poly_sigma': 1.5
+        'levels': 3,
+        'winsize': 12,
+        'iterations': 3,
+        'poly_n': 5,
+        'poly_sigma': 1.3,
+        'downscale': 0.5
     }
 }
 
@@ -93,23 +99,17 @@ class OpticalFlowInterpolator:
         return interpolated
 
     def _compute_flow(self, prev_gray: np.ndarray, curr_gray: np.ndarray) -> np.ndarray:
-        preset = QUALITY_PRESETS.get(self.config.quality, QUALITY_PRESETS['medium'])
+        preset = QUALITY_PRESETS.get(self.config.quality, QUALITY_PRESETS['fast'])
+        downscale = preset.get('downscale', 0.25)
 
-        if self.use_gpu and self._flow_gpu:
-            try:
-                prev_gpu = cv2.cuda_GpuMat()
-                curr_gpu = cv2.cuda_GpuMat()
-                prev_gpu.upload(prev_gray)
-                curr_gpu.upload(curr_gray)
+        h, w = prev_gray.shape[:2]
+        new_h, new_w = int(h * downscale), int(w * downscale)
 
-                flow_gpu = self._flow_gpu.calc(prev_gpu, curr_gpu, None)
-                flow = flow_gpu.download()
-                return flow
-            except Exception:
-                self.use_gpu = False
+        prev_small = cv2.resize(prev_gray, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        curr_small = cv2.resize(curr_gray, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-        flow = cv2.calcOpticalFlowFarneback(
-            prev_gray, curr_gray, None,
+        flow_small = cv2.calcOpticalFlowFarneback(
+            prev_small, curr_small, None,
             pyr_scale=preset['pyr_scale'],
             levels=preset['levels'],
             winsize=preset['winsize'],
@@ -118,6 +118,9 @@ class OpticalFlowInterpolator:
             poly_sigma=preset['poly_sigma'],
             flags=0
         )
+
+        flow = cv2.resize(flow_small, (w, h), interpolation=cv2.INTER_LINEAR)
+        flow *= (1.0 / downscale)
 
         return flow
 
@@ -162,6 +165,53 @@ class OpticalFlowInterpolator:
         self.prev_frame = None
         self.prev_gray = None
 
+    def apply_motion_blur(self, frame: np.ndarray) -> np.ndarray:
+        if not self.config.motion_blur_enabled:
+            return frame
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
+
+        if self.prev_gray is None:
+            self.prev_frame = frame.copy()
+            self.prev_gray = gray.copy()
+            return frame
+
+        flow = self._compute_flow(self.prev_gray, gray)
+
+        result = self._apply_directional_blur(frame, flow)
+
+        self.prev_frame = frame.copy()
+        self.prev_gray = gray.copy()
+
+        return result
+
+    def _apply_directional_blur(self, frame: np.ndarray, flow: np.ndarray) -> np.ndarray:
+        h, w = frame.shape[:2]
+        intensity = self.config.motion_blur_intensity
+        samples = min(self.config.motion_blur_samples, 3)
+
+        y_coords, x_coords = np.mgrid[0:h, 0:w].astype(np.float32)
+
+        result = frame.astype(np.float32)
+        total_weight = 1.0
+
+        for i in range(1, samples + 1):
+            t = (i / samples) * intensity
+            weight = 1.0 - (i / (samples + 1))
+
+            map_x = x_coords - flow[..., 0] * t
+            map_y = y_coords - flow[..., 1] * t
+
+            map_x = np.clip(map_x, 0, w - 1)
+            map_y = np.clip(map_y, 0, h - 1)
+
+            warped = cv2.remap(frame, map_x, map_y, cv2.INTER_LINEAR)
+            result += warped.astype(np.float32) * weight
+            total_weight += weight
+
+        result = result / total_weight
+        return np.clip(result, 0, 255).astype(np.uint8)
+
 
 def create_interpolator_from_config(config_parser) -> OpticalFlowInterpolator:
     try:
@@ -169,6 +219,9 @@ def create_interpolator_from_config(config_parser) -> OpticalFlowInterpolator:
             enabled=config_parser.getboolean('OpticalFlow', 'enabled', fallback=False),
             target_fps=config_parser.getint('OpticalFlow', 'target_fps', fallback=30),
             quality=config_parser.get('OpticalFlow', 'quality', fallback='medium'),
+            motion_blur_enabled=config_parser.getboolean('OpticalFlow', 'motion_blur_enabled', fallback=False),
+            motion_blur_intensity=config_parser.getfloat('OpticalFlow', 'motion_blur_intensity', fallback=0.5),
+            motion_blur_samples=config_parser.getint('OpticalFlow', 'motion_blur_samples', fallback=5),
         )
         return OpticalFlowInterpolator(of_config)
     except Exception:

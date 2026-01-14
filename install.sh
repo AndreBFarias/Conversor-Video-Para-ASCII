@@ -80,6 +80,12 @@ echo "   -> Instalando MediaPipe para segmentacao automatica..."
 echo "   -> Instalando PyAudio para audio-reactive..."
 "${SCRIPT_DIR}/venv/bin/pip" install pyaudio || echo "Aviso: Falha ao instalar pyaudio. Audio-reactive nao funcionara."
 
+echo "   -> Instalando Sphinx para documentacao..."
+"${SCRIPT_DIR}/venv/bin/pip" install sphinx sphinx_rtd_theme || echo "Aviso: Falha ao instalar sphinx."
+
+echo "   -> Instalando pytest para testes..."
+"${SCRIPT_DIR}/venv/bin/pip" install pytest pytest-cov coverage || echo "Aviso: Falha ao instalar pytest."
+
 echo "[5/8] Preparando os altares (data_input, data_output, .cache, logs, models)..."
 mkdir -p "${SCRIPT_DIR}/data_input" || echo "Aviso: Falha ao criar data_input."
 mkdir -p "${SCRIPT_DIR}/data_output" || echo "Aviso: Falha ao criar data_output."

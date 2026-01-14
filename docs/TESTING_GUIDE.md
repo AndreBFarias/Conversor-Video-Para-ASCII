@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define o protocolo para Claude Code validar sprints através de testes visuais da interface gráfica.
+Este documento define o protocolo para validar sprints através de testes visuais da interface gráfica.
 
 ---
 
@@ -20,7 +20,7 @@ python3 main.py &
 
 ### 2. Captura de Screenshots
 
-Claude deve usar as ferramentas de browser automation para:
+O testador deve usar ferramentas de automacao para:
 
 1. **Tirar screenshot da interface**
 2. **Ler a screenshot** para entender estado atual
@@ -157,13 +157,13 @@ head -n 50 ~/Vídeos/*.txt
 
 ## Template de Relatório Comercial
 
-Após executar os testes, Claude deve gerar um relatório em `Dev_log/Commercial_Report_Sprint_X.md`:
+Após executar os testes, gerar um relatório em `Dev_log/Commercial_Report_Sprint_X.md`:
 
 ```markdown
 # Relatório Comercial - Sprint X
 
 **Data:** YYYY-MM-DD
-**Testador:** Claude Code
+**Testador:** [Nome do Testador]
 **Ambiente:** Pop!_OS 22.04, Python 3.10, GTK 3.0
 
 ---
@@ -239,7 +239,7 @@ Após executar os testes, Claude deve gerar um relatório em `Dev_log/Commercial
 
 ## Checklist de Validação de Sprint
 
-Antes de aprovar uma sprint, Claude deve verificar:
+Antes de aprovar uma sprint, verificar:
 
 ### Funcionalidade
 - [ ] Todos os casos de teste passaram

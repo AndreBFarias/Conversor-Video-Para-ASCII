@@ -25,38 +25,45 @@ STYLE_PRESETS = {
     },
     'sketch': {
         'name': 'Sketch',
-        'dog_sigma1': 0.5,
-        'dog_sigma2': 1.5,
-        'dog_tau': 0.98,
-        'edge_strength': 1.5
+        'dog_sigma1': 0.8,
+        'dog_sigma2': 2.5,
+        'dog_tau': 0.95,
+        'edge_strength': 3.0
     },
     'ink': {
         'name': 'Ink',
-        'dog_sigma1': 0.4,
-        'dog_sigma2': 1.2,
-        'dog_tau': 0.95,
-        'edge_strength': 2.0
+        'dog_sigma1': 0.6,
+        'dog_sigma2': 2.0,
+        'dog_tau': 0.92,
+        'edge_strength': 4.0
     },
     'comic': {
         'name': 'Comic',
-        'dog_sigma1': 0.6,
-        'dog_sigma2': 2.0,
-        'dog_tau': 0.99,
-        'edge_strength': 1.2
+        'dog_sigma1': 1.0,
+        'dog_sigma2': 3.0,
+        'dog_tau': 0.97,
+        'edge_strength': 2.5
     },
     'neon': {
         'name': 'Neon',
-        'dog_sigma1': 0.5,
-        'dog_sigma2': 1.5,
-        'dog_tau': 0.98,
-        'edge_strength': 1.0
+        'dog_sigma1': 0.8,
+        'dog_sigma2': 2.5,
+        'dog_tau': 0.95,
+        'edge_strength': 2.5
     },
     'emboss': {
         'name': 'Emboss',
-        'dog_sigma1': 0.3,
-        'dog_sigma2': 1.0,
-        'dog_tau': 0.97,
-        'edge_strength': 1.8
+        'dog_sigma1': 0.5,
+        'dog_sigma2': 1.5,
+        'dog_tau': 0.94,
+        'edge_strength': 3.5
+    },
+    'cyberpunk': {
+        'name': 'Cyberpunk',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
     }
 }
 
@@ -65,6 +72,7 @@ class StyleTransferProcessor:
 
     def __init__(self, config: Optional[StyleConfig] = None):
         self.config = config or StyleConfig()
+        self._cyberpunk_cache = {}
 
     def process(self, frame: np.ndarray) -> np.ndarray:
         if not self.config.style_enabled or self.config.style_preset == 'none':
@@ -79,12 +87,18 @@ class StyleTransferProcessor:
 
         if self.config.style_preset == 'neon':
             edges_color = cv2.applyColorMap(edges, cv2.COLORMAP_HOT)
-            result = cv2.addWeighted(frame, 0.5, edges_color, 0.5, 0)
+            result = cv2.addWeighted(frame, 0.3, edges_color, 0.7, 0)
+        elif self.config.style_preset == 'cyberpunk':
+            result = self._apply_cyberpunk(frame, edges)
         elif self.config.style_preset in ('sketch', 'ink'):
-            result = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+            edges_inv = 255 - edges
+            result = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
+        elif self.config.style_preset == 'emboss':
+            edges_3ch = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+            result = cv2.addWeighted(frame, 0.4, edges_3ch, 0.6, 0)
         else:
             edges_3ch = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-            result = cv2.addWeighted(frame, 0.7, edges_3ch, 0.3 * self.config.edge_strength, 0)
+            result = cv2.addWeighted(frame, 0.5, edges_3ch, 0.5 * self.config.edge_strength, 0)
 
         return result
 
@@ -103,6 +117,41 @@ class StyleTransferProcessor:
         dog = np.clip(dog * self.config.edge_strength + 128, 0, 255).astype(np.uint8)
 
         return dog
+
+    def _apply_cyberpunk(self, frame: np.ndarray, edges: np.ndarray) -> np.ndarray:
+        h, w = frame.shape[:2]
+        cache_key = (h, w)
+
+        if cache_key not in self._cyberpunk_cache:
+            gradient = np.linspace(0, 1, w, dtype=np.float32).reshape(1, w)
+            gradient = np.tile(gradient, (h, 1))
+
+            magenta = np.zeros((h, w, 3), dtype=np.float32)
+            magenta[:, :, 0] = 200
+            magenta[:, :, 2] = 255
+
+            cyan = np.zeros((h, w, 3), dtype=np.float32)
+            cyan[:, :, 0] = 255
+            cyan[:, :, 1] = 255
+
+            neon_color = (magenta * (1 - gradient[:, :, np.newaxis]) +
+                          cyan * gradient[:, :, np.newaxis])
+
+            self._cyberpunk_cache[cache_key] = neon_color
+
+        neon_color = self._cyberpunk_cache[cache_key]
+
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1].astype(np.float32) * 1.4, 0, 255).astype(np.uint8)
+        hsv[:, :, 2] = np.clip(hsv[:, :, 2].astype(np.float32) * 1.1, 0, 255).astype(np.uint8)
+        saturated = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+        edge_mask = (edges > 127).astype(np.float32)
+        edge_glow = neon_color * edge_mask[:, :, np.newaxis]
+
+        result = saturated.astype(np.float32) * 0.6 + edge_glow * 0.8
+
+        return np.clip(result, 0, 255).astype(np.uint8)
 
     def update_config(self, **kwargs):
         for key, value in kwargs.items():

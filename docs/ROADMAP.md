@@ -67,19 +67,33 @@ Modo textura MSE, Unicode Braille (4x resolucao), anti-flicker.
 - Captura via PyAudio (loopback/mic)
 - Integrado na Row 4 do calibrador
 
+### Sprint 14: Polimento Final e Release
+**Concluido:** v2.3.0
+- Suite pytest com 43 testes (97% cobertura)
+- Motion Blur otimizado (downscale + frame skip)
+- Manual do usuario completo (docs/USER_MANUAL.md)
+- Pacote .deb funcional
+- Documentacao Sphinx
+
+### Sprint 15: Impacto Visual Real
+**Concluido:** v2.3.0
+- PostFX com valores visiveis (bloom_threshold 80, chromatic_shift 12)
+- Audio Reactive com todas as modulacoes conectadas
+- Style Transfer com presets intensificados
+- Motion Blur baseado em Optical Flow
+- Brightness e Color Shift como novos efeitos PostFX
+
 ---
 
 ## Sprints Futuras
 
-### Sprint 14: Polimento Final e Release
-**Foco:** Versao 1.0.0 publica
+### Sprint 16: Release Publico
+**Foco:** Distribuicao e marketing
 **Features:**
-- Testes completos (pytest, coverage > 80%)
-- Profiling e otimizacoes finais
-- Documentacao user manual
-- GitHub release com .deb e AppImage
-- Marketing: YouTube, Reddit, Hacker News
-**Duracao:** 7-10 dias
+- AppImage para distribuicao universal
+- GitHub release oficial
+- Video demonstrativo
+- Posts em comunidades (Reddit, Hacker News)
 
 ---
 
@@ -99,11 +113,11 @@ Modo textura MSE, Unicode Braille (4x resolucao), anti-flicker.
 
 ## Proximos Passos
 
-1. Testar Sprint 13 (Audio-Reactive) com musica
-2. Iniciar Sprint 14 (Polimento Final e Release)
-3. Criar issues no GitHub para cada sprint restante
-4. Manter Dev_log atualizado
+1. Criar AppImage para distribuicao universal
+2. Preparar GitHub release (tag v2.3.0)
+3. Video demonstrativo dos efeitos visuais
+4. Divulgacao em comunidades
 
 ---
 
-**Ultima Atualizacao:** 2026-01-14 (Sprint 13 concluida)
+**Ultima Atualizacao:** 2026-01-14 (Sprint 15 concluida)

@@ -34,8 +34,16 @@ def quantize_colors(image, n_colors=16, use_fixed_palette=False, custom_palette=
         else:
             palette = DEFAULT_PALETTE_16[:min(n_colors, 16)]
 
-        dists = np.sum((pixels[:, np.newaxis, :] - palette[np.newaxis, :, :]) ** 2, axis=2)
-        labels = np.argmin(dists, axis=1)
+        n_pixels = pixels.shape[0]
+        labels = np.empty(n_pixels, dtype=np.int32)
+
+        chunk_size = 10000
+        for i in range(0, n_pixels, chunk_size):
+            end = min(i + chunk_size, n_pixels)
+            chunk = pixels[i:end]
+            dists = np.sum((chunk[:, np.newaxis, :] - palette[np.newaxis, :, :]) ** 2, axis=2)
+            labels[i:end] = np.argmin(dists, axis=1)
+
         quantized = palette[labels].astype(np.uint8)
     else:
         n_colors = min(max(2, n_colors), 64)

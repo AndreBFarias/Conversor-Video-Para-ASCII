@@ -1,4 +1,4 @@
-name: Build and Release .deb
+name: Build and Release
 
 on:
   push:
@@ -6,45 +6,120 @@ on:
       - 'v*'
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install test dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 libgirepository1.0-dev libcairo2-dev
+        pip install pytest pytest-cov coverage numpy opencv-python Pillow PyGObject
+
+    - name: Run tests
+      run: |
+        pytest tests/ -v --tb=short
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Install Dependencies
+    - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg imagemagick
+        sudo apt-get install -y ffmpeg imagemagick curl python3-venv
 
-    - name: Build .deb Package
+    - name: Extract version
+      id: version
       run: |
         VERSION=${{ github.ref_name }}
         VERSION=${VERSION#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build .deb package
+      run: |
         chmod +x packaging/build-deb.sh
-        ./packaging/build-deb.sh "$VERSION"
+        ./packaging/build-deb.sh "${{ steps.version.outputs.version }}"
+
+    - name: Build AppImage
+      run: |
+        chmod +x packaging/build-appimage.sh
+        ./packaging/build-appimage.sh "${{ steps.version.outputs.version }}" || echo "AppImage build failed, continuing..."
+
+    - name: List artifacts
+      run: ls -la packaging/
 
     - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        files: packaging/*.deb
-        name: Release ${{ github.ref_name }}
+        files: |
+          packaging/*.deb
+          packaging/*.AppImage
+        name: Extase em 4R73 ${{ github.ref_name }}
         body: |
-          Automated release for version ${{ github.ref_name }}.
-          
-          ## Installation
+          ## Extase em 4R73 ${{ github.ref_name }}
+
+          Conversor de videos para arte ASCII colorida com GPU CUDA.
+
+          ### Novidades nesta versao
+
+          **Efeitos Visuais (PostFX Cyberpunk)**
+          - Bloom (brilho neon)
+          - Chromatic Aberration (RGB shift)
+          - Scanlines CRT
+          - Glitch effect
+          - Motion Blur (Optical Flow)
+
+          **Audio Reactive**
+          - Modulacao por FFT em tempo real
+          - 3 bandas: Bass, Mids, Treble
+          - Efeitos respondem a musica
+
+          **Style Transfer**
+          - Presets: Sketch, Ink, Comic, Neon, Emboss, Cyberpunk
+          - DoG/XDoG edge detection
+          - Cyberpunk: neon magenta/ciano com bordas brilhantes
+
+          **Matrix Rain**
+          - Sistema de particulas GPU
+          - Charsets: Katakana, Binary, ASCII
+
+          ### Instalacao
+
+          **Ubuntu/Debian (.deb)**
           ```bash
-          sudo dpkg -i extase-em-4r73_${{ github.ref_name }}_all.deb
+          sudo dpkg -i extase-em-4r73_${{ steps.version.outputs.version }}_all.deb
           sudo apt-get install -f
           ```
+
+          **AppImage (Universal)**
+          ```bash
+          chmod +x Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage
+          ./Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage
+          ```
+
+          ### Requisitos
+          - Python 3.10+
+          - GTK 3.0
+          - GPU NVIDIA com CUDA 12.x (opcional, para aceleracao)
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

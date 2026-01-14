@@ -2,6 +2,122 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.3.0] - 2026-01-14
+
+### Sprint 15: Impacto Visual Real
+
+#### PostFX - Valores Ajustados
+- Bloom threshold: 150 -> 80 (mais pixels qualificam)
+- Bloom intensity: 0.6 -> 1.2 (efeito mais visivel)
+- Chromatic shift: 5 -> 12 (aberracao perceptivel)
+- Glitch intensity: 0.3 -> 0.6 (dispara mais frequente)
+- Scanlines spacing: 3 -> 2 (linhas mais densas)
+
+#### Audio Reactive - Modulacoes Completas
+- Brightness modulation conectada (bass -> brightness)
+- Color shift conectada (bandas -> RGB shift)
+- Multiplicadores aumentados para impacto visual
+
+#### Style Transfer - Presets Intensificados
+- Sketch: edge_strength 1.5 -> 3.0
+- Ink: edge_strength 2.0 -> 4.0, inversao de edges
+- Neon: blend 0.5/0.5 -> 0.3/0.7 (mais colorido)
+- Emboss: edge_strength 1.8 -> 3.5
+- Cyberpunk: novo preset com neon magenta/ciano e bordas brilhantes
+
+#### Novas Features PostFX
+- `brightness_enabled` / `brightness_multiplier`
+- `color_shift_enabled` / `color_shift_r/g/b`
+
+#### Motion Blur (Optical Flow)
+- `apply_motion_blur()` - efeito de rastro de movimento
+- Baseado em Farneback Optical Flow
+- Parametros: intensity (0.3-1.0), samples (3-8)
+- Integrado no pipeline do calibrador
+
+### Documentacao
+- User Manual completo (docs/USER_MANUAL.md)
+- Testes mantidos em 97% cobertura
+
+---
+
+## [2.2.0] - 2026-01-14
+
+### Sprints 7A-13: Features Avancadas
+
+#### Sprint 7A: Unicode Braille + Temporal Coherence
+- Modo Braille com Unicode (4x resolucao efetiva)
+- Sistema anti-flicker com temporal coherence
+- Threshold configuravel para estabilidade visual
+
+#### Sprint 7B: Async CUDA Streams
+- `async_gpu_converter.py` com CuPy Streams
+- Ganho de +15-20% FPS em conversoes GPU
+- Pipeline assíncrono para frames
+
+#### Sprint 9: Matrix Rain (Particle System GPU)
+- `matrix_rain_gpu.py` com sistema de particulas
+- Suporte a 5000+ particulas simultaneas
+- Charsets: Katakana, Binary, ASCII, Mixed
+- Velocidade e densidade configuraveis
+
+#### Sprint 10: Pos-Processamento Cyberpunk
+- `post_fx_gpu.py` com efeitos visuais
+- Bloom (brilho neon com Gaussian blur)
+- Chromatic Aberration (RGB shift)
+- Scanlines CRT
+- Glitch effect (distorcao aleatoria)
+
+#### Sprint 11: Neural ASCII (Style Transfer)
+- `style_transfer.py` com estilizacao pre-conversao
+- DoG/XDoG edge detection
+- 6 presets: None, Sketch, Comic, Ink, Neon, Emboss
+
+#### Sprint 12: Optical Flow (Interpolacao)
+- `optical_flow.py` com interpolacao de frames
+- Farneback Optical Flow (CPU e GPU)
+- Target FPS: 30, 60, 120
+- Frame warping bidirecional
+
+#### Sprint 13: Audio-Reactive ASCII
+- `audio_analyzer.py` com FFT em tempo real
+- 3 bandas: Bass, Mids, Treble
+- Modulacao de efeitos PostFX via audio
+- Captura via PyAudio (loopback/mic)
+
+### Sprint 8: Infraestrutura
+
+#### Profissionalizacao
+- Pacote .deb funcional com postinst robusto
+- Lazy loader para modulos pesados
+- Documentacao Sphinx configurada
+
+#### Anonimato
+- Remocao de referencias a ferramentas de desenvolvimento
+- TESTING_GUIDE.md generalizado
+
+#### Testes
+- Suite pytest com 43 testes unitarios
+- Cobertura de 97% nos modulos testaveis
+- Configuracao .coveragerc para exclusao de GUI/GPU
+
+### Arquivos Adicionados
+- `src/core/async_gpu_converter.py`
+- `src/core/matrix_rain_gpu.py`
+- `src/core/post_fx_gpu.py`
+- `src/core/style_transfer.py`
+- `src/core/optical_flow.py`
+- `src/core/audio_analyzer.py`
+- `tests/test_color.py`
+- `tests/test_image.py`
+- `tests/test_ascii_converter.py`
+- `tests/test_logger.py`
+- `tests/conftest.py`
+- `pytest.ini`
+- `.coveragerc`
+
+---
+
 ## [2.1.0] - 2025-12-31
 
 ### Interface Renovada

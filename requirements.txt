@@ -9,3 +9,8 @@ mediapipe
 pyaudio>=0.2.13
 sphinx==7.2.6
 sphinx_rtd_theme==2.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.1.0
+coverage>=7.4.0
