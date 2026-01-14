@@ -1,0 +1,65 @@
+# Extase em 4R73 - Gitignore
+
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+.env/
+
+# Pastas de Dados (Nao rastrear midia, manter placeholders)
+data_input/*
+!data_input/.gitkeep
+data_output/*
+!data_output/.gitkeep
+
+# Pastas legadas (ignorar completamente)
+videos_entrada/
+videos_saida/
+
+# Logs e Dev
+logs/*
+!logs/.gitkeep
+Dev_log/
+
+# Arquivos de desenvolvimento privados
+CLAUDE.md
+IMPORTANT.md
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+
+# Build/Dist
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDE/Config
+.vscode/
+.idea/
+*.sublime-*
+.gemini/
+.claude/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Icones gerados automaticamente
+assets/logo-64.png
+assets/logo-128.png
+assets/logo-512.png
+
+# Modelos ML (baixar via script)
+assets/models/*.tflite
+assets/models/*.onnx
+
+# Logs de execucao
+*.log

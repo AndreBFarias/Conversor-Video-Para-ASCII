@@ -1,0 +1,50 @@
+name: Build and Release .deb
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg imagemagick
+
+    - name: Build .deb Package
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        chmod +x packaging/build-deb.sh
+        ./packaging/build-deb.sh "$VERSION"
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: packaging/*.deb
+        name: Release ${{ github.ref_name }}
+        body: |
+          Automated release for version ${{ github.ref_name }}.
+          
+          ## Installation
+          ```bash
+          sudo dpkg -i extase-em-4r73_${{ github.ref_name }}_all.deb
+          sudo apt-get install -f
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

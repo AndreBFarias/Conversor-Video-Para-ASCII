@@ -1,0 +1,13 @@
+extase-em-4r73 (1.0.0) unstable; urgency=medium
+
+  * Initial release
+  * Features:
+    - Conversão ASCII em tempo real com GPU (CUDA)
+    - Chroma key avançado
+    - Unicode Braille (4x resolução)
+    - High Fidelity texture mode
+    - Temporal coherence (anti-flicker)
+    - Gravação MP4/GIF/HTML
+    - Interface GTK3 moderna
+
+ -- Extase em 4R73 Team <noreply@example.com>  Mon, 13 Jan 2026 00:00:00 +0000
