@@ -1155,6 +1155,35 @@ class GTKCalibrator:
 
         return True
 
+    def _force_rerender(self):
+        if not self._cached_ascii_data or self.current_frame is None:
+            return
+
+        resized_gray, resized_color, resized_mask, magnitude_norm, angle = self._cached_ascii_data
+        frame_h, frame_w = self.current_frame.shape[:2]
+
+        if self.conversion_mode == MODE_PIXELART:
+            result_image = self._render_pixelart_to_image(resized_color, resized_mask, frame_h, frame_w)
+        elif self.braille_enabled:
+            braille_grid = self._convert_to_braille(resized_gray, self.braille_threshold)
+            if self.temporal_enabled:
+                braille_gray = resized_gray[::4, ::2]
+                braille_grid = self._apply_temporal_coherence(braille_grid, braille_gray, self.temporal_threshold)
+            result_image = self._render_braille_to_image(braille_grid, resized_color, resized_mask, frame_h, frame_w)
+        else:
+            result_image = self._render_ascii_to_image(resized_gray, resized_color, resized_mask, magnitude_norm, angle, frame_h, frame_w)
+
+        if result_image is None or result_image.size == 0:
+            return
+
+        if self.matrix_enabled and self.matrix_rain_instance:
+            result_image = self._apply_matrix_rain(result_image, resized_mask)
+
+        if self.postfx_enabled and self.postfx_processor:
+            result_image = self.postfx_processor.process(result_image)
+
+        self._set_frame_to_image(self.image_ascii, self.aspect_ascii, result_image)
+
     def _get_ascii_area_geometry(self):
         if not self.aspect_ascii or not self.aspect_ascii.get_window():
             return None
@@ -1568,6 +1597,7 @@ class GTKCalibrator:
             self.pixel_art_config['pixel_size'] = int(self.spin_pixel_size.get_value())
         if self.spin_palette_size:
             self.pixel_art_config['color_palette_size'] = int(self.spin_palette_size.get_value())
+        self._force_rerender()
 
     def on_fixed_palette_toggled(self, widget):
         if self._block_signals:
@@ -1580,6 +1610,7 @@ class GTKCalibrator:
             self.combo_fixed_palette.set_sensitive(use_fixed)
 
         self._set_status(f"Paleta fixa: {'Ativada' if use_fixed else 'Desativada'}")
+        self._force_rerender()
 
     def on_fixed_palette_changed(self, widget):
         if self._block_signals:
@@ -1589,6 +1620,7 @@ class GTKCalibrator:
         if palette_id and palette_id in FIXED_PALETTES:
             self.pixel_art_config['fixed_palette_name'] = palette_id
             self._set_status(f"Paleta: {FIXED_PALETTES[palette_id]['name']}")
+            self._force_rerender()
 
     def on_ramp_preset_changed(self, widget):
         if self._block_signals:
@@ -1597,7 +1629,9 @@ class GTKCalibrator:
         preset_id = widget.get_active_id()
         if preset_id and preset_id in LUMINANCE_RAMPS:
             self.converter_config['luminance_ramp'] = LUMINANCE_RAMPS[preset_id]['ramp']
+            self.converter_config['luminance_preset'] = preset_id
             self._set_status(f"Rampa: {LUMINANCE_RAMPS[preset_id]['name']}")
+            self._force_rerender()
 
     def on_mode_toggled(self, widget):
         if self._block_signals:
@@ -1626,6 +1660,7 @@ class GTKCalibrator:
         else:
             self.render_mode = RENDER_MODE_BOTH
             self._set_status("Render: Ambos")
+        self._force_rerender()
 
     def on_gpu_settings_changed(self, widget):
         if self._block_signals:
@@ -1655,6 +1690,7 @@ class GTKCalibrator:
             self._set_status(f"GPU: {' | '.join(status_parts)}")
         else:
             self._set_status("GPU: Desativado")
+        self._force_rerender()
 
     def on_auto_seg_changed(self, widget):
         if self._block_signals:
@@ -1743,6 +1779,7 @@ class GTKCalibrator:
             self._set_status(f"Matrix: {self.matrix_mode.capitalize()} | {charset_label} | {self.matrix_particles}p | {self.matrix_speed:.1f}x")
         else:
             self._set_status("Matrix: Desativado")
+        self._force_rerender()
 
     def _reinit_matrix_rain(self):
         if self.matrix_rain_instance:
@@ -1956,6 +1993,7 @@ class GTKCalibrator:
             self._set_status(f"FX: {' | '.join(effects)}")
         else:
             self._set_status("FX: Desativado")
+        self._force_rerender()
 
     def on_style_changed(self, widget):
         if self._block_signals:
@@ -2229,6 +2267,7 @@ class GTKCalibrator:
             preset_id = preset_names[active]
             self.converter_config['luminance_ramp'] = LUMINANCE_RAMPS[preset_id]['ramp']
             self._set_status(f"Luminancia: {LUMINANCE_RAMPS[preset_id]['name']}")
+            self._force_rerender()
 
     def on_preview_terminal_clicked(self, widget):
         self._save_and_open_preview()
@@ -2293,6 +2332,10 @@ class GTKCalibrator:
             self.config.set('PixelArt', 'color_palette_size', str(int(self.spin_palette_size.get_value())))
         if self.chk_fixed_palette:
             self.config.set('PixelArt', 'use_fixed_palette', str(self.chk_fixed_palette.get_active()).lower())
+        if self.combo_fixed_palette:
+            palette_id = self.combo_fixed_palette.get_active_id()
+            if palette_id:
+                self.config.set('PixelArt', 'fixed_palette_name', palette_id)
 
         self.config.set('Mode', 'conversion_mode', self.conversion_mode)
 
