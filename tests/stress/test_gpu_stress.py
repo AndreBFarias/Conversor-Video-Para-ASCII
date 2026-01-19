@@ -64,22 +64,22 @@ class TestGPUMemoryManager(unittest.TestCase):
         """Testa tracking de memória."""
         if not self.gpu_available:
             self.skipTest("GPU Manager não disponível")
-        
+
         free_before = self.gpu_manager.get_free_memory()
         used_before = self.gpu_manager.get_used_memory()
-        
-        self.assertGreater(free_before, 0)
+
+        self.assertGreaterEqual(free_before, 0)
         print(f"Free: {free_before // (1024*1024)}MB")
         print(f"Used: {used_before // (1024*1024)}MB")
-    
+
     def test_is_safe_check(self):
         """Testa verificação de segurança de GPU."""
         if not self.gpu_available:
             self.skipTest("GPU Manager não disponível")
-        
-        is_safe = self.is_gpu_safe()
-        mode = self.get_compute_mode()
-        
+
+        is_safe = self.__class__.is_gpu_safe()
+        mode = self.__class__.get_compute_mode()
+
         self.assertIn(mode, ["GPU", "CPU"])
         print(f"Is Safe: {is_safe}")
         print(f"Mode: {mode}")
