@@ -60,6 +60,7 @@ fi
 
 echo "[4/8] Instalando pacotes Python no venv..."
 echo "NOTA: PyGObject/GTK ja esta disponivel via pacotes do sistema (--system-site-packages)"
+echo "NOTA: Instalando PyTorch antes de MediaPipe para evitar conflitos de versao"
 if [ ! -f "${SCRIPT_DIR}/requirements.txt" ]; then
     echo "ERRO: requirements.txt nao encontrado em ${SCRIPT_DIR}!"
     exit 1
@@ -73,8 +74,17 @@ fi
 
 "${SCRIPT_DIR}/venv/bin/pip" install --upgrade pip setuptools wheel || echo "Aviso: Falha ao atualizar ferramentas pip."
 
+echo "   -> Instalando PyTorch com versoes fixas (torch 2.5.1, torchvision 0.20.1)..."
+if command -v nvidia-smi &> /dev/null; then
+    echo "   -> GPU NVIDIA detectada, instalando versao CUDA..."
+    "${SCRIPT_DIR}/venv/bin/pip" install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121 || { echo "ERRO: Falha ao instalar PyTorch CUDA."; exit 1; }
+else
+    echo "   -> GPU nao detectada, instalando versao CPU..."
+    "${SCRIPT_DIR}/venv/bin/pip" install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu || { echo "ERRO: Falha ao instalar PyTorch CPU."; exit 1; }
+fi
+
 echo "   -> Instalando dependencias basicas (opencv, numpy, pillow)..."
-"${SCRIPT_DIR}/venv/bin/pip" install opencv-python numpy Pillow || { echo "ERRO: Falha ao instalar dependencias basicas."; exit 1; }
+"${SCRIPT_DIR}/venv/bin/pip" install opencv-python "numpy>=1.24.0,<2.0.0" Pillow || { echo "ERRO: Falha ao instalar dependencias basicas."; exit 1; }
 
 echo "   -> Tentando instalar suporte GPU (cupy-cuda12x)..."
 if command -v nvidia-smi &> /dev/null; then
@@ -89,16 +99,13 @@ else
 fi
 
 echo "   -> Instalando MediaPipe para segmentacao automatica..."
-if "${SCRIPT_DIR}/venv/bin/pip" install mediapipe 2>&1 | grep -q "dependency conflicts"; then
-    echo "   -> AVISO: Conflitos de dependencias detectados (torch/torchvision)."
-    echo "   -> Isso e normal e nao afeta o funcionamento. Continuando..."
-fi
+"${SCRIPT_DIR}/venv/bin/pip" install mediapipe || echo "Aviso: Falha ao instalar mediapipe. Auto Seg nao funcionara."
 
 echo "   -> Instalando PyAudio para audio-reactive..."
 "${SCRIPT_DIR}/venv/bin/pip" install pyaudio || echo "Aviso: Falha ao instalar pyaudio. Audio-reactive nao funcionara."
 
 echo "   -> Instalando Sphinx para documentacao..."
-"${SCRIPT_DIR}/venv/bin/pip" install sphinx sphinx_rtd_theme || echo "Aviso: Falha ao instalar sphinx."
+"${SCRIPT_DIR}/venv/bin/pip" install --ignore-installed sphinx sphinx_rtd_theme 2>&1 | grep -v "Not uninstalling" | grep -v "Can't uninstall" || true
 
 echo "   -> Instalando pytest para testes..."
 "${SCRIPT_DIR}/venv/bin/pip" install pytest pytest-cov coverage || echo "Aviso: Falha ao instalar pytest."
