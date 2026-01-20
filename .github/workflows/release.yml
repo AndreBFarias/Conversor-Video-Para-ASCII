@@ -132,8 +132,8 @@ jobs:
         # 3. Copy and resize icon
         convert assets/logo.png -resize 64x64! AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
 
-        # 4. Install Python dependencies into AppDir
-        pip3 install --ignore-installed --prefix AppDir/usr -r requirements.txt
+        # 4. Install Python dependencies into AppDir (versao CPU leve)
+        pip3 install --ignore-installed --prefix AppDir/usr -r requirements-appimage.txt
 
         # 5. Copy source code
         cp -r src AppDir/usr/src/extase-em-4r73/
@@ -176,11 +176,20 @@ jobs:
         # 9. Rename output to standardized name
         mv Extase_em_4R73*.AppImage Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage || true
 
+        # 10. Verify size (GitHub limit: 2GB)
+        APPIMAGE_SIZE=$(stat -c%s "Extase_em_4R73-${{ steps.version.outputs.version }}-x86_64.AppImage" 2>/dev/null || echo 0)
+        APPIMAGE_SIZE_MB=$((APPIMAGE_SIZE / 1024 / 1024))
+        echo "AppImage size: ${APPIMAGE_SIZE_MB}MB"
+        if [ "$APPIMAGE_SIZE" -gt 2147483648 ]; then
+          echo "ERROR: AppImage exceeds GitHub 2GB limit!"
+          exit 1
+        fi
+
     - name: Upload AppImage artifact
       uses: actions/upload-artifact@v4
       with:
         name: appimage-package
-        path: '*.AppImage'
+        path: 'Extase_em_4R73-*.AppImage'
 
   release:
     needs: [build-deb, build-flatpak, build-appimage]
@@ -218,7 +227,11 @@ jobs:
         path: artifacts/
 
     - name: List artifacts
-      run: ls -la artifacts/
+      run: |
+        echo "=== Artifacts downloaded ==="
+        ls -lh artifacts/
+        echo "=== Total size ==="
+        du -sh artifacts/
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
