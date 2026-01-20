@@ -312,7 +312,7 @@ class App(
             self.selected_path_label = self.builder.get_object("selected_path_label")
             self.convert_button = self.builder.get_object("convert_button")
             self.convert_all_button = self.builder.get_object("convert_all_button")
-            self.play_mode_combo = self.builder.get_object("play_mode_combo")
+            self.play_mode_combo = None
             self.play_button = self.builder.get_object("play_button")
             self.open_video_button = self.builder.get_object("open_video_button")
             self.open_folder_button = self.builder.get_object("open_folder_button")
@@ -386,7 +386,7 @@ class App(
 
             required_widgets = [
                 self.selected_path_label, self.convert_button,
-                self.convert_all_button, self.play_mode_combo, self.play_button,
+                self.convert_all_button, self.play_button,
                 self.open_video_button, self.open_folder_button, self.calibrate_button,
                 self.open_webcam_button, self.select_ascii_button, self.play_ascii_button,
                 self.options_button, self.options_dialog, self.options_notebook,
