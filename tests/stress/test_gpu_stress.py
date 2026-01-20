@@ -113,8 +113,10 @@ class TestGPUStress(unittest.TestCase):
         try:
             import cupy as cp
             cls.cp = cp
+            _ = cp.array([1])
+            _ = cp.random.rand(2, 2)
             cls.gpu_available = True
-        except ImportError:
+        except (ImportError, RuntimeError, OSError):
             cls.gpu_available = False
     
     def test_allocation_stress(self):
