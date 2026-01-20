@@ -2474,6 +2474,8 @@ class GTKCalibrator:
         self.config.set('Audio', 'mids_sensitivity', str(mids_sens))
         self.config.set('Audio', 'treble_sensitivity', str(treble_sens))
 
+        self.config.set('Conversor', 'auto_seg_enabled', str(self.auto_seg_enabled).lower())
+
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
