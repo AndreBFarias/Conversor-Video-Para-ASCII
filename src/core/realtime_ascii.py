@@ -199,9 +199,9 @@ def run_realtime_ascii(config_path, video_path=None):
                 p_config = PostFXConfig()
                 p_config.bloom_enabled = bloom
                 p_config.bloom_intensity = config.getfloat('PostFX', 'bloom_intensity', fallback=1.2)
-                p_config.bloom_radius = config.getfloat('PostFX', 'bloom_radius', fallback=20.0)
+                p_config.bloom_radius = config.getint('PostFX', 'bloom_radius', fallback=20)
                 p_config.chromatic_enabled = chromatic
-                p_config.chromatic_shift = config.getfloat('PostFX', 'chromatic_shift', fallback=5.0)
+                p_config.chromatic_shift = config.getint('PostFX', 'chromatic_shift', fallback=5)
                 p_config.scanlines_enabled = scanlines
                 p_config.scanlines_intensity = config.getfloat('PostFX', 'scanlines_intensity', fallback=0.5)
                 p_config.glitch_enabled = glitch

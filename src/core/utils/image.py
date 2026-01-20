@@ -11,6 +11,8 @@ def sharpen_frame(frame: np.ndarray, sharpen_amount: float = 0.5) -> np.ndarray:
 
 
 def apply_morphological_refinement(mask: np.ndarray, erode_size: int = 2, dilate_size: int = 2) -> np.ndarray:
+    erode_size = int(erode_size)
+    dilate_size = int(dilate_size)
     if erode_size > 0:
         kernel_erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erode_size*2+1, erode_size*2+1))
         mask = cv2.erode(mask, kernel_erode, iterations=1)

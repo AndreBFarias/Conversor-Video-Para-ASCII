@@ -121,7 +121,7 @@ class PostFXProcessor:
         _, bright_mask = cv2.threshold(gray, self.config.bloom_threshold, 255, cv2.THRESH_BINARY)
         bright_areas = cv2.bitwise_and(frame, frame, mask=bright_mask)
 
-        ksize = max(3, self.config.bloom_radius * 2 + 1)
+        ksize = int(max(3, self.config.bloom_radius * 2 + 1))
         if ksize % 2 == 0:
             ksize += 1
 
@@ -142,7 +142,7 @@ class PostFXProcessor:
         _, bright_mask = cv2.threshold(gray, self.config.bloom_threshold, 255, cv2.THRESH_BINARY)
         bright_areas = cv2.bitwise_and(frame, frame, mask=bright_mask)
 
-        ksize = max(3, self.config.bloom_radius * 2 + 1)
+        ksize = int(max(3, self.config.bloom_radius * 2 + 1))
         if ksize % 2 == 0:
             ksize += 1
 
