@@ -333,10 +333,13 @@ class GTKCalibrator:
         capture_source = self.video_path if self.is_video_file else 0
 
         max_retries = 3
-        retry_delay = 0.5
+        retry_delay = 1.0
 
         for attempt in range(max_retries):
-            self.cap = cv2.VideoCapture(capture_source)
+            if self.is_video_file:
+                self.cap = cv2.VideoCapture(capture_source)
+            else:
+                self.cap = cv2.VideoCapture(capture_source, cv2.CAP_V4L2)
 
             if self.cap.isOpened():
                 break
@@ -350,23 +353,31 @@ class GTKCalibrator:
                     error_msg += "A webcam pode estar em uso por outro processo ou ainda nao foi liberada pelo kernel.\n\n"
                     error_msg += "Aguarde 2-3 segundos e tente novamente."
 
-                dialog = Gtk.MessageDialog(
-                    modal=True,
-                    message_type=Gtk.MessageType.ERROR,
-                    buttons=Gtk.ButtonsType.OK,
-                    text="Erro ao Abrir Fonte de Video"
-                )
-                dialog.format_secondary_text(error_msg)
-                dialog.run()
-                dialog.destroy()
-                sys.exit(1)
+                print(f"[ERRO] {error_msg}")
 
-        self.recording_fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
+                def show_error_dialog():
+                    dialog = Gtk.MessageDialog(
+                        parent=None,
+                        modal=True,
+                        message_type=Gtk.MessageType.ERROR,
+                        buttons=Gtk.ButtonsType.OK,
+                        text="Erro ao Abrir Fonte de Video"
+                    )
+                    dialog.format_secondary_text(error_msg)
+                    dialog.run()
+                    dialog.destroy()
+                    Gtk.main_quit()
 
-        w = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        h = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        if h > 0:
-            self.source_aspect_ratio = w / h
+                GLib.timeout_add(100, show_error_dialog)
+                return
+
+        if self.cap and self.cap.isOpened():
+            self.recording_fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
+
+            w = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            h = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            if h > 0:
+                self.source_aspect_ratio = w / h
 
         self._update_target_dimensions()
 
