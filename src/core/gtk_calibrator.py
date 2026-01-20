@@ -674,14 +674,14 @@ class GTKCalibrator:
                 rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             alloc = aspect_frame.get_allocation()
-            target_w = max(alloc.width - 8, 200)
-            target_h = max(alloc.height - 8, 150)
+            target_w = max(alloc.width - 4, 10)
+            target_h = max(alloc.height - 4, 10)
 
             scale_w = target_w / w
             scale_h = target_h / h
             scale = min(scale_w, scale_h)
-            new_w = max(1, int(w * scale))
-            new_h = max(1, int(h * scale))
+            new_w = max(10, int(w * scale))
+            new_h = max(10, int(h * scale))
 
             resized = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
             resized = np.ascontiguousarray(resized)
@@ -1075,7 +1075,27 @@ class GTKCalibrator:
         self.source_aspect_ratio = frame_w / frame_h
 
         if self.auto_seg_enabled and self.auto_segmenter:
-            mask = self.auto_segmenter.process(frame)
+            try:
+                max_autoseg_size = 320
+                if max(frame_h, frame_w) > max_autoseg_size:
+                    scale = max_autoseg_size / max(frame_h, frame_w)
+                    small_h, small_w = int(frame_h * scale), int(frame_w * scale)
+                    small_frame = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_AREA)
+                    small_mask = self.auto_segmenter.process(small_frame)
+                    mask = cv2.resize(small_mask, (frame_w, frame_h), interpolation=cv2.INTER_NEAREST)
+                else:
+                    mask = self.auto_segmenter.process(frame)
+            except Exception as e:
+                print(f"[WARN] Auto Seg falhou: {e}. Usando HSV fallback.")
+                self.auto_seg_enabled = False
+                if self.chk_auto_seg:
+                    self.chk_auto_seg.set_active(False)
+                values = self._get_current_hsv_values()
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                lower = np.array([values['h_min'], values['s_min'], values['v_min']])
+                upper = np.array([values['h_max'], values['s_max'], values['v_max']])
+                mask = cv2.inRange(hsv, lower, upper)
+                mask = apply_morphological_refinement(mask, values['erode'], values['dilate'])
         else:
             values = self._get_current_hsv_values()
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -2539,7 +2559,7 @@ class GTKCalibrator:
         self.window.show_all()
         self._update_mode_visibility()
 
-        GLib.timeout_add(50, self._update_frame)
+        GLib.timeout_add(33, self._update_frame)
 
         Gtk.main()
 
