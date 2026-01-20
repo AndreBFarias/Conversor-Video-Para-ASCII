@@ -177,6 +177,13 @@ def run_realtime_ascii(config_path, video_path=None):
         else:
             print("Auto Segmentation habilitado no config mas nao disponivel (falta mediapipe).")
 
+    # Load Temporal Coherence settings
+    temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
+    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
+    prev_gray_frame = None
+    if temporal_enabled:
+        print(f"Temporal Coherence ativado: threshold={temporal_threshold}")
+
     # Setup Matrix Rain
     matrix_enabled = config.getboolean('MatrixRain', 'enabled', fallback=False)
     matrix_rain = None
@@ -367,6 +374,13 @@ def run_realtime_ascii(config_path, video_path=None):
 
             resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_LANCZOS4)
+
+            if temporal_enabled and prev_gray_frame is not None:
+                diff = np.abs(resized_gray.astype(np.int32) - prev_gray_frame.astype(np.int32))
+                temporal_mask = diff < temporal_threshold
+                resized_gray = np.where(temporal_mask, prev_gray_frame, resized_gray).astype(np.uint8)
+
+            prev_gray_frame = resized_gray.copy()
 
             sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
             sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)

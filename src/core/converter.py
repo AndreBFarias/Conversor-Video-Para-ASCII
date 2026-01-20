@@ -13,6 +13,13 @@ from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
 
+try:
+    from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
+    AUTO_SEG_AVAILABLE = auto_seg_available()
+except ImportError:
+    AUTO_SEG_AVAILABLE = False
+    AutoSegmenter = None
+
 
 def iniciar_conversao(video_path, output_dir, config, chroma_override=None, force_output_path=None):
     try:
@@ -30,6 +37,12 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+
+        auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+        temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
+        temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
+        braille_enabled = config.getboolean('Conversor', 'braille_enabled', fallback=False)
+        braille_threshold = config.getint('Conversor', 'braille_threshold', fallback=128)
 
         if chroma_override:
             lower_green = np.array([
@@ -97,14 +110,47 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         print(f"Aviso: Nao foi possivel calcular a proporcao. Usando 80x25. Erro: {e}")
         target_dimensions = (target_width, 25)
 
+    auto_segmenter = None
+    if auto_seg_enabled and AUTO_SEG_AVAILABLE:
+        try:
+            auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=False)
+            print("Auto Seg ativado para conversao (CPU)")
+        except Exception as e:
+            print(f"Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+            auto_segmenter = None
+    elif auto_seg_enabled and not AUTO_SEG_AVAILABLE:
+        print("Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+
+    if temporal_enabled:
+        print(f"Temporal Coherence ativado: threshold={temporal_threshold}")
+
+    if braille_enabled:
+        print("Aviso: Braille requer GPU Converter (gpu_converter.py), ignorado em conversao CPU")
+
+    prev_gray_frame = None
+
     while True:
         sucesso, frame_colorido = captura.read()
         if not sucesso:
             break
 
-        hsv_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv_frame, lower_green, upper_green)
-        mask = apply_morphological_refinement(mask, erode_size, dilate_size)
+        if auto_segmenter is not None:
+            frame_h, frame_w = frame_colorido.shape[:2]
+            max_autoseg_size = 320
+            if max(frame_h, frame_w) > max_autoseg_size:
+                scale = max_autoseg_size / max(frame_h, frame_w)
+                small_h, small_w = int(frame_h * scale), int(frame_w * scale)
+                small_frame = cv2.resize(frame_colorido, (small_w, small_h), interpolation=cv2.INTER_AREA)
+                small_mask = auto_segmenter.process(small_frame)
+                mask = cv2.resize(small_mask, (frame_w, frame_h), interpolation=cv2.INTER_NEAREST)
+            else:
+                mask = auto_segmenter.process(frame_colorido)
+            mask = apply_morphological_refinement(mask, erode_size, dilate_size)
+        else:
+            hsv_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
+            mask = cv2.inRange(hsv_frame, lower_green, upper_green)
+            mask = apply_morphological_refinement(mask, erode_size, dilate_size)
+
         grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
         resized_gray = cv2.resize(grayscale_frame, target_dimensions, interpolation=cv2.INTER_AREA)
@@ -114,6 +160,13 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         if sharpen_enabled:
             resized_color = sharpen_frame(resized_color, sharpen_amount)
             resized_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+
+        if temporal_enabled and prev_gray_frame is not None:
+            diff = np.abs(resized_gray.astype(np.int32) - prev_gray_frame.astype(np.int32))
+            temporal_mask = diff < temporal_threshold
+            resized_gray = np.where(temporal_mask, prev_gray_frame, resized_gray).astype(np.uint8)
+
+        prev_gray_frame = resized_gray.copy()
         sobel_x = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
         sobel_y = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)
         magnitude = np.hypot(sobel_x, sobel_y)
