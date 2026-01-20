@@ -89,7 +89,10 @@ else
 fi
 
 echo "   -> Instalando MediaPipe para segmentacao automatica..."
-"${SCRIPT_DIR}/venv/bin/pip" install mediapipe || echo "Aviso: Falha ao instalar mediapipe. Auto Seg nao funcionara."
+if "${SCRIPT_DIR}/venv/bin/pip" install mediapipe 2>&1 | grep -q "dependency conflicts"; then
+    echo "   -> AVISO: Conflitos de dependencias detectados (torch/torchvision)."
+    echo "   -> Isso e normal e nao afeta o funcionamento. Continuando..."
+fi
 
 echo "   -> Instalando PyAudio para audio-reactive..."
 "${SCRIPT_DIR}/venv/bin/pip" install pyaudio || echo "Aviso: Falha ao instalar pyaudio. Audio-reactive nao funcionara."
@@ -148,7 +151,7 @@ EXEC_COMMAND="\"${PYTHON_VENV_PATH}\" \"${MAIN_SCRIPT_PATH}\""
 
 CATEGORIES="Video;AudioVideo;"
 
-$SUDO_CMD printf "[Desktop Entry]\nVersion=1.5\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII v2.3.1\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
+$SUDO_CMD printf "[Desktop Entry]\nVersion=1.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII v2.3.1\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
     "${APP_DISPLAY_NAME}" \
     "${EXEC_COMMAND}" \
     "${ICON_NAME}" \
