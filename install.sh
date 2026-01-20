@@ -148,7 +148,7 @@ EXEC_COMMAND="\"${PYTHON_VENV_PATH}\" \"${MAIN_SCRIPT_PATH}\""
 
 CATEGORIES="Video;AudioVideo;"
 
-$SUDO_CMD printf "[Desktop Entry]\nVersion=1.1\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
+$SUDO_CMD printf "[Desktop Entry]\nVersion=1.5\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII v2.3.1\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
     "${APP_DISPLAY_NAME}" \
     "${EXEC_COMMAND}" \
     "${ICON_NAME}" \

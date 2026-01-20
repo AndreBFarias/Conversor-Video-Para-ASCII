@@ -207,7 +207,7 @@ class ConversionActionsMixin:
                     cmd = [python_executable, PIXEL_ART_CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
                     script_name = PIXEL_ART_CONVERTER_SCRIPT
                 else:
-                    cmd = [python_executable, CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path]
+                    cmd = [python_executable, CONVERTER_SCRIPT, "--video", file_path, "--config", self.config_path, "--output", output_filepath]
                     script_name = CONVERTER_SCRIPT
 
             if chroma_override and script_name == CONVERTER_SCRIPT:

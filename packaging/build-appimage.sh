@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VERSION="${1:-2.3.0}"
+VERSION="${1:-2.3.1}"
 PACKAGE_NAME="extase-em-4r73"
 APP_DIR="${SCRIPT_DIR}/AppDir"
 OUTPUT_NAME="Extase_em_4R73-${VERSION}-x86_64.AppImage"

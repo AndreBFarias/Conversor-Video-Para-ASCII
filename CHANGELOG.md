@@ -2,6 +2,14 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.3.1] - 2026-01-20
+
+### Correcões e Melhorias
+- **Unificação do Terminal**: Configuração do `kitty` sincronizada com Gnome Terminal (Dracula, Fonte 12pt).
+- **Correção AutoSegmenter**: Inversão da máscara (0=User) para corrigir renderização invertida.
+- **Interface Simplificada**: Remoção de opções de renderização obsoletas no Player.
+- **Playback Unificado**: Player agora utiliza o mesmo terminal configurado da webcam.
+
 ## [2.1.0] - 2025-12-31
 
 ### Interface Renovada

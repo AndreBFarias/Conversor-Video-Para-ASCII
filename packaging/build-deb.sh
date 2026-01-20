@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VERSION="${1:-2.1.0}"
+VERSION="${1:-2.3.1}"
 PACKAGE_NAME="extase-em-4r73"
 BUILD_DIR="${SCRIPT_DIR}/build"
 DEB_ROOT="${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}"

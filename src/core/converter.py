@@ -14,7 +14,7 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
 
 
-def iniciar_conversao(video_path, output_dir, config, chroma_override=None):
+def iniciar_conversao(video_path, output_dir, config, chroma_override=None, force_output_path=None):
     try:
         target_width = config.getint('Conversor', 'target_width')
         char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
@@ -60,8 +60,13 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None):
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Erro: '{video_path}' nao encontrado.")
 
-    nome_base = os.path.splitext(os.path.basename(video_path))[0]
-    caminho_saida = os.path.join(output_dir, f"{nome_base}.txt")
+    if force_output_path:
+        caminho_saida = force_output_path
+        # Ensure parent directory exists
+        os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
+    else:
+        nome_base = os.path.splitext(os.path.basename(video_path))[0]
+        caminho_saida = os.path.join(output_dir, f"{nome_base}.txt")
 
     captura = cv2.VideoCapture(video_path)
     if not captura.isOpened():
@@ -140,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--v-max", type=int, default=None, help="ChromaKey V max override")
     parser.add_argument("--erode", type=int, default=None, help="ChromaKey erode override")
     parser.add_argument("--dilate", type=int, default=None, help="ChromaKey dilate override")
+    parser.add_argument("--output", default=None, help="Caminho explicito para arquivo de saida.")
     args = parser.parse_args()
 
     if not os.path.exists(args.config):
@@ -171,7 +177,7 @@ if __name__ == "__main__":
 
     try:
         print(f"Iniciando conversao (CLI) para: {args.video}")
-        output_file = iniciar_conversao(args.video, output_dir, config, chroma_override=chroma_override)
+        output_file = iniciar_conversao(args.video, output_dir, config, chroma_override=chroma_override, force_output_path=args.output)
         print(f"Conversao (CLI) concluida: {output_file}")
     except Exception as e:
         print(f"Erro na conversao (CLI): {e}")

@@ -31,8 +31,7 @@ class CalibrationActionsMixin:
         title = "Extase em 4R73 - Webcam"
 
         try:
-            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
-                   '-o', f'font_size={font_size}', '--start-as=maximized', '--'] + cmd_base
+            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}', '--'] + cmd_base
             self.logger.info(f"Executando webcam otimizada: {shlex.join(cmd)}")
             subprocess.Popen(cmd)
         except FileNotFoundError:

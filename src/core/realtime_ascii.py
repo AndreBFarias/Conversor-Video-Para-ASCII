@@ -6,6 +6,31 @@ import configparser
 import argparse
 import time
 
+# Ensure project root is in sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+try:
+    from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
+except ImportError as e:
+    print(f"Erro ao importar AutoSegmenter: {e}")
+    AutoSegmenter = None
+    def auto_seg_available(): return False
+
+try:
+    from src.core.matrix_rain_gpu import MatrixRainGPU
+    MATRIX_RAIN_AVAILABLE = True
+except ImportError:
+    MATRIX_RAIN_AVAILABLE = False
+
+try:
+    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
+    POSTFX_AVAILABLE = True
+except ImportError:
+    POSTFX_AVAILABLE = False
+
 ANSI_RESET = "\033[0m"
 COLOR_SEPARATOR = "§"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
@@ -56,10 +81,15 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
                 ansi_code = rgb_to_ansi256(r, g, b)
             else:
                 pixel_brightness = gray_frame[y, x]
-                char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
-                char = luminance_ramp[char_index]
-                b, g, r = color_frame[y, x]
-                ansi_code = rgb_to_ansi256(r, g, b)
+                if pixel_brightness == 0 and len(color_frame[y, x]) == 3 and np.array_equal(color_frame[y, x], [0, 0, 0]):
+                     # Force background to space if perfectly black (masked)
+                     char = " "
+                     ansi_code = 232 # Black
+                else:
+                    char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
+                    char = luminance_ramp[char_index]
+                    b, g, r = color_frame[y, x]
+                    ansi_code = rgb_to_ansi256(r, g, b)
 
             if char:
                 line_buffer.append(f"\033[38;5;{ansi_code}m{char}")
@@ -101,6 +131,7 @@ def run_realtime_ascii(config_path, video_path=None):
 
     is_video_file = video_path is not None
 
+    # Load Chroma settings
     chroma_enabled = False
     hsv_values = {}
     if 'ChromaKey' in config:
@@ -121,30 +152,100 @@ def run_realtime_ascii(config_path, video_path=None):
             print(f"Aviso: Erro ao carregar ChromaKey: {e}")
             chroma_enabled = False
 
+    # Load Auto Segmenter settings
+    auto_seg_enabled = False
+    segmenter = None
+    if config.getboolean('Conversor', 'auto_seg_enabled', fallback=False):
+        if auto_seg_available():
+            try:
+                print("Iniciando Auto Segmentation (MediaPipe)...")
+                segmenter = AutoSegmenter(threshold=0.5, use_gpu=True)
+                auto_seg_enabled = True
+                print("Auto Segmentation ativado.")
+            except Exception as e:
+                print(f"Erro ao iniciar Auto Segmentation: {e}")
+        else:
+            print("Auto Segmentation habilitado no config mas nao disponivel (falta mediapipe).")
+
+    # Setup Matrix Rain
+    matrix_enabled = config.getboolean('MatrixRain', 'enabled', fallback=False)
+    matrix_rain = None
+    if matrix_enabled and MATRIX_RAIN_AVAILABLE:
+        try:
+            print("Iniciando Matrix Rain...")
+            charset = config.get('MatrixRain', 'char_set', fallback='katakana')
+            mode = config.get('MatrixRain', 'mode', fallback='user')
+            particles = config.getint('MatrixRain', 'num_particles', fallback=2000)
+            speed = config.getfloat('MatrixRain', 'speed_multiplier', fallback=1.0)
+            matrix_rain = MatrixRainGPU(width=1280, height=720, char_set=charset)
+            matrix_rain.mode = mode
+            matrix_rain.num_particles = particles
+            matrix_rain.speed_multiplier = speed
+            print("Matrix Rain ativado.")
+        except Exception as e:
+            print(f"Erro ao iniciar Matrix Rain: {e}")
+
+    # Setup PostFX
+    postfx = None
+    if POSTFX_AVAILABLE:
+        try:
+            bloom = config.getboolean('PostFX', 'bloom_enabled', fallback=False)
+            chromatic = config.getboolean('PostFX', 'chromatic_enabled', fallback=False)
+            scanlines = config.getboolean('PostFX', 'scanlines_enabled', fallback=False)
+            glitch = config.getboolean('PostFX', 'glitch_enabled', fallback=False)
+            
+            if bloom or chromatic or scanlines or glitch:
+                print("Iniciando PostFX...")
+                p_config = PostFXConfig()
+                p_config.bloom_enabled = bloom
+                p_config.bloom_intensity = config.getfloat('PostFX', 'bloom_intensity', fallback=1.2)
+                p_config.bloom_radius = config.getfloat('PostFX', 'bloom_radius', fallback=20.0)
+                p_config.chromatic_enabled = chromatic
+                p_config.chromatic_shift = config.getfloat('PostFX', 'chromatic_shift', fallback=5.0)
+                p_config.scanlines_enabled = scanlines
+                p_config.scanlines_intensity = config.getfloat('PostFX', 'scanlines_intensity', fallback=0.5)
+                p_config.glitch_enabled = glitch
+                p_config.glitch_intensity = config.getfloat('PostFX', 'glitch_intensity', fallback=0.3)
+                
+                postfx = PostFXProcessor(config=p_config)
+                print("PostFX ativado.")
+        except Exception as e:
+             print(f"Erro ao iniciar PostFX: {e}")
+
+    # Prioridade para Config do Usuario
+    try:
+        config_width = config.getint('Conversor', 'target_width', fallback=0)
+        config_height = config.getint('Conversor', 'target_height', fallback=0)
+        
+        target_width = config_width if config_width > 0 else 180
+        char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.48)
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        target_width = 180
+        char_aspect_ratio = 0.48
+        
     try:
         term_size = os.get_terminal_size()
         terminal_cols = term_size.columns
         terminal_lines = term_size.lines
         print(f"Terminal detectado: {terminal_cols}x{terminal_lines}")
+        
+        if config_width <= 0:
+            target_width = max(40, terminal_cols - 2)
+            target_height = max(20, terminal_lines - 5)
+            print(f"Usando resolucao maxima do terminal: {target_width}x{target_height}")
+        else:
+             print(f"Usando resolucao do config: {target_width} (AspectRatio: {char_aspect_ratio})")
 
-        target_width = terminal_cols - 2
-        target_height = terminal_lines - 5
-        char_aspect_ratio = 0.48
-
-        print(f"Usando resolucao maxima: {target_width}x{target_height}")
     except OSError:
-        print("Aviso: Nao foi possivel detectar tamanho do terminal. Usando config.ini")
-        try:
-            target_width = config.getint('Conversor', 'target_width')
-            char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio')
-        except (configparser.NoSectionError, configparser.NoOptionError) as e:
-            print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
-            target_width = 180
-            char_aspect_ratio = 0.48
+        pass
 
     try:
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
         luminance_ramp = config.get('Conversor', 'luminance_ramp').rstrip('|')
+        
+        # Inverter rampa para renderizacao em terminal (Light-on-Dark)
+        # Check if user specifically requested NO reversal? Usually terminal is always dark.
+        luminance_ramp = luminance_ramp[::-1]
 
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
@@ -153,7 +254,7 @@ def run_realtime_ascii(config_path, video_path=None):
         target_width = 180
         char_aspect_ratio = 0.48
         sobel_threshold = 70
-        luminance_ramp = LUMINANCE_RAMP_DEFAULT
+        luminance_ramp = LUMINANCE_RAMP_DEFAULT[::-1]
 
     capture_source = video_path if is_video_file else 0
     cap = cv2.VideoCapture(capture_source)
@@ -202,8 +303,47 @@ def run_realtime_ascii(config_path, video_path=None):
             if sharpen_enabled:
                 frame_colorido = sharpen_frame(frame_colorido, sharpen_amount)
 
-            if chroma_enabled:
+            # Apply Segmentation / Chroma
+            mask = None
+            if auto_seg_enabled and segmenter:
+                # Auto Segmentation
+                mask = segmenter.process(frame_colorido)
+                # seg_mask: 0=Foreground, 255=Background
+                # Set Background to Black
+                frame_colorido[mask > 127] = 0
+            elif chroma_enabled:
                 frame_colorido = apply_chroma_key(frame_colorido, hsv_values)
+                # Create mask from chroma result for Matrix Rain if needed
+                if matrix_rain:
+                    gray_tmp = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
+                    _, user_mask_chroma = cv2.threshold(gray_tmp, 10, 255, cv2.THRESH_BINARY)
+                    # For Matrix Rain 'user' mode, we usually want mask of USER (255)
+                    mask = cv2.bitwise_not(user_mask_chroma) # Hack: invert to match seg mask style?
+                    # Wait, Seg Mask: 0=FG, 255=BG. 
+                    # Matrix Rain usually expects: None or specific mask dependent on implementation.
+                    # Looking at gtk_calibrator logic might be safer, but let's assume standard behavior first.
+                    # Actually, for matrix rain 'user' mode, it usually falls BEHIND user.
+            
+            # Matrix Rain
+            if matrix_rain:
+                 user_mask_for_rain = None
+                 if mask is not None:
+                     # If mask has 0 for FG and 255 for BG.
+                     # We usually want a mask where 255 is where rain SHOULD NOT be (the user).
+                     # Or 255 is where rain SHOULD be. 
+                     # Let's assume user_mask needs 255 for User.
+                     # Seg Mask: 0=User. So bitwise_not converts 0->255 (User).
+                     user_mask_for_rain = cv2.bitwise_not(mask)
+                 elif chroma_enabled:
+                     # We already computed it above or need to.
+                     gray_tmp = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
+                     _, user_mask_for_rain = cv2.threshold(gray_tmp, 1, 255, cv2.THRESH_BINARY)
+                 
+                 frame_colorido = matrix_rain.render(frame_colorido, user_mask_for_rain)
+
+            # PostFX
+            if postfx:
+                frame_colorido = postfx.process(frame_colorido)
 
             grayscale_frame = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
@@ -231,7 +371,11 @@ def run_realtime_ascii(config_path, video_path=None):
         print("\nSaindo do modo Real-Time...")
     except Exception as e:
         print(f"\nErro inesperado no loop: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
+        if segmenter: segmenter.close()
+        if matrix_rain: matrix_rain.close()
         if cap.isOpened():
             cap.release()
         cv2.destroyAllWindows()

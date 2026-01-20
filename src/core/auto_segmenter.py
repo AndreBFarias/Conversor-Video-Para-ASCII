@@ -54,10 +54,10 @@ class AutoSegmenter:
 
         if self.use_gpu:
             mask_gpu = cp.asarray(category_mask)
-            mask = cp.where(mask_gpu > 0, cp.uint8(0), cp.uint8(255))
+            mask = cp.where(mask_gpu > 0, cp.uint8(255), cp.uint8(0))
             mask = cp.asnumpy(mask)
         else:
-            mask = np.where(category_mask > 0, 0, 255).astype(np.uint8)
+            mask = np.where(category_mask > 0, 255, 0).astype(np.uint8)
 
         if self._prev_mask is not None and self._prev_mask.shape == mask.shape:
             mask = cv2.addWeighted(
