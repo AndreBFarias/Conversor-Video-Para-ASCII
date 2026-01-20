@@ -15,6 +15,12 @@ if BASE_DIR not in sys.path:
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
 
+try:
+    from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
+    AUTO_SEG_AVAILABLE = auto_seg_available()
+except ImportError:
+    AUTO_SEG_AVAILABLE = False
+
 def generate_ansi_palette():
     palette = {}
     # 0-15: Standard (approximations)
@@ -243,6 +249,16 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
         luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
+
+        edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+        edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
+        use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+
+        auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+        auto_segmenter = None
+        if auto_seg_enabled and AUTO_SEG_AVAILABLE:
+            auto_segmenter = AutoSegmenter()
+            print("AutoSeg habilitado para conversao HTML")
     except Exception as e:
         raise ValueError(f"Erro ao ler config.ini: {e}")
 
@@ -306,17 +322,20 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         read_count += 1
         processed_count += 1
 
-        hsv = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
-        mask_green = cv2.inRange(hsv, lower_green, upper_green)
-        
-        if erode_size > 0:
-            kernel_erode = np.ones((erode_size, erode_size), np.uint8)
-            mask_green = cv2.erode(mask_green, kernel_erode, iterations=1)
-        if dilate_size > 0:
-            kernel_dilate = np.ones((dilate_size, dilate_size), np.uint8)
-            mask_green = cv2.dilate(mask_green, kernel_dilate, iterations=1)
-            
-        mask_refined = apply_morphological_refinement(mask_green)
+        if auto_segmenter:
+            mask_refined = auto_segmenter.process(frame_colorido)
+        else:
+            hsv = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
+            mask_green = cv2.inRange(hsv, lower_green, upper_green)
+
+            if erode_size > 0:
+                kernel_erode = np.ones((erode_size, erode_size), np.uint8)
+                mask_green = cv2.erode(mask_green, kernel_erode, iterations=1)
+            if dilate_size > 0:
+                kernel_dilate = np.ones((dilate_size, dilate_size), np.uint8)
+                mask_green = cv2.dilate(mask_green, kernel_dilate, iterations=1)
+
+            mask_refined = apply_morphological_refinement(mask_green)
         frame_gray = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
         
         if sharpen_enabled:
@@ -333,10 +352,13 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         angle = np.arctan2(dy, dx)
         
         ascii_raw = converter_frame_para_ascii(
-            resized_gray, resized_color, resized_mask, 
+            resized_gray, resized_color, resized_mask,
             magnitude_norm, angle,
             sobel_threshold, luminance_ramp,
-            output_format="file"
+            output_format="file",
+            edge_boost_enabled=edge_boost_enabled,
+            edge_boost_amount=edge_boost_amount,
+            use_edge_chars=use_edge_chars
         )
         
         # Parse ASCII RAW "char§code§char§code" into Interleaved Integer Array [char, color, char, color...]

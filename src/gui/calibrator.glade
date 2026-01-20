@@ -67,6 +67,10 @@
     <property name="lower">0</property><property name="upper">50</property><property name="value">10</property>
     <property name="step-increment">1</property><property name="page-increment">5</property>
   </object>
+  <object class="GtkAdjustment" id="adj_edge_boost_amount">
+    <property name="lower">0</property><property name="upper">255</property><property name="value">100</property>
+    <property name="step-increment">10</property><property name="page-increment">25</property>
+  </object>
   <object class="GtkAdjustment" id="adj_matrix_particles">
     <property name="lower">1000</property><property name="upper">15000</property><property name="value">5000</property>
     <property name="step-increment">500</property><property name="page-increment">1000</property>
@@ -545,6 +549,13 @@
                     <child><object class="GtkScale" id="scale_v_max"><property name="visible">True</property><property name="adjustment">adj_v_max</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">5</property><property name="top-attach">1</property></packing></child>
                     <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Dilate:</property><property name="xalign">1</property></object><packing><property name="left-attach">6</property><property name="top-attach">1</property></packing></child>
                     <child><object class="GtkScale" id="scale_dilate"><property name="visible">True</property><property name="adjustment">adj_dilate</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_hsv_changed"/></object><packing><property name="left-attach">7</property><property name="top-attach">1</property></packing></child>
+
+                    <child><object class="GtkCheckButton" id="chk_braille"><property name="visible">True</property><property name="label">Braille</property><property name="active">False</property><signal name="toggled" handler="on_gpu_settings_changed"/></object><packing><property name="left-attach">0</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkScale" id="scale_braille_threshold"><property name="visible">True</property><property name="adjustment">adj_braille_threshold</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_gpu_settings_changed"/></object><packing><property name="left-attach">1</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkCheckButton" id="chk_temporal"><property name="visible">True</property><property name="label">Temporal</property><property name="active">False</property><signal name="toggled" handler="on_gpu_settings_changed"/></object><packing><property name="left-attach">2</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkScale" id="scale_temporal_threshold"><property name="visible">True</property><property name="adjustment">adj_temporal_threshold</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_gpu_settings_changed"/></object><packing><property name="left-attach">3</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkCheckButton" id="chk_edge_boost"><property name="visible">True</property><property name="label">Edge Boost</property><property name="active">False</property><signal name="toggled" handler="on_edge_boost_changed"/></object><packing><property name="left-attach">4</property><property name="top-attach">2</property></packing></child>
+                    <child><object class="GtkScale" id="scale_edge_boost_amount"><property name="visible">True</property><property name="adjustment">adj_edge_boost_amount</property><property name="digits">0</property><property name="value-pos">right</property><property name="hexpand">True</property><signal name="value-changed" handler="on_edge_boost_changed"/></object><packing><property name="left-attach">5</property><property name="top-attach">2</property></packing></child>
                   </object>
                   <packing><property name="expand">False</property></packing>
                 </child>
@@ -557,31 +568,25 @@
               <object class="GtkBox" id="island_gpu">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">4</property>
-                <property name="vexpand">True</property>
+                <property name="spacing">20</property>
+                <property name="vexpand">False</property>
+                <property name="margin-top">10</property>
+                <property name="margin-bottom">10</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">GPU</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
                   <packing><property name="expand">False</property></packing>
                 </child>
                 <child>
-                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">4</property>
-                    <child><object class="GtkCheckButton" id="chk_braille"><property name="visible">True</property><property name="active">False</property><signal name="toggled" handler="on_gpu_settings_changed"/></object></child>
-                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Braille:</property></object></child>
-                    <child><object class="GtkSpinButton" id="spin_braille_threshold"><property name="visible">True</property><property name="adjustment">adj_braille_threshold</property><property name="width-chars">3</property><signal name="value-changed" handler="on_gpu_settings_changed"/></object></child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">4</property>
-                    <child><object class="GtkCheckButton" id="chk_temporal"><property name="visible">True</property><property name="active">False</property><signal name="toggled" handler="on_gpu_settings_changed"/></object></child>
-                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Temporal:</property></object></child>
-                    <child><object class="GtkSpinButton" id="spin_temporal_threshold"><property name="visible">True</property><property name="adjustment">adj_temporal_threshold</property><property name="width-chars">2</property><signal name="value-changed" handler="on_gpu_settings_changed"/></object></child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">4</property>
+                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">4</property><property name="margin-top">8</property>
                     <child><object class="GtkCheckButton" id="chk_auto_seg"><property name="visible">True</property><property name="active">False</property><signal name="toggled" handler="on_auto_seg_changed"/></object></child>
                     <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Auto Seg</property></object></child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox"><property name="visible">True</property><property name="spacing">4</property><property name="margin-top">8</property>
+                    <child><object class="GtkCheckButton" id="chk_use_edge_chars"><property name="visible">True</property><property name="active">True</property><signal name="toggled" handler="on_edge_boost_changed"/></object></child>
+                    <child><object class="GtkLabel"><property name="visible">True</property><property name="label">Edge Chars</property></object></child>
                   </object>
                 </child>
               </object>
@@ -594,7 +599,7 @@
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">4</property>
-                <property name="vexpand">True</property>
+                <property name="vexpand">False</property>
                 <style><class name="island-hsv"/></style>
                 <child>
                   <object class="GtkLabel"><property name="visible">True</property><property name="label">Matrix Rain</property><property name="halign">start</property><attributes><attribute name="weight" value="bold"/></attributes></object>
@@ -655,7 +660,7 @@
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">6</property>
-                <property name="vexpand">True</property>
+                <property name="vexpand">False</property>
                 <style><class name="island-hsv"/></style>
                 <!-- Header com checkbox -->
                 <child>

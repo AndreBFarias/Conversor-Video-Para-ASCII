@@ -27,6 +27,15 @@ class AutoSegmenter:
 
         self.threshold = threshold
         self.use_gpu = use_gpu and CUPY_AVAILABLE
+
+        if self.use_gpu:
+            try:
+                test = cp.array([1])
+                del test
+            except Exception as e:
+                print(f"[AutoSeg] GPU/CUDA nao disponivel, usando CPU: {e}")
+                self.use_gpu = False
+
         self._prev_mask = None
         self._temporal_weight = 0.6
 
@@ -53,9 +62,14 @@ class AutoSegmenter:
         category_mask = result.category_mask.numpy_view()
 
         if self.use_gpu:
-            mask_gpu = cp.asarray(category_mask)
-            mask = cp.where(mask_gpu > 0, cp.uint8(255), cp.uint8(0))
-            mask = cp.asnumpy(mask)
+            try:
+                mask_gpu = cp.asarray(category_mask)
+                mask = cp.where(mask_gpu > 0, cp.uint8(255), cp.uint8(0))
+                mask = cp.asnumpy(mask)
+            except Exception as e:
+                print(f"[AutoSeg] Falha ao usar GPU, caindo para CPU: {e}")
+                self.use_gpu = False
+                mask = np.where(category_mask > 0, 255, 0).astype(np.uint8)
         else:
             mask = np.where(category_mask > 0, 255, 0).astype(np.uint8)
 

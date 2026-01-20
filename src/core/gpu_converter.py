@@ -21,6 +21,32 @@ from src.core.utils import color as color_module
 from src.core.utils.color import rgb_to_ansi256_vectorized
 from src.app.constants import USER_CACHE_DIR
 
+try:
+    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
+    POSTFX_AVAILABLE = True
+except ImportError:
+    POSTFX_AVAILABLE = False
+
+
+def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
+    if not POSTFX_AVAILABLE:
+        return None
+
+    return PostFXConfig(
+        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
+        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
+        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
+        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
+        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
+        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
+        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
+        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
+        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
+        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
+        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
+        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
+    )
+
 RENDER_KERNEL = cp.RawKernel(r'''
 extern "C" __global__
 void render_ascii(
@@ -574,6 +600,28 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         if matrix_rain_enabled:
             print(f"Matrix Rain Enabled: {matrix_num_particles} particles (mode={matrix_mode})")
 
+        postfx_processor = None
+        postfx_config = _load_postfx_config(config)
+        if postfx_config and POSTFX_AVAILABLE:
+            has_any_fx = any([
+                postfx_config.bloom_enabled,
+                postfx_config.chromatic_enabled,
+                postfx_config.scanlines_enabled,
+                postfx_config.glitch_enabled
+            ])
+            if has_any_fx:
+                postfx_processor = PostFXProcessor(postfx_config, use_gpu=True)
+                fx_list = []
+                if postfx_config.bloom_enabled:
+                    fx_list.append("Bloom")
+                if postfx_config.chromatic_enabled:
+                    fx_list.append("Chromatic")
+                if postfx_config.scanlines_enabled:
+                    fx_list.append("Scanlines")
+                if postfx_config.glitch_enabled:
+                    fx_list.append("Glitch")
+                print(f"PostFX habilitado (GPU): {', '.join(fx_list)}")
+
         if chroma_override:
             lower_green = cp.array([
                 chroma_override['h_min'], chroma_override['s_min'], chroma_override['v_min']
@@ -782,6 +830,9 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                 output_gpu = gpu_renderer.render_frame(char_indices, ansi_gpu)
 
             output_cpu = output_gpu.get()
+
+            if postfx_processor:
+                output_cpu = postfx_processor.process(output_cpu)
 
             proc.stdin.write(output_cpu.tobytes())
 

@@ -17,6 +17,38 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
 from src.core.renderer import render_ascii_as_image
 
+try:
+    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
+    POSTFX_AVAILABLE = True
+except ImportError:
+    POSTFX_AVAILABLE = False
+
+try:
+    from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
+    AUTO_SEG_AVAILABLE = auto_seg_available()
+except ImportError:
+    AUTO_SEG_AVAILABLE = False
+
+
+def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
+    if not POSTFX_AVAILABLE:
+        return None
+
+    return PostFXConfig(
+        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
+        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
+        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
+        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
+        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
+        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
+        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
+        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
+        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
+        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
+        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
+        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
+    )
+
 
 def converter_video_para_gif(video_path: str, output_dir: str, config: configparser.ConfigParser, progress_callback=None, chroma_override=None) -> str:
     try:
@@ -26,6 +58,38 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
         luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
+
+        edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+        edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
+        use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+
+        auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+        auto_segmenter = None
+        if auto_seg_enabled and AUTO_SEG_AVAILABLE:
+            auto_segmenter = AutoSegmenter()
+            print("AutoSeg habilitado para conversao GIF")
+
+        postfx_processor = None
+        postfx_config = _load_postfx_config(config)
+        if postfx_config and POSTFX_AVAILABLE:
+            has_any_fx = any([
+                postfx_config.bloom_enabled,
+                postfx_config.chromatic_enabled,
+                postfx_config.scanlines_enabled,
+                postfx_config.glitch_enabled
+            ])
+            if has_any_fx:
+                postfx_processor = PostFXProcessor(postfx_config, use_gpu=True)
+                fx_list = []
+                if postfx_config.bloom_enabled:
+                    fx_list.append("Bloom")
+                if postfx_config.chromatic_enabled:
+                    fx_list.append("Chromatic")
+                if postfx_config.scanlines_enabled:
+                    fx_list.append("Scanlines")
+                if postfx_config.glitch_enabled:
+                    fx_list.append("Glitch")
+                print(f"PostFX habilitado para GIF: {', '.join(fx_list)}")
 
         if chroma_override:
             lower_green = np.array([
@@ -106,17 +170,20 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
                 frame_count += 1
                 continue
 
-            hsv = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
-            mask_green = cv2.inRange(hsv, lower_green, upper_green)
+            if auto_segmenter:
+                mask_refined = auto_segmenter.process(frame_colorido)
+            else:
+                hsv = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2HSV)
+                mask_green = cv2.inRange(hsv, lower_green, upper_green)
 
-            if erode_size > 0:
-                kernel_erode = np.ones((erode_size, erode_size), np.uint8)
-                mask_green = cv2.erode(mask_green, kernel_erode, iterations=1)
-            if dilate_size > 0:
-                kernel_dilate = np.ones((dilate_size, dilate_size), np.uint8)
-                mask_green = cv2.dilate(mask_green, kernel_dilate, iterations=1)
+                if erode_size > 0:
+                    kernel_erode = np.ones((erode_size, erode_size), np.uint8)
+                    mask_green = cv2.erode(mask_green, kernel_erode, iterations=1)
+                if dilate_size > 0:
+                    kernel_dilate = np.ones((dilate_size, dilate_size), np.uint8)
+                    mask_green = cv2.dilate(mask_green, kernel_dilate, iterations=1)
 
-            mask_refined = apply_morphological_refinement(mask_green)
+                mask_refined = apply_morphological_refinement(mask_green)
 
             frame_gray = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
 
@@ -137,10 +204,16 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
                 resized_gray, resized_color, resized_mask,
                 magnitude_norm, angle,
                 sobel_threshold, luminance_ramp,
-                output_format="file"
+                output_format="file",
+                edge_boost_enabled=edge_boost_enabled,
+                edge_boost_amount=edge_boost_amount,
+                use_edge_chars=use_edge_chars
             )
 
             frame_image = render_ascii_as_image(ascii_string, font_scale=0.5)
+
+            if postfx_processor:
+                frame_image = postfx_processor.process(frame_image)
 
             frame_filename = os.path.join(temp_dir, f"frame_{saved_frame_count:06d}.png")
             cv2.imwrite(frame_filename, frame_image)

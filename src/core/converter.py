@@ -24,9 +24,12 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
 
-        # LER RAMPA DO CONFIG.INI (importante para caracteres personalizados!)
         luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
         print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
+
+        edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+        edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
+        use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
 
         if chroma_override:
             lower_green = np.array([
@@ -119,7 +122,10 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         frame_ascii = converter_frame_para_ascii(
             resized_gray, resized_color, resized_mask, magnitude_norm, angle, sobel_threshold, luminance_ramp,
-            output_format="file"
+            output_format="file",
+            edge_boost_enabled=edge_boost_enabled,
+            edge_boost_amount=edge_boost_amount,
+            use_edge_chars=use_edge_chars
         )
         frames_ascii.append(frame_ascii)
 

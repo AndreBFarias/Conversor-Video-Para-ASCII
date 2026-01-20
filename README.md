@@ -28,12 +28,14 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 |-----------|---------------|
 | **Renderizacao** | ASCII Colorido, Pixel Art, Unicode Braille (4x res), High Fidelity |
 | **Performance** | GPU CUDA (CuPy), Async Streams, 60+ FPS |
-| **Chroma Key** | Calibrador GTK em tempo real, Presets (Studio/Natural/Bright) |
+| **Chroma Key** | Calibrador GTK em tempo real, Presets (Studio/Natural/Bright), Auto Seg (MediaPipe) |
+| **Edge Boost** | Realce de bordas para ASCII denso, chars especiais de borda, controle de intensidade |
+| **Temporal Coherence** | Reducao de flickering entre frames, threshold ajustavel |
 | **Efeitos PostFX** | Bloom Neon, Chromatic Aberration, Scanlines CRT, Glitch Digital |
 | **Matrix Rain** | Sistema de particulas GPU, modos Katakana/Binary/Symbols |
 | **Audio Reactive** | Modulacao por frequencia (Bass/Mids/Treble) |
 | **Optical Flow** | Interpolacao de frames (15 FPS para 60 FPS) |
-| **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado |
+| **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado, UI reorganizada |
 | **Exportacao** | TXT, MP4, GIF, HTML standalone |
 | **Deploy** | AppImage, Flatpak, .deb |
 
@@ -179,19 +181,19 @@ python3 main.py
 
 ```
 Conversor-Video-Para-ASCII/
-├── main.py              # Entry point
-├── config.ini           # Configuracoes
-├── install.sh           # Instalacao
-├── uninstall.sh         # Desinstalacao
-├── requirements.txt     # Dependencias Python
-├── src/
-│   ├── app/             # Aplicacao GTK principal
-│   ├── core/            # Conversores (CPU/GPU)
-│   └── gui/             # Arquivos Glade
-├── assets/              # Icones e imagens
-├── docs/                # Documentacao
-├── tests/               # Testes (pytest)
-└── packaging/           # Scripts de build
+  main.py              # Entry point
+  config.ini           # Configuracoes
+  install.sh           # Instalacao
+  uninstall.sh         # Desinstalacao
+  requirements.txt     # Dependencias Python
+  src/
+    app/               # Aplicacao GTK principal
+    core/              # Conversores (CPU/GPU)
+    gui/               # Arquivos Glade
+  assets/              # Icones e imagens
+  docs/                # Documentacao
+  tests/               # Testes (pytest)
+  packaging/           # Scripts de build
 ```
 
 ---

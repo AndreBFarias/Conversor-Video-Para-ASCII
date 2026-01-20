@@ -60,14 +60,25 @@ def rgb_to_ansi256(r, g, b):
     return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
 
 
-def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, sobel_threshold, luminance_ramp):
+def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, sobel_threshold, luminance_ramp,
+                        edge_boost_enabled=False, edge_boost_amount=100, use_edge_chars=True):
     height, width = gray_frame.shape
     output_buffer = []
+    ramp_len = len(luminance_ramp)
+
+    is_edge = magnitude_frame > sobel_threshold
+
+    if edge_boost_enabled:
+        brightness = gray_frame.astype(np.int32)
+        edge_boost = is_edge.astype(np.int32) * edge_boost_amount
+        brightness = np.clip(brightness + edge_boost, 0, 255).astype(np.uint8)
+    else:
+        brightness = gray_frame
 
     for y in range(height):
         line_buffer = []
         for x in range(width):
-            if magnitude_frame[y, x] > sobel_threshold:
+            if use_edge_chars and is_edge[y, x]:
                 angle = angle_frame[y, x]
                 if (angle > 67.5 and angle <= 112.5):
                     char = "|"
@@ -80,13 +91,12 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
                 b, g, r = color_frame[y, x]
                 ansi_code = rgb_to_ansi256(r, g, b)
             else:
-                pixel_brightness = gray_frame[y, x]
+                pixel_brightness = brightness[y, x]
                 if pixel_brightness == 0 and len(color_frame[y, x]) == 3 and np.array_equal(color_frame[y, x], [0, 0, 0]):
-                     # Force background to space if perfectly black (masked)
                      char = " "
-                     ansi_code = 232 # Black
+                     ansi_code = 232
                 else:
-                    char_index = int((pixel_brightness / 255) * (len(luminance_ramp) - 1))
+                    char_index = int((pixel_brightness / 255) * (ramp_len - 1))
                     char = luminance_ramp[char_index]
                     b, g, r = color_frame[y, x]
                     ansi_code = rgb_to_ansi256(r, g, b)
@@ -242,19 +252,27 @@ def run_realtime_ascii(config_path, video_path=None):
     try:
         sobel_threshold = config.getint('Conversor', 'sobel_threshold')
         luminance_ramp = config.get('Conversor', 'luminance_ramp').rstrip('|')
-        
-        # Inverter rampa para renderizacao em terminal (Light-on-Dark)
-        # Check if user specifically requested NO reversal? Usually terminal is always dark.
+
         luminance_ramp = luminance_ramp[::-1]
 
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
+
+        edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+        edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
+        use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+
+        if edge_boost_enabled:
+            print(f"Edge Boost ativado: {edge_boost_amount}")
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
         print(f"Erro ao ler config.ini: {e}. Usando valores padrao.")
         target_width = 180
         char_aspect_ratio = 0.48
         sobel_threshold = 70
         luminance_ramp = LUMINANCE_RAMP_DEFAULT[::-1]
+        edge_boost_enabled = False
+        edge_boost_amount = 100
+        use_edge_chars = True
 
     capture_source = video_path if is_video_file else 0
     cap = cv2.VideoCapture(capture_source)
@@ -359,7 +377,8 @@ def run_realtime_ascii(config_path, video_path=None):
 
             frame_ascii = frame_para_ascii_rt(
                 resized_gray, resized_color, magnitude_norm, angle,
-                sobel_threshold, luminance_ramp
+                sobel_threshold, luminance_ramp,
+                edge_boost_enabled, edge_boost_amount, use_edge_chars
             )
 
             sys.stdout.write(ANSI_CLEAR_AND_HOME + frame_ascii)

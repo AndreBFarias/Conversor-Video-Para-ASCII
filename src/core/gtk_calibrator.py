@@ -149,6 +149,10 @@ class GTKCalibrator:
         self.auto_seg_enabled = False
         self.auto_segmenter = None
 
+        self.edge_boost_enabled = False
+        self.edge_boost_amount = 100
+        self.use_edge_chars = True
+
         self.postfx_enabled = False
         self.postfx_processor = None
         self.postfx_config = None
@@ -459,10 +463,14 @@ class GTKCalibrator:
         self.combo_luminance = self.builder.get_object("combo_luminance")
 
         self.chk_braille = self.builder.get_object("chk_braille")
-        self.spin_braille_threshold = self.builder.get_object("spin_braille_threshold")
+        self.scale_braille_threshold = self.builder.get_object("scale_braille_threshold")
         self.chk_temporal = self.builder.get_object("chk_temporal")
-        self.spin_temporal_threshold = self.builder.get_object("spin_temporal_threshold")
+        self.scale_temporal_threshold = self.builder.get_object("scale_temporal_threshold")
         self.chk_auto_seg = self.builder.get_object("chk_auto_seg")
+
+        self.chk_edge_boost = self.builder.get_object("chk_edge_boost")
+        self.scale_edge_boost_amount = self.builder.get_object("scale_edge_boost_amount")
+        self.chk_use_edge_chars = self.builder.get_object("chk_use_edge_chars")
 
         self.chk_matrix = self.builder.get_object("chk_matrix")
         self.combo_matrix_mode = self.builder.get_object("combo_matrix_mode")
@@ -586,17 +594,20 @@ class GTKCalibrator:
             self.temporal_enabled = self.config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
             self.temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=10)
             self.auto_seg_enabled = self.config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+            self.edge_boost_enabled = self.config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+            self.edge_boost_amount = self.config.getint('Conversor', 'edge_boost_amount', fallback=100)
+            self.use_edge_chars = self.config.getboolean('Conversor', 'use_edge_chars', fallback=True)
 
         if self.chk_braille:
             self.chk_braille.set_active(self.braille_enabled)
-        if self.spin_braille_threshold:
-            self.spin_braille_threshold.set_value(self.braille_threshold)
-            self.spin_braille_threshold.set_sensitive(self.braille_enabled)
+        if self.scale_braille_threshold:
+            self.scale_braille_threshold.set_value(self.braille_threshold)
+            self.scale_braille_threshold.set_sensitive(self.braille_enabled)
         if self.chk_temporal:
             self.chk_temporal.set_active(self.temporal_enabled)
-        if self.spin_temporal_threshold:
-            self.spin_temporal_threshold.set_value(self.temporal_threshold)
-            self.spin_temporal_threshold.set_sensitive(self.temporal_enabled)
+        if self.scale_temporal_threshold:
+            self.scale_temporal_threshold.set_value(self.temporal_threshold)
+            self.scale_temporal_threshold.set_sensitive(self.temporal_enabled)
 
         if self.chk_auto_seg:
             self.chk_auto_seg.set_active(self.auto_seg_enabled)
@@ -606,6 +617,14 @@ class GTKCalibrator:
                 except Exception:
                     self.auto_seg_enabled = False
                     self.chk_auto_seg.set_active(False)
+
+        if self.chk_edge_boost:
+            self.chk_edge_boost.set_active(self.edge_boost_enabled)
+        if self.scale_edge_boost_amount:
+            self.scale_edge_boost_amount.set_value(self.edge_boost_amount)
+            self.scale_edge_boost_amount.set_sensitive(self.edge_boost_enabled)
+        if self.chk_use_edge_chars:
+            self.chk_use_edge_chars.set_active(self.use_edge_chars)
 
         if 'MatrixRain' in self.config:
             self.matrix_enabled = self.config.getboolean('MatrixRain', 'enabled', fallback=False)
@@ -903,7 +922,15 @@ class GTKCalibrator:
         ramp_len = len(luminance_ramp)
         sobel_threshold = self.converter_config['sobel_threshold']
 
-        lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
+        is_edge = magnitude_norm > sobel_threshold
+
+        if self.edge_boost_enabled:
+            brightness = resized_gray.astype(np.int32)
+            edge_boost = is_edge.astype(np.int32) * self.edge_boost_amount
+            brightness = np.clip(brightness + edge_boost, 0, 255)
+            lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
+        else:
+            lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
 
         for y in range(height):
             py = offset_y + y * char_h + char_h - 3
@@ -921,7 +948,7 @@ class GTKCalibrator:
                 mag = magnitude_norm[y, x]
                 ang = angle[y, x]
 
-                if mag > sobel_threshold:
+                if self.use_edge_chars and mag > sobel_threshold:
                     if 22.5 <= ang < 67.5 or 157.5 <= ang < 202.5:
                         char = '/'
                     elif 67.5 <= ang < 112.5 or 247.5 <= ang < 292.5:
@@ -1149,7 +1176,10 @@ class GTKCalibrator:
                 magnitude_norm, angle,
                 self.converter_config['sobel_threshold'],
                 self.converter_config['luminance_ramp'],
-                output_format="file"
+                output_format="file",
+                edge_boost_enabled=self.edge_boost_enabled,
+                edge_boost_amount=self.edge_boost_amount,
+                use_edge_chars=self.use_edge_chars
             )
             self.ascii_frames.append(frame_for_file)
 
@@ -1667,14 +1697,14 @@ class GTKCalibrator:
             return
 
         self.braille_enabled = self.chk_braille.get_active() if self.chk_braille else False
-        self.braille_threshold = int(self.spin_braille_threshold.get_value()) if self.spin_braille_threshold else 128
+        self.braille_threshold = int(self.scale_braille_threshold.get_value()) if self.scale_braille_threshold else 128
         self.temporal_enabled = self.chk_temporal.get_active() if self.chk_temporal else False
-        self.temporal_threshold = int(self.spin_temporal_threshold.get_value()) if self.spin_temporal_threshold else 10
+        self.temporal_threshold = int(self.scale_temporal_threshold.get_value()) if self.scale_temporal_threshold else 10
 
-        if self.spin_braille_threshold:
-            self.spin_braille_threshold.set_sensitive(self.braille_enabled)
-        if self.spin_temporal_threshold:
-            self.spin_temporal_threshold.set_sensitive(self.temporal_enabled)
+        if self.scale_braille_threshold:
+            self.scale_braille_threshold.set_sensitive(self.braille_enabled)
+        if self.scale_temporal_threshold:
+            self.scale_temporal_threshold.set_sensitive(self.temporal_enabled)
 
         if not self.temporal_enabled:
             self._prev_char_grid = None
@@ -1728,6 +1758,23 @@ class GTKCalibrator:
             scale = getattr(self, scale_name, None)
             if scale:
                 scale.set_sensitive(hsv_sensitive)
+
+    def on_edge_boost_changed(self, widget):
+        if self._block_signals:
+            return
+
+        self.edge_boost_enabled = self.chk_edge_boost.get_active() if self.chk_edge_boost else False
+        self.edge_boost_amount = int(self.scale_edge_boost_amount.get_value()) if self.scale_edge_boost_amount else 100
+        self.use_edge_chars = self.chk_use_edge_chars.get_active() if self.chk_use_edge_chars else True
+
+        if self.scale_edge_boost_amount:
+            self.scale_edge_boost_amount.set_sensitive(self.edge_boost_enabled)
+
+        status = "Edge Boost: Ativado" if self.edge_boost_enabled else "Edge Boost: Desativado"
+        if self.edge_boost_enabled:
+            status += f" ({self.edge_boost_amount})"
+        self._set_status(status)
+        self._force_rerender()
 
     def on_matrix_settings_changed(self, widget):
         if self._block_signals:
@@ -2346,6 +2393,9 @@ class GTKCalibrator:
         self.config.set('Conversor', 'braille_threshold', str(self.braille_threshold))
         self.config.set('Conversor', 'temporal_coherence_enabled', str(self.temporal_enabled).lower())
         self.config.set('Conversor', 'temporal_threshold', str(self.temporal_threshold))
+        self.config.set('Conversor', 'edge_boost_enabled', str(self.edge_boost_enabled).lower())
+        self.config.set('Conversor', 'edge_boost_amount', str(self.edge_boost_amount))
+        self.config.set('Conversor', 'use_edge_chars', str(self.use_edge_chars).lower())
 
         if not self.config.has_section('MatrixRain'):
             self.config.add_section('MatrixRain')

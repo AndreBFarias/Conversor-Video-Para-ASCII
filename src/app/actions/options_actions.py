@@ -405,6 +405,19 @@ class OptionsActionsMixin:
                 auto_seg_enabled = self.config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
                 self.pref_auto_seg_switch.set_active(auto_seg_enabled)
 
+            if hasattr(self, 'opt_edge_boost_check') and self.opt_edge_boost_check:
+                edge_boost_enabled = self.config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+                self.opt_edge_boost_check.set_active(edge_boost_enabled)
+
+            if hasattr(self, 'opt_edge_boost_spin') and self.opt_edge_boost_spin:
+                edge_boost_amount = self.config.getint('Conversor', 'edge_boost_amount', fallback=100)
+                self.opt_edge_boost_spin.set_value(edge_boost_amount)
+                self.opt_edge_boost_spin.set_sensitive(self.opt_edge_boost_check.get_active() if self.opt_edge_boost_check else True)
+
+            if hasattr(self, 'opt_use_edge_chars_check') and self.opt_use_edge_chars_check:
+                use_edge_chars = self.config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+                self.opt_use_edge_chars_check.set_active(use_edge_chars)
+
             if hasattr(self, 'opt_font_detection_switch') and self.opt_font_detection_switch:
                 font_detection = self.config.getboolean('Preview', 'font_detection_enabled', fallback=True)
                 self.opt_font_detection_switch.set_active(font_detection)
@@ -501,6 +514,15 @@ class OptionsActionsMixin:
         if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
             self.opt_luminance_preset_combo.set_active(0)
             self.opt_luminance_entry.set_sensitive(False)
+
+        if hasattr(self, 'opt_edge_boost_check') and self.opt_edge_boost_check:
+            self.opt_edge_boost_check.set_active(False)
+        if hasattr(self, 'opt_edge_boost_spin') and self.opt_edge_boost_spin:
+            self.opt_edge_boost_spin.set_value(100)
+            self.opt_edge_boost_spin.set_sensitive(False)
+        if hasattr(self, 'opt_use_edge_chars_check') and self.opt_use_edge_chars_check:
+            self.opt_use_edge_chars_check.set_active(True)
+
         if hasattr(self, 'opt_fixed_palette_combo') and self.opt_fixed_palette_combo:
             self.opt_fixed_palette_combo.set_active(0)
             self.opt_fixed_palette_combo.set_sensitive(False)
@@ -556,6 +578,18 @@ class OptionsActionsMixin:
             if hasattr(self, 'pref_auto_seg_switch') and self.pref_auto_seg_switch:
                 auto_seg_enabled = self.pref_auto_seg_switch.get_active()
                 self.config.set('Conversor', 'auto_seg_enabled', 'true' if auto_seg_enabled else 'false')
+
+            if hasattr(self, 'opt_edge_boost_check') and self.opt_edge_boost_check:
+                edge_boost_enabled = self.opt_edge_boost_check.get_active()
+                self.config.set('Conversor', 'edge_boost_enabled', 'true' if edge_boost_enabled else 'false')
+
+            if hasattr(self, 'opt_edge_boost_spin') and self.opt_edge_boost_spin:
+                edge_boost_amount = int(self.opt_edge_boost_spin.get_value())
+                self.config.set('Conversor', 'edge_boost_amount', str(edge_boost_amount))
+
+            if hasattr(self, 'opt_use_edge_chars_check') and self.opt_use_edge_chars_check:
+                use_edge_chars = self.opt_use_edge_chars_check.get_active()
+                self.config.set('Conversor', 'use_edge_chars', 'true' if use_edge_chars else 'false')
 
             if 'Preview' not in self.config:
                 self.config.add_section('Preview')

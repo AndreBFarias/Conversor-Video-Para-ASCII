@@ -253,10 +253,12 @@ jobs:
 
           ### Novidades nesta versao
 
-          **Efeitos Visuais e Correções (v2.3)**
-          - **Interface Melhorada:** Botões de conversão com bordas verdes, Switches roxos.
-          - **Correções Críticas:** Launch crash fixed, GTK theme integration.
-          - **Deploy Completo:** Disponível em .deb, Flatpak e AppImage.
+          **Edge Boost & UI Reorganizada (v2.4)**
+          - **Edge Boost:** Realce de bordas para ASCII mais denso, controle de intensidade, chars especiais de borda
+          - **Temporal Coherence:** Reducao de flickering entre frames com threshold ajustavel
+          - **Auto Seg CPU Fallback:** Segmentacao automatica funciona sem GPU/CUDA
+          - **UI Reorganizada:** Controles Braille/Temporal/Edge no bloco HSV, GPU block mais compacto
+          - **Correções Críticas:** Tipos float corrigidos no OpenCV, integração completa do edge_boost
 
           ### Instalacao
 
