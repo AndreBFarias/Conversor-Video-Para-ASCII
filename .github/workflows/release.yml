@@ -133,6 +133,11 @@ jobs:
         convert assets/logo.png -resize 64x64! AppDir/usr/share/icons/hicolor/64x64/apps/extase-em-4r73.png
 
         # 4. Install Python dependencies into AppDir (versao CPU leve)
+        # PyTorch CPU-only primeiro (200MB vs 2GB CUDA)
+        pip3 install --ignore-installed --prefix AppDir/usr \
+          torch==2.5.1+cpu torchvision==0.20.1+cpu \
+          --index-url https://download.pytorch.org/whl/cpu
+        # Resto das dependencias
         pip3 install --ignore-installed --prefix AppDir/usr -r requirements-appimage.txt
 
         # 5. Copy source code

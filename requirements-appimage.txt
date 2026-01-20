@@ -6,11 +6,6 @@ opencv-python-headless>=4.8.0
 numpy>=1.24.0,<2.0.0
 Pillow>=10.0.0
 
-# PyTorch CPU-only (200MB vs 2GB da versao CUDA)
---index-url https://download.pytorch.org/whl/cpu
-torch==2.5.1+cpu
-torchvision==0.20.1+cpu
-
 # Segmentacao automatica
 mediapipe>=0.10.0
 
