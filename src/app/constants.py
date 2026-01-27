@@ -219,4 +219,8 @@ STYLE_PRESETS = {
 }
 
 VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.webm', '.gif')
-IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
+IMAGE_EXTENSIONS = (
+    '.png', '.jpg', '.jpeg', '.bmp', '.webp',
+    '.tif', '.tiff', '.ppm', '.pgm', '.pbm',
+    '.hdr', '.exr', '.ico'
+)

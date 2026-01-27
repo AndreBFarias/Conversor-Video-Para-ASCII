@@ -370,7 +370,7 @@ class OptionsActionsMixin:
                 self.pref_theme_combo.set_active_id(current_theme)
 
             if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
-                gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=False)
+                gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=True)
                 self.pref_gpu_switch.set_active(gpu_enabled)
                 
             if hasattr(self, 'pref_render_mode_combo') and self.pref_render_mode_combo:

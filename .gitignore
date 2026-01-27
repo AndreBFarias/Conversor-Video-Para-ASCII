@@ -75,3 +75,9 @@ packaging/build/
 
 # Index marker
 .INDEX_NEEDS_UPDATE
+
+# Build venvs extras
+venv_requirements-appimage/
+
+# CI cache
+.github-cache-bust

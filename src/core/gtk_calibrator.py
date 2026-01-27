@@ -1510,44 +1510,126 @@ class GTKCalibrator:
         return False
 
     def _open_terminal_preview(self):
-        realtime_script = os.path.join(BASE_DIR, "src", "core", "realtime_ascii.py")
-        python_exec = sys.executable
-        cmd_base = [python_exec, realtime_script, "--config", self.config_path]
-        title = "Extase em 4R73 - Preview"
-
-        if self.video_path:
-            cmd_base.extend(["--video", self.video_path])
-
-        font_family = self.terminal_font.get('family', 'monospace') if self.terminal_font else 'monospace'
-        font_size = self.terminal_font.get('size', 12) if self.terminal_font else 12
-
         try:
-            cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
-                   '-o', f'font_family={font_family}',
-                   '-o', f'font_size={font_size}',
-                   '--start-as=maximized', '--'] + cmd_base
-            subprocess.Popen(cmd)
-            self._set_status(f"Preview: {font_family} {font_size}pt")
-        except FileNotFoundError:
+            realtime_script = os.path.join(BASE_DIR, "src", "core", "realtime_ascii.py")
+            python_exec = sys.executable
+            cmd_base = [python_exec, realtime_script, "--config", self.config_path]
+            title = "Extase em 4R73 - Preview"
+
+            if self.video_path:
+                cmd_base.extend(["--video", self.video_path])
+
+            hsv = self._get_current_hsv_values()
+            cmd_base.extend([
+                "--h-min", str(hsv['h_min']),
+                "--h-max", str(hsv['h_max']),
+                "--s-min", str(hsv['s_min']),
+                "--s-max", str(hsv['s_max']),
+                "--v-min", str(hsv['v_min']),
+                "--v-max", str(hsv['v_max']),
+                "--erode", str(hsv['erode']),
+                "--dilate", str(hsv['dilate']),
+            ])
+
+            auto_seg = self.chk_auto_seg.get_active() if self.chk_auto_seg else False
+            cmd_base.extend(["--auto-seg", str(auto_seg).lower()])
+
+            matrix_on = self.chk_matrix.get_active() if self.chk_matrix else False
+            cmd_base.extend(["--matrix-enabled", str(matrix_on).lower()])
+            if matrix_on:
+                cmd_base.extend([
+                    "--matrix-mode", self.matrix_mode,
+                    "--matrix-charset", self.matrix_charset,
+                    "--matrix-particles", str(self.matrix_particles),
+                    "--matrix-speed", str(self.matrix_speed),
+                ])
+
+            bloom = self.chk_bloom.get_active() if self.chk_bloom else False
+            chromatic = self.chk_chromatic.get_active() if self.chk_chromatic else False
+            scanlines = self.chk_scanlines.get_active() if self.chk_scanlines else False
+            glitch = self.chk_glitch.get_active() if self.chk_glitch else False
+            cmd_base.extend([
+                "--bloom", str(bloom).lower(),
+                "--chromatic", str(chromatic).lower(),
+                "--scanlines", str(scanlines).lower(),
+                "--glitch", str(glitch).lower(),
+            ])
+
+            conversion_mode = self.conversion_mode if hasattr(self, 'conversion_mode') else MODE_ASCII
+            cmd_base.extend(["--render-mode", conversion_mode])
+
+            # Render target (user/background/both)
+            render_target_map = {RENDER_MODE_USER: 'user', RENDER_MODE_BACKGROUND: 'background', RENDER_MODE_BOTH: 'both'}
+            render_target = render_target_map.get(self.render_mode, 'both')
+            cmd_base.extend(["--render-target", render_target])
+
+            width = int(self.spin_width.get_value()) if self.spin_width else 150
+            height = int(self.spin_height.get_value()) if self.spin_height else 55
+            cmd_base.extend(["--width", str(width), "--height", str(height)])
+
+            sobel = int(self.scale_sobel.get_value()) if self.scale_sobel else 15
+            cmd_base.extend(["--sobel", str(sobel)])
+
+            sharpen_on = self.chk_sharpen.get_active() if self.chk_sharpen else True
+            sharpen_amt = self.scale_sharpen.get_value() if self.scale_sharpen else 0.5
+            cmd_base.extend(["--sharpen", str(sharpen_on).lower(), "--sharpen-amount", str(sharpen_amt)])
+
+            edge_boost_on = self.chk_edge_boost.get_active() if self.chk_edge_boost else False
+            edge_boost_amt = int(self.scale_edge_boost_amount.get_value()) if self.scale_edge_boost_amount else 100
+            edge_chars = self.chk_use_edge_chars.get_active() if self.chk_use_edge_chars else True
+            cmd_base.extend([
+                "--edge-boost", str(edge_boost_on).lower(),
+                "--edge-boost-amount", str(edge_boost_amt),
+                "--edge-chars", str(edge_chars).lower(),
+            ])
+
+            temporal_on = self.chk_temporal.get_active() if self.chk_temporal else False
+            temporal_thresh = int(self.scale_temporal_threshold.get_value()) if self.scale_temporal_threshold else 50
+            cmd_base.extend(["--temporal", str(temporal_on).lower(), "--temporal-threshold", str(temporal_thresh)])
+
+            if conversion_mode == MODE_PIXELART:
+                pixel_size = int(self.spin_pixel_size.get_value()) if self.spin_pixel_size else 2
+                palette_size = int(self.spin_palette_size.get_value()) if self.spin_palette_size else 16
+                fixed_palette = self.chk_fixed_palette.get_active() if self.chk_fixed_palette else False
+                cmd_base.extend([
+                    "--pixel-size", str(pixel_size),
+                    "--palette-size", str(palette_size),
+                    "--fixed-palette", str(fixed_palette).lower(),
+                ])
+
+            font_family = self.terminal_font.get('family', 'monospace') if self.terminal_font else 'monospace'
+            font_size = self.terminal_font.get('size', 12) if self.terminal_font else 12
+
             try:
-                cmd = ['gnome-terminal', '--maximize', f'--title={title}',
-                       '--class=extase-em-4r73', '--'] + cmd_base
+                cmd = ['kitty', '--class=extase-em-4r73', f'--title={title}',
+                       '-o', f'font_family={font_family}',
+                       '-o', f'font_size={font_size}',
+                       '--start-as=maximized', '--'] + cmd_base
                 subprocess.Popen(cmd)
-                self._set_status(f"Preview: {font_family} {font_size}pt (gnome)")
+                self._set_status(f"Preview: {font_family} {font_size}pt")
             except FileNotFoundError:
                 try:
-                    xft_font = f'{font_family}:size={font_size}'
-                    cmd = ['xterm', '-maximized', '-title', title,
-                           '-fa', font_family, '-fs', str(font_size),
-                           '-e'] + cmd_base
+                    cmd = ['gnome-terminal', '--maximize', f'--title={title}',
+                           '--class=extase-em-4r73', '--'] + cmd_base
                     subprocess.Popen(cmd)
-                    self._set_status(f"Preview: {font_family} {font_size}pt (xterm)")
+                    self._set_status(f"Preview: {font_family} {font_size}pt (gnome)")
+                except FileNotFoundError:
+                    try:
+                        cmd = ['xterm', '-maximized', '-title', title,
+                               '-fa', font_family, '-fs', str(font_size),
+                               '-e'] + cmd_base
+                        subprocess.Popen(cmd)
+                        self._set_status(f"Preview: {font_family} {font_size}pt (xterm)")
+                    except Exception as e:
+                        self._set_status(f"Erro terminal: {e}")
                 except Exception as e:
                     self._set_status(f"Erro terminal: {e}")
             except Exception as e:
                 self._set_status(f"Erro terminal: {e}")
         except Exception as e:
-            self._set_status(f"Erro terminal: {e}")
+            self._set_status(f"Erro ao preparar preview: {e}")
+            import traceback
+            traceback.print_exc()
 
     def on_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_q or event.keyval == Gdk.KEY_Q:

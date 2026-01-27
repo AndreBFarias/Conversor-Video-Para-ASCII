@@ -129,7 +129,7 @@ class ConversionActionsMixin:
             conversion_mode = self.config.get('Mode', 'conversion_mode', fallback='ascii').lower()
 
             if output_format == 'mp4' and not self._is_image_file(file_path):
-                gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=False)
+                gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=True)
                 
                 try:
                     def progress_cb(current, total_frames, frame_data=None):
@@ -197,10 +197,10 @@ class ConversionActionsMixin:
 
             if self._is_image_file(file_path):
                 if conversion_mode == 'pixelart':
-                    cmd = [python_executable, PIXEL_ART_IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
+                    cmd = [python_executable, PIXEL_ART_IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path, "--output-dir", self.output_dir]
                     script_name = PIXEL_ART_IMAGE_CONVERTER_SCRIPT
                 else:
-                    cmd = [python_executable, IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path]
+                    cmd = [python_executable, IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path, "--output-dir", self.output_dir]
                     script_name = IMAGE_CONVERTER_SCRIPT
             else:
                 if conversion_mode == 'pixelart':
@@ -262,6 +262,11 @@ class ConversionActionsMixin:
 
     def _update_thumbnail(self, frame_array: np.ndarray):
         if not hasattr(self, 'preview_thumbnail') or not self.preview_thumbnail:
+            self.logger.debug("preview_thumbnail nao disponivel")
+            return False
+
+        if not hasattr(self, 'preview_frame') or not self.preview_frame:
+            self.logger.debug("preview_frame nao disponivel")
             return False
 
         import time
@@ -278,40 +283,44 @@ class ConversionActionsMixin:
             self.preview_thumbnail.set_visible(False)
             return False
 
-        height, width = frame_array.shape[:2]
-        max_width = 400
-        if width > max_width:
-            scale = max_width / width
-            new_width = max_width
-            new_height = int(height * scale)
-            frame_array = frame_array.copy()
+        try:
             import cv2
-            frame_array = cv2.resize(frame_array, (new_width, new_height), interpolation=cv2.INTER_AREA)
-            height, width = new_height, new_width
+            height, width = frame_array.shape[:2]
+            max_width = 400
+            if width > max_width:
+                scale = max_width / width
+                new_width = max_width
+                new_height = int(height * scale)
+                frame_array = cv2.resize(frame_array, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                height, width = new_height, new_width
 
-        if len(frame_array.shape) == 2:
-            rgb_array = np.stack([frame_array] * 3, axis=-1)
-        elif frame_array.shape[2] == 3:
-            rgb_array = frame_array[:, :, ::-1]
-        else:
-            rgb_array = frame_array[:, :, :3][:, :, ::-1]
+            if len(frame_array.shape) == 2:
+                rgb_array = np.stack([frame_array] * 3, axis=-1)
+            elif frame_array.shape[2] == 3:
+                rgb_array = frame_array[:, :, ::-1].copy()
+            else:
+                rgb_array = frame_array[:, :, :3][:, :, ::-1].copy()
 
-        pixbuf = GdkPixbuf.Pixbuf.new_from_data(
-            rgb_array.tobytes(),
-            GdkPixbuf.Colorspace.RGB,
-            False,
-            8,
-            width,
-            height,
-            width * 3
-        )
+            rgb_array = np.ascontiguousarray(rgb_array)
 
-        self.preview_thumbnail.set_from_pixbuf(pixbuf)
-        self.preview_thumbnail.set_visible(True)
-        
-        if hasattr(self, 'preview_frame') and self.preview_frame:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
+                GLib.Bytes.new(rgb_array.tobytes()),
+                GdkPixbuf.Colorspace.RGB,
+                False,
+                8,
+                width,
+                height,
+                width * 3
+            )
+
+            self.preview_thumbnail.set_from_pixbuf(pixbuf)
+            self.preview_thumbnail.set_visible(True)
             self.preview_frame.set_visible(True)
-            
+
+        except Exception as e:
+            self.logger.error(f"Erro ao atualizar thumbnail: {e}")
+            return False
+
         return False
 
     def _hide_thumbnail(self):

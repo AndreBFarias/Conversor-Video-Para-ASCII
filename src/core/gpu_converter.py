@@ -19,6 +19,7 @@ from src.core.utils.ascii_converter import LUMINANCE_RAMP_DEFAULT, COLOR_SEPARAT
 from src.core.renderer import ASCII_FONT, ASCII_FONT_SCALE, ASCII_FONT_THICKNESS, ASCII_CHAR_WIDTH, ASCII_CHAR_HEIGHT
 from src.core.utils import color as color_module
 from src.core.utils.color import rgb_to_ansi256_vectorized
+from src.core.utils.image import apply_morphological_refinement
 from src.app.constants import USER_CACHE_DIR
 
 try:
@@ -26,6 +27,13 @@ try:
     POSTFX_AVAILABLE = True
 except ImportError:
     POSTFX_AVAILABLE = False
+
+try:
+    from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
+    AUTO_SEG_AVAILABLE = auto_seg_available()
+except ImportError:
+    AUTO_SEG_AVAILABLE = False
+    AutoSegmenter = None
 
 
 def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
@@ -585,6 +593,11 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
         temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=20)
 
+        auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+        render_mode = config.get('Conversor', 'render_mode', fallback='both')
+        if render_mode not in ('user', 'background', 'both'):
+            render_mode = 'both'
+
         matrix_rain_enabled = config.getboolean('MatrixRain', 'enabled', fallback=False)
         matrix_num_particles = config.getint('MatrixRain', 'num_particles', fallback=5000)
         matrix_char_set = config.get('MatrixRain', 'char_set', fallback='katakana')
@@ -599,6 +612,30 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             print("Mode High Fidelity Activated: Texture Matching.")
         if matrix_rain_enabled:
             print(f"Matrix Rain Enabled: {matrix_num_particles} particles (mode={matrix_mode})")
+
+        auto_segmenter = None
+        if auto_seg_enabled:
+            if AUTO_SEG_AVAILABLE:
+                try:
+                    auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=True)
+                    print("Auto Seg ativado para conversao GPU")
+                except Exception as e:
+                    print(f"Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+                    auto_segmenter = None
+            else:
+                print("Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+
+        if render_mode != 'both':
+            print(f"Render Mode: {render_mode}")
+
+        erode_size = 2
+        dilate_size = 2
+        if chroma_override:
+            erode_size = chroma_override.get('erode', 2)
+            dilate_size = chroma_override.get('dilate', 2)
+        else:
+            erode_size = config.getint('ChromaKey', 'erode', fallback=2)
+            dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
 
         postfx_processor = None
         postfx_config = _load_postfx_config(config)
@@ -722,23 +759,48 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
 
             resized = cv2.resize(frame_img, resize_target, interpolation=cv2.INTER_AREA)
 
-            if matrix_rain_enabled:
-                if is_hifi:
-                    full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-                    full_gray_gpu = cp.array(full_gray)
-                    resized_color = cv2.resize(resized, target_dim, interpolation=cv2.INTER_AREA)
+            if is_hifi:
+                resized_color = cv2.resize(resized, target_dim, interpolation=cv2.INTER_AREA)
+            else:
+                resized_color = resized
+
+            if auto_segmenter is not None:
+                frame_h, frame_w = resized_color.shape[:2]
+                max_autoseg_size = 320
+                if max(frame_h, frame_w) > max_autoseg_size:
+                    scale = max_autoseg_size / max(frame_h, frame_w)
+                    small_h, small_w = int(frame_h * scale), int(frame_w * scale)
+                    small_frame = cv2.resize(resized_color, (small_w, small_h), interpolation=cv2.INTER_AREA)
+                    small_mask = auto_segmenter.process(small_frame)
+                    mask_cpu = cv2.resize(small_mask, (frame_w, frame_h), interpolation=cv2.INTER_NEAREST)
                 else:
-                    full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-                    full_gray_gpu = cp.array(full_gray)
-                    resized_color = resized
-
-                resized_color_gpu = cp.array(resized_color)
-
+                    mask_cpu = auto_segmenter.process(resized_color)
+                mask_cpu = apply_morphological_refinement(mask_cpu, erode_size, dilate_size)
+            else:
                 hsv_cpu = cv2.cvtColor(resized_color, cv2.COLOR_BGR2HSV)
                 l_g_cpu = lower_green.get()
                 u_g_cpu = upper_green.get()
                 mask_cpu = cv2.inRange(hsv_cpu, l_g_cpu, u_g_cpu)
-                chroma_mask_gpu = cp.array(mask_cpu > 127)
+                mask_cpu = apply_morphological_refinement(mask_cpu, erode_size, dilate_size)
+
+            if render_mode == 'user':
+                resized_color[mask_cpu > 127] = 0
+            elif render_mode == 'background':
+                resized_color[mask_cpu < 128] = 0
+
+            mask_gpu = cp.array(mask_cpu)
+            is_masked = mask_gpu > 127
+
+            if matrix_rain_enabled:
+                if is_hifi:
+                    full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+                    full_gray_gpu = cp.array(full_gray)
+                else:
+                    full_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+                    full_gray_gpu = cp.array(full_gray)
+
+                resized_color_gpu = cp.array(resized_color)
+                chroma_mask_gpu = is_masked
 
                 char_indices, ansi_gpu = gpu_renderer.render_fast_with_matrix(
                     full_gray_gpu,
@@ -748,12 +810,12 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                     dt=1.0/fps
                 )
 
-                is_masked = chroma_mask_gpu
-                if braille_enabled:
-                    downsampled_mask = is_masked[::4, ::2]
-                    char_indices[downsampled_mask] = 32
-                else:
-                    char_indices[is_masked] = 32
+                if render_mode == 'both':
+                    if braille_enabled:
+                        downsampled_mask = is_masked[::4, ::2]
+                        char_indices[downsampled_mask] = 32
+                    else:
+                        char_indices[is_masked] = 32
 
                 output_gpu = gpu_renderer.render_frame(char_indices, ansi_gpu)
 
@@ -763,21 +825,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                     full_gray_gpu = cp.array(full_gray)
                     char_indices = gpu_renderer.render_high_fidelity(full_gray_gpu)
 
-                    resized_color = cv2.resize(resized, target_dim, interpolation=cv2.INTER_AREA)
-                else:
-                    resized_color = resized
-
-                hsv_cpu = cv2.cvtColor(resized_color, cv2.COLOR_BGR2HSV)
-                l_g_cpu = lower_green.get()
-                u_g_cpu = upper_green.get()
-                mask_cpu = cv2.inRange(hsv_cpu, l_g_cpu, u_g_cpu)
-
-                mask_gpu = cp.array(mask_cpu)
-                is_masked = mask_gpu > 127
-
                 ansi_cpu = rgb_to_ansi256_vectorized(resized_color)
                 ansi_gpu = cp.array(ansi_cpu, dtype=cp.int32)
-                ansi_gpu[is_masked] = 232
+                if render_mode == 'both':
+                    ansi_gpu[is_masked] = 232
 
                 if not is_hifi:
                     frame_gpu = cp.array(resized_color)
@@ -792,7 +843,8 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                         downsampled_ansi = ansi_gpu[::4, ::2]
                         downsampled_mask = is_masked[::4, ::2]
 
-                        char_indices[downsampled_mask] = 0
+                        if render_mode == 'both':
+                            char_indices[downsampled_mask] = 0
                         ansi_gpu = downsampled_ansi
                         is_masked = downsampled_mask
                     else:
@@ -826,7 +878,8 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                     else:
                         char_indices = gpu_renderer.apply_temporal_coherence(char_indices, gray_gpu, temporal_threshold)
 
-                char_indices[is_masked] = 32
+                if render_mode == 'both':
+                    char_indices[is_masked] = 32
                 output_gpu = gpu_renderer.render_frame(char_indices, ansi_gpu)
 
             output_cpu = output_gpu.get()
@@ -850,6 +903,8 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             proc.stdin.close()
             proc.wait()
         captura.release()
+        if auto_segmenter is not None:
+            auto_segmenter.close()
 
     print("Extraindo audio do video original...")
     temp_audio = os.path.join(temp_dir, "audio.aac")
@@ -905,6 +960,11 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
         temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
         luminance_ramp_str = config.get('Conversor', 'luminance_ramp', fallback='').rstrip('|')
 
+        auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
+        render_mode = config.get('Conversor', 'render_mode', fallback='both')
+        if render_mode not in ('user', 'background', 'both'):
+            render_mode = 'both'
+
         if chroma_override:
             lower_green = cp.array([
                 chroma_override['h_min'], chroma_override['s_min'], chroma_override['v_min']
@@ -912,6 +972,8 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
             upper_green = cp.array([
                 chroma_override['h_max'], chroma_override['s_max'], chroma_override['v_max']
             ])
+            erode_size = chroma_override.get('erode', 2)
+            dilate_size = chroma_override.get('dilate', 2)
         else:
             lower_green = cp.array([
                 config.getint('ChromaKey', 'h_min'),
@@ -923,8 +985,25 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
                 config.getint('ChromaKey', 's_max'),
                 config.getint('ChromaKey', 'v_max')
             ])
+            erode_size = config.getint('ChromaKey', 'erode', fallback=2)
+            dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
     except Exception as e:
         raise ValueError(f"Config Error: {e}")
+
+    auto_segmenter = None
+    if auto_seg_enabled:
+        if AUTO_SEG_AVAILABLE:
+            try:
+                auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=True)
+                print("[ASYNC] Auto Seg ativado para conversao GPU")
+            except Exception as e:
+                print(f"[ASYNC] Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+                auto_segmenter = None
+        else:
+            print("[ASYNC] Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+
+    if render_mode != 'both':
+        print(f"[ASYNC] Render Mode: {render_mode}")
 
     captura = cv2.VideoCapture(video_path)
     if not captura.isOpened():
@@ -993,12 +1072,31 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
 
             resized = cv2.resize(frame_img, target_dim, interpolation=cv2.INTER_AREA)
 
-            hsv_cpu = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
-            l_g_cpu = lower_green.get()
-            u_g_cpu = upper_green.get()
-            mask_cpu = cv2.inRange(hsv_cpu, l_g_cpu, u_g_cpu)
+            if auto_segmenter is not None:
+                frame_h, frame_w = resized.shape[:2]
+                max_autoseg_size = 320
+                if max(frame_h, frame_w) > max_autoseg_size:
+                    scale = max_autoseg_size / max(frame_h, frame_w)
+                    small_h, small_w = int(frame_h * scale), int(frame_w * scale)
+                    small_frame = cv2.resize(resized, (small_w, small_h), interpolation=cv2.INTER_AREA)
+                    small_mask = auto_segmenter.process(small_frame)
+                    mask_cpu = cv2.resize(small_mask, (frame_w, frame_h), interpolation=cv2.INTER_NEAREST)
+                else:
+                    mask_cpu = auto_segmenter.process(resized)
+                mask_cpu = apply_morphological_refinement(mask_cpu, erode_size, dilate_size)
+            else:
+                hsv_cpu = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
+                l_g_cpu = lower_green.get()
+                u_g_cpu = upper_green.get()
+                mask_cpu = cv2.inRange(hsv_cpu, l_g_cpu, u_g_cpu)
+                mask_cpu = apply_morphological_refinement(mask_cpu, erode_size, dilate_size)
 
-            resized[mask_cpu > 127] = [0, 0, 0]
+            if render_mode == 'user':
+                resized[mask_cpu > 127] = [0, 0, 0]
+            elif render_mode == 'background':
+                resized[mask_cpu < 128] = [0, 0, 0]
+            elif render_mode == 'both':
+                resized[mask_cpu > 127] = [0, 0, 0]
 
             b, g, r = resized[:,:,0], resized[:,:,1], resized[:,:,2]
             gray = (0.114*b + 0.587*g + 0.299*r).astype(np.uint8)
@@ -1049,11 +1147,15 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
         proc.stdin.close()
         proc.wait()
         captura.release()
+        if auto_segmenter is not None:
+            auto_segmenter.close()
         raise e
 
     proc.stdin.close()
     proc.wait()
     captura.release()
+    if auto_segmenter is not None:
+        auto_segmenter.close()
 
     if os.path.exists(temp_video_no_audio):
         result = subprocess.run(

@@ -179,6 +179,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Executor de Conversao de Imagem para Pixel Art (CLI)")
     parser.add_argument("--image", required=True, help="Caminho da imagem para converter.")
     parser.add_argument("--config", required=True, help="Caminho para o config.ini.")
+    parser.add_argument("--output-dir", required=False, help="Diretorio de saida (override).")
     args = parser.parse_args()
 
     if not os.path.exists(args.config):
@@ -188,10 +189,17 @@ if __name__ == "__main__":
     config = configparser.ConfigParser(interpolation=None)
     config.read(args.config)
 
-    output_dir = config['Pastas']['output_dir']
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        output_dir = config.get('Pastas', 'output_dir', fallback='')
+        if not output_dir:
+            output_dir = os.path.join(os.path.dirname(args.image), 'output')
+            os.makedirs(output_dir, exist_ok=True)
 
     try:
         print(f"Iniciando conversao de imagem PIXEL ART (CLI) para: {args.image}")
+        print(f"Diretorio de saida: {output_dir}")
         output_file = iniciar_conversao_imagem(args.image, output_dir, config)
         print(f"Conversao PIXEL ART (CLI) concluida: {output_file}")
     except Exception as e:

@@ -20,6 +20,14 @@ except ImportError:
     AUTO_SEG_AVAILABLE = False
     AutoSegmenter = None
 
+try:
+    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
+    POSTFX_AVAILABLE = True
+except ImportError:
+    POSTFX_AVAILABLE = False
+    PostFXProcessor = None
+    PostFXConfig = None
+
 
 def iniciar_conversao(video_path, output_dir, config, chroma_override=None, force_output_path=None):
     try:
@@ -43,6 +51,47 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
         braille_enabled = config.getboolean('Conversor', 'braille_enabled', fallback=False)
         braille_threshold = config.getint('Conversor', 'braille_threshold', fallback=128)
+
+        render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()
+        if render_mode not in ('user', 'background', 'both'):
+            render_mode = 'both'
+
+        postfx_processor = None
+        if POSTFX_AVAILABLE:
+            bloom_enabled = config.getboolean('PostFX', 'bloom_enabled', fallback=False)
+            chromatic_enabled = config.getboolean('PostFX', 'chromatic_enabled', fallback=False)
+            scanlines_enabled = config.getboolean('PostFX', 'scanlines_enabled', fallback=False)
+            glitch_enabled = config.getboolean('PostFX', 'glitch_enabled', fallback=False)
+
+            if bloom_enabled or chromatic_enabled or scanlines_enabled or glitch_enabled:
+                try:
+                    postfx_config = PostFXConfig(
+                        bloom_enabled=bloom_enabled,
+                        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
+                        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
+                        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
+                        chromatic_enabled=chromatic_enabled,
+                        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
+                        scanlines_enabled=scanlines_enabled,
+                        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
+                        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
+                        glitch_enabled=glitch_enabled,
+                        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
+                        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
+                    )
+                    postfx_processor = PostFXProcessor(postfx_config, use_gpu=False)
+                    fx_list = []
+                    if bloom_enabled:
+                        fx_list.append("Bloom")
+                    if chromatic_enabled:
+                        fx_list.append("Chromatic")
+                    if scanlines_enabled:
+                        fx_list.append("Scanlines")
+                    if glitch_enabled:
+                        fx_list.append("Glitch")
+                    print(f"PostFX habilitado (CPU): {', '.join(fx_list)}")
+                except Exception as e:
+                    print(f"Aviso: PostFX falhou ao inicializar: {e}")
 
         if chroma_override:
             lower_green = np.array([
@@ -127,6 +176,9 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
     if braille_enabled:
         print("Aviso: Braille requer GPU Converter (gpu_converter.py), ignorado em conversao CPU")
 
+    if render_mode != 'both':
+        print(f"Render Mode: {render_mode}")
+
     prev_gray_frame = None
 
     while True:
@@ -161,6 +213,17 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
             resized_color = sharpen_frame(resized_color, sharpen_amount)
             resized_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
 
+        if render_mode == 'user':
+            resized_color[resized_mask > 127] = 0
+        elif render_mode == 'background':
+            resized_color[resized_mask < 128] = 0
+
+        if postfx_processor is not None:
+            try:
+                resized_color = postfx_processor.process(resized_color)
+            except Exception:
+                pass
+
         if temporal_enabled and prev_gray_frame is not None:
             diff = np.abs(resized_gray.astype(np.int32) - prev_gray_frame.astype(np.int32))
             temporal_mask = diff < temporal_threshold
@@ -183,6 +246,13 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         frames_ascii.append(frame_ascii)
 
     captura.release()
+
+    if auto_segmenter is not None:
+        try:
+            auto_segmenter.close()
+        except Exception:
+            pass
+
     try:
         with open(caminho_saida, 'w') as f:
             f.write(f"{fps}\n")
