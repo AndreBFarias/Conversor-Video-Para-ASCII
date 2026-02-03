@@ -63,6 +63,10 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
 
+        render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()
+        if render_mode not in ('user', 'background', 'both'):
+            render_mode = 'both'
+
         auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
         auto_segmenter = None
         if auto_seg_enabled and AUTO_SEG_AVAILABLE:
@@ -194,6 +198,15 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
 
+            if render_mode == 'user':
+                resized_color[resized_mask > 127] = 0
+                mask_for_ascii = resized_mask
+            elif render_mode == 'background':
+                resized_color[resized_mask < 128] = 0
+                mask_for_ascii = 255 - resized_mask
+            else:
+                mask_for_ascii = np.zeros_like(resized_mask)
+
             dx = cv2.Sobel(resized_gray, cv2.CV_64F, 1, 0, ksize=3)
             dy = cv2.Sobel(resized_gray, cv2.CV_64F, 0, 1, ksize=3)
             magnitude = np.sqrt(dx**2 + dy**2)
@@ -201,7 +214,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             angle = np.arctan2(dy, dx)
 
             ascii_string = converter_frame_para_ascii(
-                resized_gray, resized_color, resized_mask,
+                resized_gray, resized_color, mask_for_ascii,
                 magnitude_norm, angle,
                 sobel_threshold, luminance_ramp,
                 output_format="file",

@@ -283,7 +283,7 @@ def run_realtime_ascii(config_path, video_path=None, overrides=None):
 
     # Sobel, Sharpen, Edge Boost, Temporal (com overrides)
     sobel_threshold = overrides.get('sobel_threshold') if overrides and 'sobel_threshold' in overrides else config.getint('Conversor', 'sobel_threshold', fallback=70)
-    luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT).rstrip('|')[::-1]
+    luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT).rstrip('|')
 
     sharpen_enabled = overrides.get('sharpen_enabled') if overrides and 'sharpen_enabled' in overrides else config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
     sharpen_amount = overrides.get('sharpen_amount') if overrides and 'sharpen_amount' in overrides else config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)

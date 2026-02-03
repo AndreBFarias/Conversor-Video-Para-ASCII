@@ -215,14 +215,12 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
 
         if render_mode == 'user':
             resized_color[resized_mask > 127] = 0
+            mask_for_ascii = resized_mask
         elif render_mode == 'background':
             resized_color[resized_mask < 128] = 0
-
-        if postfx_processor is not None:
-            try:
-                resized_color = postfx_processor.process(resized_color)
-            except Exception:
-                pass
+            mask_for_ascii = 255 - resized_mask
+        else:
+            mask_for_ascii = np.zeros_like(resized_mask)
 
         if temporal_enabled and prev_gray_frame is not None:
             diff = np.abs(resized_gray.astype(np.int32) - prev_gray_frame.astype(np.int32))
@@ -237,7 +235,7 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         angle = (angle + 180) % 180
         magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         frame_ascii = converter_frame_para_ascii(
-            resized_gray, resized_color, resized_mask, magnitude_norm, angle, sobel_threshold, luminance_ramp,
+            resized_gray, resized_color, mask_for_ascii, magnitude_norm, angle, sobel_threshold, luminance_ramp,
             output_format="file",
             edge_boost_enabled=edge_boost_enabled,
             edge_boost_amount=edge_boost_amount,
