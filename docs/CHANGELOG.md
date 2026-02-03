@@ -194,7 +194,7 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
 ## [2.0.0] - 2025-12-17
 
-### 🛡️ Compliance & Estrutura
+### Compliance e Estrutura
 - **Reestruturação Completa de Diretórios:**
   - `src/ui` -> `src/gui`
   - `src/assets` -> `assets/` (Root)
@@ -205,7 +205,7 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
   - README estritamente formatado conforme template visual
   - Scripts de lifecycle (`install.sh`, `uninstall.sh`) atualizados
 
-### ✨ Novas Funcionalidades
+### Novas Funcionalidades
 
 #### Sistema de Presets de Qualidade
 - Adicionado ComboBox com presets dinâmicos: Mobile (100x25), Low (120x30), Medium (180x45), High (240x60), Very High (300x75)
@@ -251,13 +251,13 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Range do `char_aspect_ratio` expandido: **0.01 a 2.0** (antes: 0.1 a 2.0)
 - Permite ajustes ultra-finos para resoluções altas
 
-### 🔧 Modificações
+### Modificacoes
 
 #### Arquivos Modificados
 - `src/main.py` - ComboBox de presets, detecção de modo, handlers
 - `src/core/calibrator.py` - Auto-detect, presets, refinamento morfológico
 - `src/core/converter.py` - Sharpen filter, Lanczos resize
-- `src/core/image_converter.py` - Sharpen filter, Lanczos resize  
+- `src/core/image_converter.py` - Sharpen filter, Lanczos resize
 - `src/core/pixel_art_converter.py` - Sharpen filter, Lanczos resize
 - `src/core/pixel_art_image_converter.py` - Sharpen filter, Lanczos resize
 - `src/ui/main.glade` - Adjustment de aspect_ratio (mínimo 0.01)
@@ -267,14 +267,14 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - `src/core/pixel_art_converter.py` - Conversor Pixel Art para vídeo
 - `src/core/pixel_art_image_converter.py` - Conversor Pixel Art para imagem
 
-### 📊 Estatísticas
+### Estatisticas
 - **~500 linhas adicionadas** ao código
 - **2 novos módulos** criados
 - **6 presets de qualidade** para cada modo (ASCII e Pixel Art)
 - **3 presets de chroma key** prontos para uso
 - **Zoom mínimo:** 0.5 (testado com 0.6 como padrão)
 
-### 👥 Contribuidores
+### Contribuidores
 - [@vitoriamaria](https://github.com/vitoriamaria) - Todas as funcionalidades desta versão
 
 ---

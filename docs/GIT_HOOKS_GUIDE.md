@@ -10,7 +10,7 @@ Este projeto utiliza 3 git hooks para automatizar validações e linkagem de com
 
 ---
 
-## Hook 1: pre-commit ✅
+## Hook 1: pre-commit [OK]
 
 ### Localização
 `.git/hooks/pre-commit`
@@ -74,11 +74,11 @@ fi
 ```
 
 ### Faz Sentido?
-✅ **SIM** - Essencial para evitar commits com código quebrado.
+[OK] **SIM** - Essencial para evitar commits com código quebrado.
 
 ---
 
-## Hook 2: commit-msg ✅
+## Hook 2: commit-msg [OK]
 
 ### Localização
 `.git/hooks/commit-msg`
@@ -140,11 +140,11 @@ Sprint: 2
 ```
 
 ### Faz Sentido?
-✅ **SIM** - Garante rastreabilidade e padronização de commits.
+[OK] **SIM** - Garante rastreabilidade e padronização de commits.
 
 ---
 
-## Hook 3: post-commit ✅ (NOVO)
+## Hook 3: post-commit [OK] (NOVO)
 
 ### Localização
 `.git/hooks/post-commit`
@@ -192,7 +192,7 @@ Automaticamente APÓS criar commit.
 ```
 
 ### Faz Sentido?
-✅ **SIM** - Automatiza linkagem entre commits e issues, reduz trabalho manual.
+[OK] **SIM** - Automatiza linkagem entre commits e issues, reduz trabalho manual.
 
 ---
 
@@ -260,7 +260,7 @@ Automaticamente APÓS criar commit.
 
 ## Análise: Hooks Fazem Sentido?
 
-### pre-commit ✅
+### pre-commit [OK]
 **Faz Sentido:** SIM
 
 **Motivos:**
@@ -271,7 +271,7 @@ Automaticamente APÓS criar commit.
 
 **Manter:** SIM
 
-### commit-msg ✅
+### commit-msg [OK]
 **Faz Sentido:** SIM
 
 **Motivos:**
@@ -286,7 +286,7 @@ Automaticamente APÓS criar commit.
 - BLOQUEAR commit se não tiver Issue/Sprint (atualmente apenas avisa)
 - Validar se Issue existe em Dev_log/
 
-### post-commit ✅ (NOVO)
+### post-commit [OK] (NOVO)
 **Faz Sentido:** SIM
 
 **Motivos:**
@@ -346,7 +346,7 @@ Automaticamente APÓS criar commit.
 - workflow_dispatch: permite rodar manualmente
 
 ### Faz Sentido?
-✅ **SIM** - Automatiza release e garante qualidade.
+[OK] **SIM** - Automatiza release e garante qualidade.
 
 **Melhorias Possíveis:**
 - Adicionar job de testes unitários

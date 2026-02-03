@@ -20,7 +20,7 @@ echo "[2/3] Instalando SDK..."
 flatpak install -y flathub org.gnome.Platform//45 org.gnome.Sdk//45 || true
 
 echo "[3/3] Construindo flatpak..."
-cd "${SCRIPT_DIR}"
+cd "${SCRIPT_DIR}/.."
 flatpak-builder --force-clean --user --install-deps-from=flathub --repo=repo build-dir "${APP_ID}.yml"
 
 echo "=== Build concluido ==="

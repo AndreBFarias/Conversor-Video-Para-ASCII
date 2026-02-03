@@ -1,0 +1,11 @@
+#!/bin/bash
+
+COMMIT_MSG_FILE="$1"
+
+if grep -iP "Co-Authored-By:.*(anthropic|claude|openai|chatgpt|gemini|copilot)" "$COMMIT_MSG_FILE" > /dev/null 2>&1; then
+    echo "[BLOQUEIO] Detectado Co-Authored-By de servico de IA no commit."
+    echo "   Remova a linha Co-Authored-By antes de commitar."
+    exit 1
+fi
+
+exit 0

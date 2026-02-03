@@ -6,8 +6,8 @@ Apenas a versão mais recente recebe atualizações de segurança.
 
 | Versão | Suporte |
 |--------|---------|
-| 1.0.x  | ✅ Suportada |
-| < 1.0  | ❌ Não suportada |
+| 1.0.x  | Sim Suportada |
+| < 1.0  | Nao Não suportada |
 
 ---
 

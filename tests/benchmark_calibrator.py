@@ -71,7 +71,7 @@ try:
         segmenter.process(test_frame)
         measure("AutoSegmenter.process (GPU)", lambda: segmenter.process(test_frame), iterations=5)
         segmenter.close()
-        
+
         segmenter_cpu = AutoSegmenter(use_gpu=False)
         segmenter_cpu.process(test_frame)
         measure("AutoSegmenter.process (CPU)", lambda: segmenter_cpu.process(test_frame), iterations=5)
@@ -89,7 +89,7 @@ try:
     # Warmup
     postfx.process(test_frame)
     measure("PostFX.process (bloom only, GPU)", lambda: postfx.process(test_frame), iterations=5)
-    
+
     postfx_cpu = PostFXProcessor(config, use_gpu=False)
     postfx_cpu.process(test_frame)
     measure("PostFX.process (bloom only, CPU)", lambda: postfx_cpu.process(test_frame), iterations=5)
@@ -134,25 +134,25 @@ print("\n--- 6. CUPY (se disponível) ---")
 try:
     import cupy as cp
     test_gpu = cp.asarray(test_frame)
-    
+
     def cupy_operations():
         result = cp.asarray(test_frame, dtype=cp.float32)
         result = result * 1.1
         result = cp.clip(result, 0, 255).astype(cp.uint8)
         return cp.asnumpy(result)
-    
+
     # Warmup
     cupy_operations()
     cp.cuda.Stream.null.synchronize()
-    
+
     measure("CuPy array ops + sync", cupy_operations, iterations=5)
-    
+
     def cupy_free_all():
         mempool = cp.get_default_memory_pool()
         mempool.free_all_blocks()
-    
+
     measure("CuPy free_all_blocks", cupy_free_all, iterations=5)
-    
+
 except Exception as e:
     print(f"  CuPy não disponível: {e}")
 
@@ -176,19 +176,19 @@ if 'AutoSegmenter.process (GPU)' in results:
     target_fps = 30
     max_time = 1000 / target_fps
     if seg_time > max_time * 0.5:
-        print(f"⚠️  AutoSegmenter ({seg_time:.1f}ms) consome >{50}% do tempo para {target_fps}FPS")
+        print(f"[AVISO]AutoSegmenter ({seg_time:.1f}ms) consome >{50}% do tempo para {target_fps}FPS")
         print("   → Considere: processar a cada N frames, reduzir resolução, ou usar CPU")
 
 if 'PIL ASCII render (loop Python)' in results:
     pil_time = results['PIL ASCII render (loop Python)']['avg_ms']
     if pil_time > 30:
-        print(f"⚠️  Renderização PIL ({pil_time:.1f}ms) é muito lenta")
+        print(f"[AVISO]Renderização PIL ({pil_time:.1f}ms) é muito lenta")
         print("   → Considere: pré-cachear atlas de caracteres, usar cv2.putText, ou kernels GPU")
 
 if 'CuPy free_all_blocks' in results:
     free_time = results['CuPy free_all_blocks']['avg_ms']
     if free_time > 5:
-        print(f"⚠️  CuPy free_all_blocks ({free_time:.1f}ms) causa stall")
+        print(f"[AVISO]CuPy free_all_blocks ({free_time:.1f}ms) causa stall")
         print("   → Considere: chamar menos frequentemente ou em thread separada")
 
 print("\nBenchmark concluído!")

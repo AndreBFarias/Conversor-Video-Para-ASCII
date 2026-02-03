@@ -181,7 +181,7 @@ with open(self.config_path, 'w', encoding='utf-8') as f:
     ↓
 [Opções chama reload_config()]  ← NOVO
     ↓
-[Opções lê self.config (ATUALIZADO)]  ✅
+[Opções lê self.config (ATUALIZADO)]  [OK]
     ↓
 [Usuário vê valores corretos]
 ```
@@ -281,15 +281,15 @@ def run_conversion(self, file_paths: list):
 
 ## Alternativas Consideradas
 
-### Opção A: Singleton Config Manager ❌
+### Opção A: Singleton Config Manager [REJEITADA]
 **Pro:** Única instância em memória
 **Contra:** Complexo, requer refatoração grande
 
-### Opção B: File Watcher ❌
+### Opção B: File Watcher [REJEITADA]
 **Pro:** Recarrega automaticamente
 **Contra:** Overhead, dependência extra (watchdog)
 
-### Opção C: Reload em Pontos-Chave ✅ (ESCOLHIDA)
+### Opção C: Reload em Pontos-Chave [OK] (ESCOLHIDA)
 **Pro:** Simples, mínimo de mudanças, confiável
 **Contra:** Precisa lembrar de chamar reload
 

@@ -27,35 +27,29 @@ def _setup_cuda_environment():
         user_site = site.getusersitepackages()
         cuda_nvrtc_lib = os.path.join(user_site, 'nvidia/cuda_nvrtc/lib')
         cuda_runtime_lib = os.path.join(user_site, 'nvidia/cuda_runtime/lib')
-        
+
         paths_to_add = []
         if os.path.exists(cuda_nvrtc_lib):
             paths_to_add.append(cuda_nvrtc_lib)
         if os.path.exists(cuda_runtime_lib):
             paths_to_add.append(cuda_runtime_lib)
-            
+
         if paths_to_add:
              current_ld = os.environ.get('LD_LIBRARY_PATH', '')
              new_paths = ':'.join(paths_to_add)
-             
+
              # Avoid re-adding if already present
              if cuda_nvrtc_lib not in current_ld:
                  if current_ld:
                      new_ld = new_paths + ':' + current_ld
                  else:
                      new_ld = new_paths
-                 
+
                  env_copy = os.environ.copy()
                  env_copy['LD_LIBRARY_PATH'] = new_ld
                  env_copy['_CUDA_SETUP_DONE'] = '1'
-                 
-                 # Re-execute the process with new environment
-                 # print(f"Reiniciando processo com LD_LIBRARY_PATH atualizado: {new_ld}")
-                 try:
-                     os.execvte(sys.executable, [sys.executable] + sys.argv, env_copy)
-                 except AttributeError:
-                      # Fallback for systems without execvte (should not happen on linux, but safety)
-                      os.execve(sys.executable, [sys.executable] + sys.argv, env_copy)
+
+                 os.execve(sys.executable, [sys.executable] + sys.argv, env_copy)
 
     except Exception as e:
         pass # Falha silenciosa eh aceitavel se nao tiver GPU
@@ -67,7 +61,7 @@ def _ensure_config_exists():
     """Copia config.ini padrão para ~/.config/extase-em-4r73/ se não existir."""
     from src.app.constants import CONFIG_PATH, DEFAULT_CONFIG_PATH, USER_CONFIG_DIR
     import shutil
-    
+
     if not os.path.exists(CONFIG_PATH):
         try:
             if os.path.exists(DEFAULT_CONFIG_PATH):

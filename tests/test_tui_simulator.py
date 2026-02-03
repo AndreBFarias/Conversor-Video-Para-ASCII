@@ -83,10 +83,10 @@ class TUISimulator:
 
     def _print_test(self, name: str, status: str, duration: float = 0):
         if status == "PASS":
-            icon = f"{Colors.GREEN}✓{Colors.ENDC}"
+            icon = f"{Colors.GREEN}[OK]{Colors.ENDC}"
             status_text = f"{Colors.GREEN}PASS{Colors.ENDC}"
         elif status == "FAIL":
-            icon = f"{Colors.FAIL}✗{Colors.ENDC}"
+            icon = f"{Colors.FAIL}[FALHOU]{Colors.ENDC}"
             status_text = f"{Colors.FAIL}FAIL{Colors.ENDC}"
         elif status == "SKIP":
             icon = f"{Colors.WARNING}○{Colors.ENDC}"
@@ -377,9 +377,9 @@ class TUISimulator:
             print()
 
         if failed == 0:
-            print(f"{Colors.GREEN}{Colors.BOLD}✓ TODOS OS TESTES PASSARAM!{Colors.ENDC}")
+            print(f"{Colors.GREEN}{Colors.BOLD}[OK] TODOS OS TESTES PASSARAM!{Colors.ENDC}")
         else:
-            print(f"{Colors.FAIL}{Colors.BOLD}✗ {failed} TESTE(S) FALHOU(ARAM){Colors.ENDC}")
+            print(f"{Colors.FAIL}{Colors.BOLD}[FALHOU] {failed} TESTE(S) FALHOU(ARAM){Colors.ENDC}")
 
         return failed == 0
 

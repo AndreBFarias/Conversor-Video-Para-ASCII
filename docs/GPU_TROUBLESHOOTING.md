@@ -147,7 +147,7 @@ python tests/stress/test_gpu_stress.py
 |----------|-------------|
 | `[GPUManager] Inicializado: ...` | GPU detectada corretamente |
 | `[Calibrator] Modo CPU` | Usando processamento CPU |
-| `[Calibrator] ⚠️ Ativando fallback CPU` | Memória baixa, mudando para CPU |
+| `[Calibrator] [AVISO]Ativando fallback CPU` | Memória baixa, mudando para CPU |
 | `[GPUConverter] Recursos liberados` | Cleanup bem-sucedido |
 | `[PostFX] Bloom GPU falhou, usando CPU` | Fallback de efeito |
 

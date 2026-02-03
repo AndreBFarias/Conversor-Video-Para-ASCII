@@ -251,14 +251,7 @@ jobs:
 
           Conversor de videos para arte ASCII colorida com GPU CUDA.
 
-          ### Novidades nesta versao
-
-          **Edge Boost & UI Reorganizada (v2.4)**
-          - **Edge Boost:** Realce de bordas para ASCII mais denso, controle de intensidade, chars especiais de borda
-          - **Temporal Coherence:** Reducao de flickering entre frames com threshold ajustavel
-          - **Auto Seg CPU Fallback:** Segmentacao automatica funciona sem GPU/CUDA
-          - **UI Reorganizada:** Controles Braille/Temporal/Edge no bloco HSV, GPU block mais compacto
-          - **Correções Críticas:** Tipos float corrigidos no OpenCV, integração completa do edge_boost
+          Veja CHANGELOG.md para detalhes das mudancas nesta versao.
 
           ### Instalacao
 
@@ -284,6 +277,6 @@ jobs:
           - Python 3.10+
           - GTK 3.0
           - GPU NVIDIA com CUDA 12.x (opcional, para aceleracao)
-        generate_release_notes: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

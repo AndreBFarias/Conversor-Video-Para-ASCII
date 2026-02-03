@@ -178,7 +178,7 @@ Após executar os testes, gerar um relatório em `Dev_log/Commercial_Report_Spri
 
 ### Feature 1: [Nome]
 
-**Status:** ✅ Aprovado / ❌ Falhou / ⚠️ Parcial
+**Status:** [OK] Aprovado / [FALHOU] Falhou / [PARCIAL] Parcial
 
 **Screenshots:**
 

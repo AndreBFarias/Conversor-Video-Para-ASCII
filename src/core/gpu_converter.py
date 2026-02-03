@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 import cv2
 import numpy as np
-import cupy as cp
+try:
+    import cupy as cp
+    CUPY_AVAILABLE = True
+except ImportError:
+    cp = None
+    CUPY_AVAILABLE = False
 import os
 import sys
 import configparser
