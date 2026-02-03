@@ -33,6 +33,7 @@ PIXEL_ART_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_converter
 PIXEL_ART_IMAGE_CONVERTER_SCRIPT = os.path.join(BASE_DIR, "core", "pixel_art_image_converter.py")
 GTK_CALIBRATOR_SCRIPT = os.path.join(BASE_DIR, "core", "gtk_calibrator.py")
 REALTIME_SCRIPT = os.path.join(BASE_DIR, "core", "realtime_ascii.py")
+GTK_FULLSCREEN_PLAYER_SCRIPT = os.path.join(BASE_DIR, "core", "gtk_fullscreen_player.py")
 
 QUALITY_PRESETS = {
     'mobile': {'width': 100, 'height': 25, 'aspect': 0.50, 'zoom': 1.0},
@@ -64,7 +65,7 @@ LUMINANCE_RAMPS = {
     },
     'blocks': {
         'name': 'Blocos Unicode',
-        'ramp': "█▓▒░ "
+        'ramp': " "
     },
     'minimal': {
         'name': 'Minimalista (5 chars)',
@@ -76,7 +77,7 @@ LUMINANCE_RAMPS = {
     },
     'dots': {
         'name': 'Pontos',
-        'ramp': "●◉◎○. "
+        'ramp': ". "
     },
     'detailed': {
         'name': 'Detalhado (Dense)',
@@ -92,7 +93,7 @@ LUMINANCE_RAMPS = {
     },
     'arrows': {
         'name': 'Setas/Simbolos',
-        'ramp': "▼▲►◄■□●○·  "
+        'ramp': "  "
     },
 }
 
@@ -204,7 +205,7 @@ STYLE_PRESETS = {
     },
     'retro': {
         'name': 'Retro (Blocos)',
-        'luminance_ramp': "█▓▒░ ", # Blocos
+        'luminance_ramp': " ", # Blocos
         'sobel': 150, # Menos ruido
         'sharpen_amount': 0.0,
         'aspect': 0.6
