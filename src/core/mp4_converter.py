@@ -15,7 +15,8 @@ if BASE_DIR not in sys.path:
 from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
-from src.core.renderer import render_ascii_as_image
+from src.core.renderer import render_ascii_as_image, ASCII_CHAR_WIDTH, ASCII_CHAR_HEIGHT
+from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
 
 try:
     from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
@@ -214,6 +215,16 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
 
             frame_image = render_ascii_as_image(ascii_string, font_scale=0.5)
 
+            expected_h = target_height * ASCII_CHAR_HEIGHT
+            expected_w = target_width * ASCII_CHAR_WIDTH
+            fh, fw = frame_image.shape[:2]
+            if fh != expected_h or fw != expected_w:
+                canvas = np.zeros((expected_h, expected_w, 3), dtype=np.uint8)
+                copy_h = min(fh, expected_h)
+                copy_w = min(fw, expected_w)
+                canvas[:copy_h, :copy_w] = frame_image[:copy_h, :copy_w]
+                frame_image = canvas
+
             if postfx_processor:
                 frame_image = postfx_processor.process(frame_image)
 
@@ -252,36 +263,10 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
             raise RuntimeError(f"Erro ao criar video: {result.stderr}")
 
         print("Extraindo audio do video original...")
-        temp_audio = os.path.join(temp_dir, "audio.aac")
-        cmd_audio = [
-            'ffmpeg', '-y',
-            '-i', video_path,
-            '-vn',
-            '-acodec', 'copy',
-            temp_audio
-        ]
+        temp_audio = extract_audio_as_aac(video_path, temp_dir)
 
-        result = subprocess.run(cmd_audio, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        has_audio = result.returncode == 0 and os.path.exists(temp_audio)
-
-        if has_audio:
-            print("Muxando video + audio...")
-            cmd_mux = [
-                'ffmpeg', '-y',
-                '-i', temp_video,
-                '-i', temp_audio,
-                '-c:v', 'copy',
-                '-c:a', 'aac',
-                '-b:a', '192k',
-                '-shortest',
-                output_mp4
-            ]
-            result = subprocess.run(cmd_mux, capture_output=True, text=True, encoding='utf-8', errors='replace')
-            if result.returncode != 0:
-                raise RuntimeError(f"Erro ao muxar: {result.stderr}")
-        else:
-            print("Video sem audio, copiando video ASCII...")
-            shutil.copy(temp_video, output_mp4)
+        print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+        mux_video_audio(temp_video, temp_audio, output_mp4)
 
         print(f"Video ASCII criado: {output_mp4}")
         return output_mp4

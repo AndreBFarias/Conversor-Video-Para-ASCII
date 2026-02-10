@@ -115,51 +115,51 @@ class PostFXActionsMixin:
 
     def on_bloom_enabled_toggled(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_bloom_intensity_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_bloom_radius_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_bloom_threshold_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_chromatic_enabled_toggled(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_chromatic_shift_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_scanlines_enabled_toggled(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_scanlines_intensity_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_scanlines_spacing_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_glitch_enabled_toggled(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_glitch_intensity_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
     def on_glitch_block_size_changed(self, widget):
         self._save_postfx_config()
-        self._save_config_to_file()
+        self.save_config()
 
 
 # "A simplicidade e a sofisticacao suprema." - Leonardo da Vinci

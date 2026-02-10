@@ -941,7 +941,7 @@
                       </object>
                       <packing><property name="left-attach">1</property><property name="top-attach">4</property></packing>
                     </child>
-                    
+
                     <child>
                         <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -984,6 +984,8 @@
                           <item id="mp4" translatable="yes">Vídeo (.mp4)</item>
                           <item id="gif" translatable="yes">GIF Animado (.gif)</item>
                           <item id="html" translatable="yes">HTML Web (.html)</item>
+                          <item id="png_first" translatable="yes">PNG (1o Frame)</item>
+                          <item id="png_all" translatable="yes">PNG (Todos os Frames)</item>
                         </items>
                       </object>
                       <packing><property name="left-attach">1</property><property name="top-attach">6</property></packing>
@@ -1006,7 +1008,7 @@
                       </object>
                       <packing><property name="left-attach">1</property><property name="top-attach">7</property></packing>
                     </child>
-                    
+
                     <child>
                         <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -1150,7 +1152,7 @@
                         </object>
                       <packing><property name="left-attach">1</property><property name="top-attach">11</property></packing>
                     </child>
-                    
+
                     <child>
                         <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -1177,7 +1179,7 @@
                     <property name="position">0</property>
                   </packing>
                 </child>
-                
+
                 <child>
                   <object class="GtkLabel">
                     <property name="visible">True</property>

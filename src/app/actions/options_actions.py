@@ -237,22 +237,22 @@ class OptionsActionsMixin:
             return
 
         preset = STYLE_PRESETS[preset_id]
-        
+
         # Aplicar valores nos widgets
         if hasattr(self, 'opt_sobel_spin') and self.opt_sobel_spin:
              self.opt_sobel_spin.set_value(preset['sobel'])
-             
+
         if hasattr(self, 'opt_aspect_spin') and self.opt_aspect_spin:
              self.opt_aspect_spin.set_value(preset['aspect'])
-             
+
         if 'sharpen_amount' in preset:
              # Sharpen nao tem spin na UI padrao das options?
              # Se nao tiver, setamos no config direto ao salvar, ou ignoramos visualmente?
-             # O Session Summary diz "sharpen_enabled = True" e "sharpen_amount = 0.5" 
+             # O Session Summary diz "sharpen_enabled = True" e "sharpen_amount = 0.5"
              # Mas nao vi widget para sharpen no view_file do options_actions.py (soh sobel e aspect)
              # Vamos assumir que soh sobel/aspect/luminance estao expostos
              pass
-             
+
         if hasattr(self, 'opt_luminance_entry') and self.opt_luminance_entry:
              self.opt_luminance_entry.set_text(preset['luminance_ramp'])
 
@@ -362,7 +362,7 @@ class OptionsActionsMixin:
 
             if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
                 fmt = self.config.get('Output', 'format', fallback='txt')
-                fmt_map = {'txt': 0, 'mp4': 1, 'gif': 2, 'html': 3}
+                fmt_map = {'txt': 0, 'mp4': 1, 'gif': 2, 'html': 3, 'png_first': 4, 'png_all': 5}
                 self.pref_format_combo.set_active(fmt_map.get(fmt, 0))
 
             if hasattr(self, 'pref_theme_combo') and self.pref_theme_combo:
@@ -372,7 +372,7 @@ class OptionsActionsMixin:
             if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
                 gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=True)
                 self.pref_gpu_switch.set_active(gpu_enabled)
-                
+
             if hasattr(self, 'pref_render_mode_combo') and self.pref_render_mode_combo:
                 render_mode = self.config.get('Conversor', 'gpu_render_mode', fallback='fast')
                 self.pref_render_mode_combo.set_active_id(render_mode) or self.pref_render_mode_combo.set_active(0)
@@ -455,16 +455,45 @@ class OptionsActionsMixin:
                 # GtkComboBoxText supports set_active_id
                 if not self.pref_style_combo.set_active_id(style):
                     self.pref_style_combo.set_active(0) # Default to first if fail
-                
+
                 # Connect signal manually (disconnect first to avoid duplicates if re-opened?)
-                # Gtk signals don't automatically deduplicate. 
-                # Simpler: id = connect(). Store id? 
+                # Gtk signals don't automatically deduplicate.
+                # Simpler: id = connect(). Store id?
                 # Or just don't worry too much for now, or check if connected.
                 try:
                     self.pref_style_combo.disconnect_by_func(self.on_pref_style_combo_changed)
                 except:
                     pass
                 self.pref_style_combo.connect("changed", self.on_pref_style_combo_changed)
+
+            if hasattr(self, 'pref_matrix_switch') and self.pref_matrix_switch:
+                self.pref_matrix_switch.set_active(self.config.getboolean('MatrixRain', 'enabled', fallback=False))
+            if hasattr(self, 'pref_matrix_mode_combo') and self.pref_matrix_mode_combo:
+                self.pref_matrix_mode_combo.set_active_id(self.config.get('MatrixRain', 'mode', fallback='overlay'))
+            if hasattr(self, 'pref_matrix_charset_combo') and self.pref_matrix_charset_combo:
+                self.pref_matrix_charset_combo.set_active_id(self.config.get('MatrixRain', 'char_set', fallback='katakana'))
+            if hasattr(self, 'pref_matrix_particles_spin') and self.pref_matrix_particles_spin:
+                self.pref_matrix_particles_spin.set_value(self.config.getint('MatrixRain', 'num_particles', fallback=5000))
+            if hasattr(self, 'pref_matrix_speed_scale') and self.pref_matrix_speed_scale:
+                self.pref_matrix_speed_scale.set_value(self.config.getfloat('MatrixRain', 'speed_multiplier', fallback=1.0))
+
+            if hasattr(self, 'pref_optical_flow_switch') and self.pref_optical_flow_switch:
+                self.pref_optical_flow_switch.set_active(self.config.getboolean('OpticalFlow', 'enabled', fallback=False))
+            if hasattr(self, 'pref_optical_flow_fps_combo') and self.pref_optical_flow_fps_combo:
+                self.pref_optical_flow_fps_combo.set_active_id(self.config.get('OpticalFlow', 'target_fps', fallback='30'))
+            if hasattr(self, 'pref_optical_flow_quality_combo') and self.pref_optical_flow_quality_combo:
+                self.pref_optical_flow_quality_combo.set_active_id(self.config.get('OpticalFlow', 'quality', fallback='medium'))
+
+            if hasattr(self, 'pref_audio_switch') and self.pref_audio_switch:
+                self.pref_audio_switch.set_active(self.config.getboolean('Audio', 'enabled', fallback=False))
+            if hasattr(self, 'pref_audio_bass_scale') and self.pref_audio_bass_scale:
+                self.pref_audio_bass_scale.set_value(self.config.getfloat('Audio', 'bass_sensitivity', fallback=1.0))
+            if hasattr(self, 'pref_audio_mids_scale') and self.pref_audio_mids_scale:
+                self.pref_audio_mids_scale.set_value(self.config.getfloat('Audio', 'mids_sensitivity', fallback=1.0))
+            if hasattr(self, 'pref_audio_treble_scale') and self.pref_audio_treble_scale:
+                self.pref_audio_treble_scale.set_value(self.config.getfloat('Audio', 'treble_sensitivity', fallback=1.0))
+
+            self._load_postfx_config()
 
         except Exception as e:
             self.logger.error(f"Erro ao carregar opcoes: {e}")
@@ -507,7 +536,7 @@ class OptionsActionsMixin:
         if hasattr(self, 'pref_theme_combo') and self.pref_theme_combo:
             self.pref_theme_combo.set_active_id('dark')
 
-            
+
         if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
             self.pref_gpu_switch.set_active(False)
 
@@ -706,7 +735,8 @@ class OptionsActionsMixin:
             if hasattr(self, 'pref_format_combo') and self.pref_format_combo:
                 if 'Output' not in self.config:
                     self.config.add_section('Output')
-                fmt_list = ['txt', 'mp4', 'gif', 'html']
+                fmt_list = ['txt', 'mp4', 'gif', 'html', 'png_first', 'png_all']
+                active = self.pref_format_combo.get_active()
                 if 0 <= active < len(fmt_list):
                     self.config.set('Output', 'format', fmt_list[active])
 
@@ -716,6 +746,49 @@ class OptionsActionsMixin:
                     if 'Interface' not in self.config:
                         self.config.add_section('Interface')
                     self.config.set('Interface', 'theme', current_theme_id)
+
+            if hasattr(self, 'pref_matrix_switch') and self.pref_matrix_switch:
+                if not self.config.has_section('MatrixRain'):
+                    self.config.add_section('MatrixRain')
+                self.config.set('MatrixRain', 'enabled', str(self.pref_matrix_switch.get_active()).lower())
+            if hasattr(self, 'pref_matrix_mode_combo') and self.pref_matrix_mode_combo:
+                if not self.config.has_section('MatrixRain'):
+                    self.config.add_section('MatrixRain')
+                self.config.set('MatrixRain', 'mode', self.pref_matrix_mode_combo.get_active_id() or 'overlay')
+            if hasattr(self, 'pref_matrix_charset_combo') and self.pref_matrix_charset_combo:
+                if not self.config.has_section('MatrixRain'):
+                    self.config.add_section('MatrixRain')
+                self.config.set('MatrixRain', 'char_set', self.pref_matrix_charset_combo.get_active_id() or 'katakana')
+            if hasattr(self, 'pref_matrix_particles_spin') and self.pref_matrix_particles_spin:
+                if not self.config.has_section('MatrixRain'):
+                    self.config.add_section('MatrixRain')
+                self.config.set('MatrixRain', 'num_particles', str(int(self.pref_matrix_particles_spin.get_value())))
+            if hasattr(self, 'pref_matrix_speed_scale') and self.pref_matrix_speed_scale:
+                if not self.config.has_section('MatrixRain'):
+                    self.config.add_section('MatrixRain')
+                self.config.set('MatrixRain', 'speed_multiplier', str(self.pref_matrix_speed_scale.get_value()))
+
+            if hasattr(self, 'pref_optical_flow_switch') and self.pref_optical_flow_switch:
+                if not self.config.has_section('OpticalFlow'):
+                    self.config.add_section('OpticalFlow')
+                self.config.set('OpticalFlow', 'enabled', str(self.pref_optical_flow_switch.get_active()).lower())
+                if hasattr(self, 'pref_optical_flow_fps_combo') and self.pref_optical_flow_fps_combo:
+                    self.config.set('OpticalFlow', 'target_fps', self.pref_optical_flow_fps_combo.get_active_id() or '30')
+                if hasattr(self, 'pref_optical_flow_quality_combo') and self.pref_optical_flow_quality_combo:
+                    self.config.set('OpticalFlow', 'quality', self.pref_optical_flow_quality_combo.get_active_id() or 'medium')
+
+            if hasattr(self, 'pref_audio_switch') and self.pref_audio_switch:
+                if not self.config.has_section('Audio'):
+                    self.config.add_section('Audio')
+                self.config.set('Audio', 'enabled', str(self.pref_audio_switch.get_active()).lower())
+                if hasattr(self, 'pref_audio_bass_scale') and self.pref_audio_bass_scale:
+                    self.config.set('Audio', 'bass_sensitivity', str(self.pref_audio_bass_scale.get_value()))
+                if hasattr(self, 'pref_audio_mids_scale') and self.pref_audio_mids_scale:
+                    self.config.set('Audio', 'mids_sensitivity', str(self.pref_audio_mids_scale.get_value()))
+                if hasattr(self, 'pref_audio_treble_scale') and self.pref_audio_treble_scale:
+                    self.config.set('Audio', 'treble_sensitivity', str(self.pref_audio_treble_scale.get_value()))
+
+            self._save_postfx_config()
 
             self.save_config()
 

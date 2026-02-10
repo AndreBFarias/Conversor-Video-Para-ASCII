@@ -63,7 +63,7 @@ class ConversionActionsMixin:
 
         if response == Gtk.ResponseType.CANCEL:
             return
-        
+
         interactive_mode = (response == 101)
 
         thread = threading.Thread(target=self.run_conversion, args=(video_paths, interactive_mode))
@@ -119,6 +119,10 @@ class ConversionActionsMixin:
                 output_filename = os.path.splitext(file_name)[0] + "_ascii.gif"
             elif output_format == 'html':
                 output_filename = os.path.splitext(file_name)[0] + "_player.html"
+            elif output_format == 'png_first':
+                output_filename = os.path.splitext(file_name)[0] + "_ascii.png"
+            elif output_format == 'png_all':
+                output_filename = os.path.splitext(file_name)[0] + "_png_frames"
             else:
                 output_filename = os.path.splitext(file_name)[0] + ".txt"
 
@@ -130,7 +134,7 @@ class ConversionActionsMixin:
 
             if output_format == 'mp4' and not self._is_image_file(file_path):
                 gpu_enabled = self.config.getboolean('Conversor', 'gpu_enabled', fallback=True)
-                
+
                 try:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
@@ -195,8 +199,52 @@ class ConversionActionsMixin:
                     GLib.idle_add(self.on_conversion_update, f"Erro: {file_name} - {e}")
                 continue
 
+            if output_format == 'png_first' and not self._is_image_file(file_path):
+                from src.core.png_converter import converter_video_para_png_primeiro
+                try:
+                    def progress_cb(current, total_frames, frame_data=None):
+                        sub_progress = (i + (current / total_frames)) / total
+                        GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
+                        if frame_data is not None:
+                            GLib.idle_add(self._update_thumbnail, frame_data)
+
+                    output_file = converter_video_para_png_primeiro(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
+                    output_files.append(output_file)
+                    self.logger.info(f"PNG (1o frame) gerado: {output_file}")
+                except Exception as e:
+                    self.logger.error(f"Erro ao converter {file_name} para PNG: {e}")
+                    GLib.idle_add(self.on_conversion_update, f"Erro: {file_name} - {e}")
+                continue
+
+            if output_format == 'png_all' and not self._is_image_file(file_path):
+                from src.core.png_converter import converter_video_para_png_todos
+                try:
+                    def progress_cb(current, total_frames, frame_data=None):
+                        sub_progress = (i + (current / total_frames)) / total
+                        GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
+                        if frame_data is not None:
+                            GLib.idle_add(self._update_thumbnail, frame_data)
+
+                    output_file = converter_video_para_png_todos(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
+                    output_files.append(output_file)
+                    self.logger.info(f"PNG (todos frames) gerado: {output_file}")
+                except Exception as e:
+                    self.logger.error(f"Erro ao converter {file_name} para PNG: {e}")
+                    GLib.idle_add(self.on_conversion_update, f"Erro: {file_name} - {e}")
+                continue
+
             if self._is_image_file(file_path):
-                if conversion_mode == 'pixelart':
+                if output_format in ('png_first', 'png_all'):
+                    from src.core.png_converter import converter_imagem_para_png
+                    try:
+                        output_file = converter_imagem_para_png(file_path, self.output_dir, self.config, chroma_override=chroma_override)
+                        output_files.append(output_file)
+                        self.logger.info(f"Imagem PNG gerada: {output_file}")
+                    except Exception as e:
+                        self.logger.error(f"Erro ao converter imagem {file_name} para PNG: {e}")
+                        GLib.idle_add(self.on_conversion_update, f"Erro: {file_name} - {e}")
+                    continue
+                elif conversion_mode == 'pixelart':
                     cmd = [python_executable, PIXEL_ART_IMAGE_CONVERTER_SCRIPT, "--image", file_path, "--config", self.config_path, "--output-dir", self.output_dir]
                     script_name = PIXEL_ART_IMAGE_CONVERTER_SCRIPT
                 else:
@@ -328,7 +376,7 @@ class ConversionActionsMixin:
             self.preview_thumbnail.set_visible(False)
         if hasattr(self, 'preview_frame') and self.preview_frame:
             self.preview_frame.set_visible(False)
-            
+
         # Forcar redimensionamento da janela para o minimo possivel (compactar)
         if hasattr(self, 'window') and self.window:
             # Reseta qualquer requisicao de tamanho anterior que possa estar segurando a janela aberta
@@ -337,7 +385,7 @@ class ConversionActionsMixin:
             # Forcar processamento de eventos pendentes para garantir o resize
             while Gtk.events_pending():
                 Gtk.main_iteration()
-            
+
         return False
 
     def on_conversion_update(self, message: str):

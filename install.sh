@@ -50,7 +50,7 @@ if ! "${SCRIPT_DIR}/venv/bin/python3" -c "import gi; print('GTK bindings OK')" &
     echo "      Isso geralmente significa que 'python3-gi' nao esta instalado ou o venv nao foi criado com acesso aos pacotes do sistema."
     echo "      Tentando corrigir instalando dependencias novamente..."
     sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0
-    
+
     # Re-check
     if ! "${SCRIPT_DIR}/venv/bin/python3" -c "import gi" &> /dev/null; then
          echo "FATAL: Ainda nao foi possivel acessar 'gi' no venv. Abortando."
@@ -198,5 +198,7 @@ fi
 echo "=== Ritual Concluido ==="
 echo "Voce agora pode encontrar '${APP_DISPLAY_NAME}' no seu menu de aplicativos."
 echo "Para invocar manualmente, navegue ate '${SCRIPT_DIR}' e execute:"
-echo "source venv/bin/activate"
-echo "python3 main.py"
+echo "  source venv/bin/activate"
+echo "  python3 main.py          # GUI GTK"
+echo "  python cli.py info       # CLI headless (diagnostico)"
+echo "  python cli.py --help     # CLI ajuda completa"

@@ -2,11 +2,15 @@
 import cv2
 import os
 import sys
+import subprocess
+import logging
 import numpy as np
 import configparser
 import json
 import zlib
 import base64
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -30,7 +34,7 @@ def generate_ansi_palette():
     ]
     for i, hex_c in enumerate(standard):
         palette[i] = hex_c
-    
+
     # 16-231: 6x6x6
     steps = [0, 95, 135, 175, 215, 255]
     for i in range(216):
@@ -38,12 +42,12 @@ def generate_ansi_palette():
         g = steps[(i // 6) % 6]
         b = steps[i % 6]
         palette[16 + i] = f'#{r:02x}{g:02x}{b:02x}'
-        
+
     # 232-255: Grayscale
     for i in range(24):
         v = 8 + 10 * i
         palette[232 + i] = f'#{v:02x}{v:02x}{v:02x}'
-        
+
     return palette
 
 HTML_TEMPLATE = """
@@ -99,7 +103,7 @@ HTML_TEMPLATE = """
             font-weight: bold;
         }
         button:hover { background-color: #2ea043; }
-        
+
         /* Paleta ANSI */
         {CSS_PALETTE}
     </style>
@@ -108,12 +112,16 @@ HTML_TEMPLATE = """
 
     <div id="player-container">
         <div id="ascii-display">Carregando...</div>
-        
+
         <div id="controls">
             <button id="btn-play">Play</button>
             <button id="btn-pause" style="display:none;">Pause</button>
             <input type="range" id="scrubber" min="0" max="0" value="0" style="width: 300px;">
             <span id="time-display">00:00 / 00:00</span>
+            <span id="volume-control" style="display:none; margin-left: 10px;">
+                <span style="font-size: 12px;">Vol:</span>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" style="width: 80px; vertical-align: middle;">
+            </span>
         </div>
     </div>
 
@@ -123,67 +131,78 @@ HTML_TEMPLATE = """
         // Cada Linha e uma String ja com HTML spans otimizados ou dados brutos?
         // Vamos usar dados brutos comprimidos para evitar HTML gigante na string JS.
         // [ [ [char_code, color_code, char_code, color_code...], ...linhas ], ...frames ]
-        
-        const rawFrames = {FRAMES_DATA}; 
+
+        const rawFrames = {FRAMES_DATA};
         const meta = {METADATA};
-        
+
         let currentFrame = 0;
         let isPlaying = false;
         let fps = meta.fps;
         let intervalId = null;
         let frameCache = [];
-        
+
         const display = document.getElementById('ascii-display');
         const btnPlay = document.getElementById('btn-play');
         const btnPause = document.getElementById('btn-pause');
         const scrubber = document.getElementById('scrubber');
         const timeDisplay = document.getElementById('time-display');
-        
-        // Ajuste inicial
+        const volumeControl = document.getElementById('volume-control');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        let audioEl = null;
+        if (meta.hasAudio && meta.audioFile) {
+            audioEl = new Audio(meta.audioFile);
+            audioEl.volume = 0.8;
+            audioEl.preload = 'auto';
+            volumeControl.style.display = 'inline';
+
+            volumeSlider.addEventListener('input', (e) => {
+                if (audioEl) audioEl.volume = parseInt(e.target.value) / 100;
+            });
+
+            audioEl.addEventListener('error', () => {
+                volumeControl.style.display = 'none';
+                audioEl = null;
+            });
+        }
+
         display.style.fontSize = `${meta.fontSize}px`;
         display.style.lineHeight = `${meta.fontSize}px`;
-        
+
         scrubber.max = rawFrames.length - 1;
-        
-        // Pre-render frames to HTML strings to avoid lag during playback
+
         function preRenderFrame(frameIndex) {
             if (frameCache[frameIndex]) return frameCache[frameIndex];
-            
+
             const frameData = rawFrames[frameIndex];
             if (!frameData) return "";
-            
+
             let html = "";
-            // frameData e uma unica string longa: "char_code,color_code,char_code,color_code..." (separada por virgula ou array int)
-            // Para otimizar o python exportou array de ints flattened.
-            // Mas JS Arrays de ints grandes sao pesados? Vamos testar.
-            
-            // Layout: width caracteres por linha.
             const w = meta.width;
             let col = 0;
-            
+
             for (let i = 0; i < frameData.length; i += 2) {
                 const charCode = frameData[i];
                 const colorCode = frameData[i+1];
                 const char = String.fromCharCode(charCode);
-                
-                // Otimizacao: Se for espaco, nao precisa de span se background for preto
+
                 if (charCode === 32) {
                     html += " ";
                 } else {
                     html += `<span class="c${colorCode}">${char}</span>`;
                 }
-                
+
                 col++;
                 if (col >= w) {
                     html += "\\n";
                     col = 0;
                 }
             }
-            
+
             frameCache[frameIndex] = html;
             return html;
         }
-        
+
         function updateDisplay() {
             if (rawFrames[currentFrame]) {
                 const html = preRenderFrame(currentFrame);
@@ -192,49 +211,57 @@ HTML_TEMPLATE = """
                 updateTime();
             }
         }
-        
+
         function updateTime() {
             const currentSec = Math.floor(currentFrame / fps);
             const totalSec = Math.floor(rawFrames.length / fps);
             timeDisplay.textContent = `${formatTime(currentSec)} / ${formatTime(totalSec)}`;
         }
-        
+
         function formatTime(s) {
             const m = Math.floor(s / 60).toString().padStart(2, '0');
             const sec = (s % 60).toString().padStart(2, '0');
             return `${m}:${sec}`;
         }
-        
+
         function play() {
             isPlaying = true;
             btnPlay.style.display = 'none';
             btnPause.style.display = 'inline-block';
+
+            if (audioEl) {
+                audioEl.currentTime = currentFrame / fps;
+                audioEl.play().catch(() => {});
+            }
+
             intervalId = setInterval(() => {
                 currentFrame++;
                 if (currentFrame >= rawFrames.length) {
                     currentFrame = 0;
+                    if (audioEl) audioEl.currentTime = 0;
                 }
                 updateDisplay();
             }, 1000 / fps);
         }
-        
+
         function pause() {
             isPlaying = false;
             btnPlay.style.display = 'inline-block';
             btnPause.style.display = 'none';
             clearInterval(intervalId);
+            if (audioEl) audioEl.pause();
         }
-        
+
         btnPlay.addEventListener('click', play);
         btnPause.addEventListener('click', pause);
-        
+
         scrubber.addEventListener('input', (e) => {
             pause();
             currentFrame = parseInt(e.target.value);
             updateDisplay();
+            if (audioEl) audioEl.currentTime = currentFrame / fps;
         });
-        
-        // Renderizar primeiro frame
+
         updateDisplay();
     </script>
 </body>
@@ -283,9 +310,9 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         target_height = config_height
     else:
         target_height = int((target_width * source_height * char_aspect_ratio) / source_width)
-    
+
     target_dimensions = (target_width, target_height)
-    
+
     # Chroma Key
     if chroma_override:
         lower_green = np.array([
@@ -309,7 +336,7 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
     frames_data = []
     processed_count = 0
     read_count = 0
-    
+
     from src.core.renderer import render_ascii_as_image
 
     print(f"HTML Export: {target_width}x{target_height} @ {target_fps}fps (Colorido)")
@@ -318,11 +345,11 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         sucesso, frame_colorido = captura.read()
         if not sucesso:
             break
-            
+
         if read_count % frame_interval != 0:
             read_count += 1
             continue
-            
+
         read_count += 1
         processed_count += 1
 
@@ -341,10 +368,10 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
 
             mask_refined = apply_morphological_refinement(mask_green)
         frame_gray = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
-        
+
         if sharpen_enabled:
             frame_gray = sharpen_frame(frame_gray, sharpen_amount)
-            
+
         resized_gray = cv2.resize(frame_gray, target_dimensions, interpolation=cv2.INTER_AREA)
         resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
         resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
@@ -373,12 +400,12 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
             edge_boost_amount=edge_boost_amount,
             use_edge_chars=use_edge_chars
         )
-        
+
         # Parse ASCII RAW "char§code§char§code" into Interleaved Integer Array [char, color, char, color...]
         # Remove newlines first to have a continuous stream matching the JS loop logic
         lines = ascii_raw.split('\n')
         frame_int_stream = []
-        
+
         for line in lines:
             if not line: continue
             parts = line.split(COLOR_SEPARATOR)
@@ -395,7 +422,7 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
                          color_code = int(code_str)
                      except:
                          color_code = 232 # Default black/bg
-                     
+
                      frame_int_stream.append(char_code)
                      frame_int_stream.append(color_code)
 
@@ -416,29 +443,61 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
     for code, hex_color in palette.items():
         css_palette_lines.append(f".c{code} {{ color: {hex_color}; }}")
     css_palette_block = "\n        ".join(css_palette_lines)
-    
+
     nome_base = os.path.splitext(os.path.basename(video_path))[0]
     output_html = os.path.join(output_dir, f"{nome_base}_player.html")
-    
-    # Export Frames as JSON Array of Arrays
-    # [ [c,k,c,k...], [c,k...] ]
+
+    has_audio = False
+    audio_filename = f"{nome_base}_player.mp3"
+    audio_output_path = os.path.join(output_dir, audio_filename)
+
+    probe_result = subprocess.run(
+        ['ffprobe', '-i', video_path, '-show_streams',
+         '-select_streams', 'a', '-loglevel', 'error'],
+        capture_output=True, text=True, encoding='utf-8', errors='replace'
+    )
+
+    if probe_result.stdout.strip():
+        cmd_audio = [
+            'ffmpeg', '-y',
+            '-i', video_path,
+            '-vn',
+            '-c:a', 'libmp3lame',
+            '-b:a', '128k',
+            audio_output_path
+        ]
+        result = subprocess.run(
+            cmd_audio, capture_output=True, text=True,
+            encoding='utf-8', errors='replace'
+        )
+        if result.returncode == 0 and os.path.exists(audio_output_path) and os.path.getsize(audio_output_path) > 1024:
+            has_audio = True
+            logger.info("Audio MP3 extraido: %s", audio_output_path)
+        else:
+            has_audio = False
+            logger.warning("Falha ao extrair audio MP3 para HTML")
+
     js_frames_json = json.dumps(frames_data)
-    
+
     metadata = {
         "fps": target_fps,
         "width": target_width,
         "height": target_height,
-        "fontSize": max(6, int(10 * (100 / target_width)))
+        "fontSize": max(6, int(10 * (100 / target_width))),
+        "hasAudio": has_audio,
+        "audioFile": audio_filename if has_audio else None
     }
-    
+
     html_content = HTML_TEMPLATE.replace("{FRAMES_DATA}", js_frames_json)
     html_content = html_content.replace("{METADATA}", json.dumps(metadata))
     html_content = html_content.replace("{CSS_PALETTE}", css_palette_block)
 
     with open(output_html, 'w', encoding='utf-8') as f:
         f.write(html_content)
-        
+
     print(f"HTML Salvo: {output_html}")
+    if has_audio:
+        print(f"Audio MP3: {audio_output_path}")
     return output_html
 
 if __name__ == "__main__":

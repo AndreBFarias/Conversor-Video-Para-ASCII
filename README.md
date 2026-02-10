@@ -4,8 +4,8 @@
 [![Licenca](https://img.shields.io/badge/licenca-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/)
 [![GTK](https://img.shields.io/badge/GTK-3.0-green.svg)](https://www.gtk.org/)
-[![Estrelas](https://img.shields.io/github/stars/AndreBFarias/Conversor-Video-Para-ASCII.svg?style=social)](https://github.com/AndreBFarias/Conversor-Video-Para-ASCII/stargazers)
-[![Contribuicoes](https://img.shields.io/badge/contribuicoes-bem--vindas-brightgreen.svg)](https://github.com/AndreBFarias/Conversor-Video-Para-ASCII/issues)
+[![Estrelas](https://img.shields.io/github/stars/[REDACTED]/Conversor-Video-Para-ASCII.svg?style=social)](https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/stargazers)
+[![Contribuicoes](https://img.shields.io/badge/contribuicoes-bem--vindas-brightgreen.svg)](https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/issues)
 
 <div align="center">
 <div style="text-align: center;">
@@ -36,7 +36,7 @@ Conversor de video para ASCII art em tempo real com aceleracao GPU (CUDA), siste
 | **Audio Reactive** | Modulacao por frequencia (Bass/Mids/Treble) |
 | **Optical Flow** | Interpolacao de frames (15 FPS para 60 FPS) |
 | **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado, UI reorganizada |
-| **Exportacao** | TXT, MP4, GIF, HTML standalone |
+| **Exportacao** | TXT, MP4, GIF, HTML standalone, PNG |
 | **Deploy** | AppImage, Flatpak, .deb |
 
 ---
@@ -77,7 +77,7 @@ flatpak run com.github.andrebfarias.extase-em-4r73
 #### Ubuntu/Debian (.deb)
 
 ```bash
-wget https://github.com/AndreBFarias/Conversor-Video-Para-ASCII/releases/latest/download/extase-em-4r73_2.4.0_all.deb
+wget https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/releases/latest/download/extase-em-4r73_2.4.0_all.deb
 sudo dpkg -i extase-em-4r73_2.4.0_all.deb
 sudo apt-get install -f
 extase-em-4r73
@@ -86,7 +86,7 @@ extase-em-4r73
 #### Via Script (Desenvolvimento)
 
 ```bash
-git clone https://github.com/AndreBFarias/Conversor-Video-Para-ASCII.git
+git clone https://github.com/[REDACTED]/Conversor-Video-Para-ASCII.git
 cd Conversor-Video-Para-ASCII
 chmod +x install.sh
 ./install.sh
@@ -118,12 +118,35 @@ chmod +x install.sh
 
 **Via menu de aplicativos:** Procure por "Extase em 4R73"
 
-**Via terminal:**
+**Via terminal (GUI):**
 ```bash
 cd Conversor-Video-Para-ASCII
 source venv/bin/activate
 python3 main.py
 ```
+
+**Via CLI (headless, sem display):**
+```bash
+source venv/bin/activate
+
+# Diagnostico do sistema
+python cli.py info
+
+# Converter video para MP4
+python cli.py convert --video data_input/video.mp4 --format mp4 --quality low
+
+# Converter video para HTML com audio
+python cli.py convert --video data_input/video.mp4 --format html
+
+# Ver/alterar configuracao
+python cli.py config show
+python cli.py config presets
+
+# Validar integridade
+python cli.py validate --video data_input/video.mp4
+```
+
+Documentacao completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 
 ---
 
@@ -181,7 +204,8 @@ python3 main.py
 
 ```
 Conversor-Video-Para-ASCII/
-  main.py              # Entry point
+  main.py              # Entry point (GUI GTK)
+  cli.py               # CLI unificado (headless)
   config.ini           # Configuracoes
   install.sh           # Instalacao
   uninstall.sh         # Desinstalacao
@@ -200,6 +224,7 @@ Conversor-Video-Para-ASCII/
 
 ### Documentacao
 
+- [Guia do CLI](docs/CLI_GUIDE.md)
 - [Referencia de Configuracao](docs/CONFIG_REFERENCE.md)
 - [Guia de Presets](docs/PRESETS_REFERENCE.md)
 - [Guia de Testes](docs/TESTING_GUIDE.md)

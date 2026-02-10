@@ -60,7 +60,7 @@ class App(
         self.config = configparser.ConfigParser(interpolation=None)
         self.config_path = CONFIG_PATH
         self.config_last_load = 0
-        
+
         # Initialize defaults to prevent AttributeError
         self.input_dir = os.path.join(os.path.expanduser("~"), "Vídeos")
         self.output_dir = os.path.join(ROOT_DIR, "data_output")
@@ -76,15 +76,15 @@ class App(
 
             input_dir_cfg = self.config.get('Pastas', 'input_dir', fallback=None)
             output_dir_cfg = self.config.get('Pastas', 'output_dir', fallback=None)
-            
+
             if input_dir_cfg: self.input_dir = input_dir_cfg
             if output_dir_cfg: self.output_dir = output_dir_cfg
-                
+
             self.input_dir = os.path.abspath(self.input_dir)
             self.output_dir = os.path.abspath(self.output_dir)
             os.makedirs(self.input_dir, exist_ok=True)
             os.makedirs(self.output_dir, exist_ok=True)
-            
+
         except (FileNotFoundError, configparser.Error) as e:
             self.logger.error(f"Configuracao corrompida ou ausente: {e}. Restaurando padrao...")
             try:
@@ -108,7 +108,7 @@ class App(
         if not self._get_widgets():
             self.initialization_failed = True
             return
-        
+
         self.selected_file_path = None
         self.selected_folder_path = None
         self.selected_ascii_path = None
@@ -117,6 +117,7 @@ class App(
 
         self._create_quality_preset_combo()
         self._create_effects_tab()
+        self._init_postfx_widgets()
         self.update_button_states()
         self.window.show_all()
 
@@ -126,14 +127,14 @@ class App(
         progressbar { min-height: 28px; }
         progressbar trough { min-height: 28px; }
         progressbar progress { min-height: 28px; }
-        
+
         #config_button_large {
-            background: none; 
-            border: none; 
-            box-shadow: none; 
+            background: none;
+            border: none;
+            box-shadow: none;
             margin-bottom: 12px;
         }
-        
+
         switch slider {
             min-height: 20px;
             min-width: 20px;
@@ -155,7 +156,7 @@ class App(
                 logo_widget.set_from_pixbuf(pixbuf_logo)
                 pixbuf_icon = GdkPixbuf.Pixbuf.new_from_file(LOGO_FILE)
                 self.window.set_icon(pixbuf_icon)
-            
+
             # Initial theme application (defaults to dark)
             current_theme = self.config.get('Interface', 'theme', fallback='dark')
             self._apply_theme(current_theme)
@@ -166,7 +167,7 @@ class App(
     def _apply_theme(self, theme_mode: str):
         settings = Gtk.Settings.get_default()
         title_widget = self.builder.get_object("title_label")
-        
+
         if theme_mode == 'light':
             settings.set_property("gtk-application-prefer-dark-theme", False)
             # settings.set_property("gtk-theme-name", "Adwaita") # Removed to respect system theme
@@ -181,13 +182,13 @@ class App(
         else:
             settings.set_property("gtk-application-prefer-dark-theme", True)
             # settings.set_property("gtk-theme-name", "Adwaita-dark") # Removed to respect system theme
-            
+
             if title_widget:
                  # Pango Markup for dual-color title
                  # Halo white "Êxtase em" and Neon Green "4R73"
                  markup = '<span font_weight="bold" size="x-large" foreground="#ffffff">Êxtase em </span><span font_weight="bold" size="x-large" foreground="#00ce93">4R73</span>'
                  title_widget.set_markup(markup)
-            
+
             # Apply Custom Dark Theme Colors
             # Apply Custom Dark Theme Colors
             dark_css = """
@@ -195,7 +196,7 @@ class App(
             window, .background {
                 background-color: #24232d;
             }
-            
+
             /* Motor Gráfico (Radio Buttons as Toggles) */
             #radio_mode_ascii, #radio_mode_pixelart {
                 background-image: none;
@@ -212,7 +213,7 @@ class App(
             #radio_mode_ascii:hover:not(:checked), #radio_mode_pixelart:hover:not(:checked) {
                  background-color: alpha(#ffffff, 0.05);
             }
-            
+
             /* Switches/Toggles (Active state) */
             switch:checked slider {
                 background-color: #713d90;
@@ -233,14 +234,14 @@ class App(
                 border-color: #418a69;
                 background-color: alpha(#000000, 0.2);
             }
-            
+
             /* File/Folder and Conversion Buttons (Green Borders) */
             /* Explicitly target the buttons we want to look "Green" */
             #select_file_button, #select_folder_button, #select_ascii_button,
             #convert_button, #convert_all_button {
                  border: 2px solid #418a69;
                  border-radius: 4px;
-                 color: #ffffff; 
+                 color: #ffffff;
                  background-image: none;
                  background-color: alpha(#418a69, 0.05); /* Slight tint */
                  box-shadow: none;
@@ -254,25 +255,25 @@ class App(
                  color: alpha(#ffffff, 0.3);
                  background-color: transparent;
             }
-            
+
             /* Selected File Highlights */
             .file-selected {
                 color: #418a69;
                 font-weight: bold;
             }
-            
+
             /* Labels Headers */
             label.title-label {
                  color: #00ce93;
             }
-            
+
             /* Section Frames/Labels if needed */
             frame > border {
                  border-color: alpha(#ffffff, 0.1);
             }
             """
             self.color_provider.load_from_data(dark_css.encode('utf-8'))
-        
+
         self._update_title_color(theme_mode)
 
     def _update_title_color(self, theme_mode: str):
@@ -283,22 +284,22 @@ class App(
 
         # Extase em (White in Dark, Black in Light)
         text_color = "#333333" if theme_mode == 'light' else "#EAEAEA"
-        
+
         markup = (
             f"<span font_desc='Sans Bold 24' foreground='{text_color}'>"
             "Êxtase em <span foreground='#81c995'>4R73</span></span>"
         )
         title_widget.set_markup(markup)
-    
+
     def on_theme_combo_changed(self, combo):
         active_id = combo.get_active_id()
         if active_id:
             logger_msg = f"Tema alterado para: {active_id}"
             self.logger.info(logger_msg)
-            
+
             # Apply immediately
             self._apply_theme(active_id)
-            
+
             # Save preference
             if 'Interface' not in self.config:
                 self.config.add_section('Interface')
@@ -345,7 +346,7 @@ class App(
             self.conversion_progress = self.builder.get_object("conversion_progress")
             self.preview_frame = self.builder.get_object("preview_frame")
             self.preview_thumbnail = self.builder.get_object("preview_thumbnail")
-            
+
             if self.preview_frame:
                 self.preview_frame.set_visible(False)
 
@@ -550,8 +551,105 @@ class App(
             speed_vbox.pack_start(self.pref_matrix_speed_scale, False, False, 0)
             effects_box.pack_start(speed_vbox, False, False, 0)
 
+            effects_box.pack_start(Gtk.Separator(), False, False, 10)
+
+            of_title = Gtk.Label()
+            of_title.set_markup("<b>Optical Flow (Interpolacao de Frames)</b>")
+            of_title.set_xalign(0)
+            effects_box.pack_start(of_title, False, False, 0)
+
+            effects_box.pack_start(Gtk.Separator(), False, False, 5)
+
+            of_switch_box = Gtk.Box(spacing=10)
+            of_switch_label = Gtk.Label(label="Ativar Optical Flow:")
+            of_switch_label.set_xalign(0)
+            of_switch_box.pack_start(of_switch_label, True, True, 0)
+            self.pref_optical_flow_switch = Gtk.Switch()
+            self.pref_optical_flow_switch.set_active(False)
+            of_switch_box.pack_start(self.pref_optical_flow_switch, False, False, 0)
+            effects_box.pack_start(of_switch_box, False, False, 0)
+
+            of_fps_box = Gtk.Box(spacing=10)
+            of_fps_label = Gtk.Label(label="Target FPS:")
+            of_fps_label.set_xalign(0)
+            of_fps_box.pack_start(of_fps_label, False, False, 0)
+            self.pref_optical_flow_fps_combo = Gtk.ComboBoxText()
+            self.pref_optical_flow_fps_combo.append("24", "24 fps")
+            self.pref_optical_flow_fps_combo.append("30", "30 fps")
+            self.pref_optical_flow_fps_combo.append("60", "60 fps")
+            self.pref_optical_flow_fps_combo.set_active_id("30")
+            of_fps_box.pack_start(self.pref_optical_flow_fps_combo, True, True, 0)
+            effects_box.pack_start(of_fps_box, False, False, 0)
+
+            of_quality_box = Gtk.Box(spacing=10)
+            of_quality_label = Gtk.Label(label="Qualidade:")
+            of_quality_label.set_xalign(0)
+            of_quality_box.pack_start(of_quality_label, False, False, 0)
+            self.pref_optical_flow_quality_combo = Gtk.ComboBoxText()
+            self.pref_optical_flow_quality_combo.append("low", "Low")
+            self.pref_optical_flow_quality_combo.append("medium", "Medium")
+            self.pref_optical_flow_quality_combo.append("high", "High")
+            self.pref_optical_flow_quality_combo.set_active_id("medium")
+            of_quality_box.pack_start(self.pref_optical_flow_quality_combo, True, True, 0)
+            effects_box.pack_start(of_quality_box, False, False, 0)
+
+            effects_box.pack_start(Gtk.Separator(), False, False, 10)
+
+            ar_title = Gtk.Label()
+            ar_title.set_markup("<b>Audio Reactive (Efeitos por Frequencia)</b>")
+            ar_title.set_xalign(0)
+            effects_box.pack_start(ar_title, False, False, 0)
+
+            effects_box.pack_start(Gtk.Separator(), False, False, 5)
+
+            ar_switch_box = Gtk.Box(spacing=10)
+            ar_switch_label = Gtk.Label(label="Ativar Audio Reactive:")
+            ar_switch_label.set_xalign(0)
+            ar_switch_box.pack_start(ar_switch_label, True, True, 0)
+            self.pref_audio_switch = Gtk.Switch()
+            self.pref_audio_switch.set_active(False)
+            ar_switch_box.pack_start(self.pref_audio_switch, False, False, 0)
+            effects_box.pack_start(ar_switch_box, False, False, 0)
+
+            ar_bass_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            ar_bass_label = Gtk.Label(label="Bass Sensitivity:")
+            ar_bass_label.set_xalign(0)
+            ar_bass_vbox.pack_start(ar_bass_label, False, False, 0)
+            bass_adj = Gtk.Adjustment(value=1.0, lower=0.0, upper=3.0, step_increment=0.1)
+            self.pref_audio_bass_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=bass_adj)
+            self.pref_audio_bass_scale.set_draw_value(True)
+            self.pref_audio_bass_scale.set_value_pos(Gtk.PositionType.RIGHT)
+            ar_bass_vbox.pack_start(self.pref_audio_bass_scale, False, False, 0)
+            effects_box.pack_start(ar_bass_vbox, False, False, 0)
+
+            ar_mids_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            ar_mids_label = Gtk.Label(label="Mids Sensitivity:")
+            ar_mids_label.set_xalign(0)
+            ar_mids_vbox.pack_start(ar_mids_label, False, False, 0)
+            mids_adj = Gtk.Adjustment(value=1.0, lower=0.0, upper=3.0, step_increment=0.1)
+            self.pref_audio_mids_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=mids_adj)
+            self.pref_audio_mids_scale.set_draw_value(True)
+            self.pref_audio_mids_scale.set_value_pos(Gtk.PositionType.RIGHT)
+            ar_mids_vbox.pack_start(self.pref_audio_mids_scale, False, False, 0)
+            effects_box.pack_start(ar_mids_vbox, False, False, 0)
+
+            ar_treble_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            ar_treble_label = Gtk.Label(label="Treble Sensitivity:")
+            ar_treble_label.set_xalign(0)
+            ar_treble_vbox.pack_start(ar_treble_label, False, False, 0)
+            treble_adj = Gtk.Adjustment(value=1.0, lower=0.0, upper=3.0, step_increment=0.1)
+            self.pref_audio_treble_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=treble_adj)
+            self.pref_audio_treble_scale.set_draw_value(True)
+            self.pref_audio_treble_scale.set_value_pos(Gtk.PositionType.RIGHT)
+            ar_treble_vbox.pack_start(self.pref_audio_treble_scale, False, False, 0)
+            effects_box.pack_start(ar_treble_vbox, False, False, 0)
+
+            scrolled = Gtk.ScrolledWindow()
+            scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scrolled.add(effects_box)
+
             tab_label = Gtk.Label(label="Efeitos")
-            notebook.append_page(effects_box, tab_label)
+            notebook.append_page(scrolled, tab_label)
 
             self.logger.info("Tab Efeitos criado programaticamente")
         except Exception as e:
@@ -561,6 +659,13 @@ class App(
             self.pref_matrix_charset_combo = None
             self.pref_matrix_particles_spin = None
             self.pref_matrix_speed_scale = None
+            self.pref_optical_flow_switch = None
+            self.pref_optical_flow_fps_combo = None
+            self.pref_optical_flow_quality_combo = None
+            self.pref_audio_switch = None
+            self.pref_audio_bass_scale = None
+            self.pref_audio_mids_scale = None
+            self.pref_audio_treble_scale = None
 
     def on_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_q or event.keyval == Gdk.KEY_Q:

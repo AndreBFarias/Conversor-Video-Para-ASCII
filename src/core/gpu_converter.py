@@ -25,6 +25,7 @@ from src.core.renderer import ASCII_FONT, ASCII_FONT_SCALE, ASCII_FONT_THICKNESS
 from src.core.utils import color as color_module
 from src.core.utils.color import rgb_to_ansi256_vectorized
 from src.core.utils.image import apply_morphological_refinement
+from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
 from src.app.constants import USER_CACHE_DIR
 
 try:
@@ -912,37 +913,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             auto_segmenter.close()
 
     print("Extraindo audio do video original...")
-    temp_audio = os.path.join(temp_dir, "audio.aac")
-    cmd_audio = [
-        'ffmpeg', '-y',
-        '-i', video_path,
-        '-vn',
-        '-acodec', 'copy',
-        temp_audio
-    ]
+    temp_audio = extract_audio_as_aac(video_path, temp_dir)
 
-    result = subprocess.run(cmd_audio, capture_output=True, text=True, encoding='utf-8', errors='replace')
-    has_audio = result.returncode == 0 and os.path.exists(temp_audio)
-
-    if has_audio:
-        print("Muxando video + audio...")
-        cmd_mux = [
-            'ffmpeg', '-y',
-            '-i', temp_video_no_audio,
-            '-i', temp_audio,
-            '-c:v', 'copy',
-            '-c:a', 'aac',
-            '-b:a', '192k',
-            '-shortest',
-            output_mp4
-        ]
-        result = subprocess.run(cmd_mux, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        if result.returncode != 0:
-            print(f"Aviso ao muxar audio: {result.stderr}")
-            shutil.copy(temp_video_no_audio, output_mp4)
-    else:
-        print("Video sem audio, copiando video ASCII...")
-        shutil.copy(temp_video_no_audio, output_mp4)
+    print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+    mux_video_audio(temp_video_no_audio, temp_audio, output_mp4)
 
     shutil.rmtree(temp_dir, ignore_errors=True)
     print(f"GPU Video ASCII criado: {output_mp4}")
@@ -1162,34 +1136,14 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     if auto_segmenter is not None:
         auto_segmenter.close()
 
-    if os.path.exists(temp_video_no_audio):
-        result = subprocess.run(
-            ['ffprobe', '-i', video_path, '-show_streams', '-select_streams', 'a', '-loglevel', 'error'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            errors='replace'
-        )
-
-        if result.stdout:
-            cmd_mux = [
-                'ffmpeg', '-y',
-                '-i', temp_video_no_audio,
-                '-i', video_path,
-                '-c:v', 'copy',
-                '-c:a', 'aac',
-                '-map', '0:v:0',
-                '-map', '1:a:0',
-                '-shortest',
-                output_mp4
-            ]
-            result = subprocess.run(cmd_mux, capture_output=True, text=True, encoding='utf-8', errors='replace')
-            if result.returncode != 0:
-                shutil.copy(temp_video_no_audio, output_mp4)
-        else:
-            shutil.copy(temp_video_no_audio, output_mp4)
-    else:
+    if not os.path.exists(temp_video_no_audio):
         raise RuntimeError("FFmpeg failed to create temp video")
+
+    print("Extraindo audio do video original...")
+    temp_audio = extract_audio_as_aac(video_path, temp_dir)
+
+    print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+    mux_video_audio(temp_video_no_audio, temp_audio, output_mp4)
 
     shutil.rmtree(temp_dir, ignore_errors=True)
     print(f"[ASYNC] GPU Video ASCII criado: {output_mp4}")
