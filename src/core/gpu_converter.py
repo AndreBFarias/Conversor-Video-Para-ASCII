@@ -901,6 +901,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                         char_indices[dash] = 45
 
                 if temporal_enabled:
+                    if is_hifi:
+                        hifi_gray_cpu = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+                        gray_gpu = cp.array(hifi_gray_cpu, dtype=cp.uint8)
+
                     if braille_enabled:
                         downsampled_gray_for_temp = gray_gpu[::4, ::2]
                         char_indices = gpu_renderer.apply_temporal_coherence(char_indices, downsampled_gray_for_temp, temporal_threshold)
