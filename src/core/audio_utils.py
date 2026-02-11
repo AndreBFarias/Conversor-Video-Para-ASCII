@@ -59,6 +59,7 @@ def mux_video_audio(video_path: str, audio_path: str | None, output_path: str) -
         '-c:a', 'copy',
         '-map', '0:v:0',
         '-map', '1:a:0',
+        '-movflags', '+faststart',
         output_path
     ]
 

@@ -738,17 +738,27 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
     else:
         resize_target = target_dim
 
+    target_fps = min(fps, 15)
+    frame_interval = max(1, round(fps / target_fps))
+    actual_fps = fps / frame_interval
+    actual_fps_int = int(round(actual_fps))
+
+    print(f"FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
+
     cmd_ffmpeg = [
         'ffmpeg', '-y',
         '-f', 'rawvideo',
         '-vcodec', 'rawvideo',
         '-s', f'{gpu_renderer.out_w}x{gpu_renderer.out_h}',
         '-pix_fmt', 'bgr24',
-        '-r', str(fps),
+        '-r', str(actual_fps_int),
         '-i', '-',
         '-c:v', 'libx264',
         '-preset', 'fast',
-        '-crf', '23',
+        '-crf', '18',
+        '-tune', 'animation',
+        '-bf', '0',
+        '-movflags', '+faststart',
         '-pix_fmt', 'yuv420p',
         temp_video_no_audio
     ]
@@ -756,12 +766,18 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
     proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE)
 
     processed_count = 0
+    frame_count = 0
+    prev_gray_cpu = None
 
     try:
         while True:
             sucesso, frame_img = captura.read()
             if not sucesso:
                 break
+
+            if frame_count % frame_interval != 0:
+                frame_count += 1
+                continue
 
             resized = cv2.resize(frame_img, resize_target, interpolation=cv2.INTER_AREA)
 
@@ -800,11 +816,14 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             if matrix_rain_enabled:
                 if is_hifi:
                     full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-                    full_gray_gpu = cp.array(full_gray)
                 else:
                     full_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
-                    full_gray_gpu = cp.array(full_gray)
 
+                if prev_gray_cpu is not None:
+                    full_gray = cv2.addWeighted(full_gray, 0.7, prev_gray_cpu, 0.3, 0)
+                prev_gray_cpu = full_gray.copy()
+
+                full_gray_gpu = cp.array(full_gray)
                 resized_color_gpu = cp.array(resized_color)
                 chroma_mask_gpu = is_masked
 
@@ -828,6 +847,9 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             else:
                 if is_hifi:
                     full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+                    if prev_gray_cpu is not None:
+                        full_gray = cv2.addWeighted(full_gray, 0.7, prev_gray_cpu, 0.3, 0)
+                    prev_gray_cpu = full_gray.copy()
                     full_gray_gpu = cp.array(full_gray)
                     char_indices = gpu_renderer.render_high_fidelity(full_gray_gpu)
 
@@ -837,10 +859,11 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                     ansi_gpu[is_masked] = 232
 
                 if not is_hifi:
-                    frame_gpu = cp.array(resized_color)
-                    b, g, r = frame_gpu[:,:,0], frame_gpu[:,:,1], frame_gpu[:,:,2]
-                    gray_gpu = 0.114*b + 0.587*g + 0.299*r
-                    gray_gpu = gray_gpu.astype(cp.uint8)
+                    gray_cpu = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+                    if prev_gray_cpu is not None:
+                        gray_cpu = cv2.addWeighted(gray_cpu, 0.7, prev_gray_cpu, 0.3, 0)
+                    prev_gray_cpu = gray_cpu.copy()
+                    gray_gpu = cp.array(gray_cpu, dtype=cp.uint8)
 
                     if braille_enabled:
                         char_indices = gpu_renderer.convert_to_braille(gray_gpu, braille_threshold)
@@ -896,11 +919,13 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             proc.stdin.write(output_cpu.tobytes())
 
             processed_count += 1
+            frame_count += 1
+
             if processed_count % 30 == 0:
-                print(f"GPU Processed: {processed_count}/{total_frames}")
+                print(f"GPU Processed: {processed_count} saved / {frame_count}/{total_frames} read")
 
             if progress_callback and processed_count % 30 == 0:
-                progress_callback(processed_count, total_frames, output_cpu)
+                progress_callback(frame_count, total_frames, output_cpu)
 
     except BrokenPipeError:
         print("FFmpeg pipe broke.")
@@ -1022,17 +1047,27 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     temp_video_no_audio = os.path.join(temp_dir, "video_no_audio.mp4")
     output_mp4 = os.path.join(output_dir, f"{nome_base}_ascii.mp4")
 
+    target_fps = min(fps, 15)
+    frame_interval = max(1, round(fps / target_fps))
+    actual_fps = fps / frame_interval
+    actual_fps_int = int(round(actual_fps))
+
+    print(f"[ASYNC] FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
+
     cmd_ffmpeg = [
         'ffmpeg', '-y',
         '-f', 'rawvideo',
         '-vcodec', 'rawvideo',
         '-s', f'{async_converter.gpu_converter.out_w}x{async_converter.gpu_converter.out_h}',
         '-pix_fmt', 'bgr24',
-        '-r', str(fps),
+        '-r', str(actual_fps_int),
         '-i', '-',
         '-c:v', 'libx264',
         '-preset', 'fast',
-        '-crf', '23',
+        '-crf', '18',
+        '-tune', 'animation',
+        '-bf', '0',
+        '-movflags', '+faststart',
         '-pix_fmt', 'yuv420p',
         temp_video_no_audio
     ]
@@ -1040,6 +1075,8 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE)
 
     processed_count = 0
+    frame_count = 0
+    prev_gray_cpu = None
     gray_batch = []
     color_batch = []
 
@@ -1048,6 +1085,10 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
             sucesso, frame_img = captura.read()
             if not sucesso:
                 break
+
+            if frame_count % frame_interval != 0:
+                frame_count += 1
+                continue
 
             resized = cv2.resize(frame_img, target_dim, interpolation=cv2.INTER_AREA)
 
@@ -1077,11 +1118,14 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
             elif render_mode == 'both':
                 resized[mask_cpu > 127] = [0, 0, 0]
 
-            b, g, r = resized[:,:,0], resized[:,:,1], resized[:,:,2]
-            gray = (0.114*b + 0.587*g + 0.299*r).astype(np.uint8)
+            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+            if prev_gray_cpu is not None:
+                gray = cv2.addWeighted(gray, 0.7, prev_gray_cpu, 0.3, 0)
+            prev_gray_cpu = gray.copy()
 
             gray_batch.append(gray)
             color_batch.append(resized)
+            frame_count += 1
 
             if len(gray_batch) >= batch_size:
                 results = async_converter.process_batch(gray_batch, color_batch)

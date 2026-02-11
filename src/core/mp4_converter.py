@@ -151,18 +151,28 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
 
     target_dimensions = (target_width, target_height)
 
+    target_fps = min(fps, 15)
+    frame_interval = max(1, round(fps / target_fps))
+    actual_fps = fps / frame_interval
+
     print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
-    print(f"FPS: {fps}, Total frames: {total_frames}")
+    print(f"FPS Original: {fps} -> MP4 FPS: {actual_fps} (interval={frame_interval})")
 
     temp_dir = tempfile.mkdtemp(prefix="ascii_mp4_")
     print(f"Frames temporarios em: {temp_dir}")
 
     try:
         frame_count = 0
+        saved_frame_count = 0
+        prev_gray = None
         while True:
             sucesso, frame_colorido = captura.read()
             if not sucesso:
                 break
+
+            if frame_count % frame_interval != 0:
+                frame_count += 1
+                continue
 
             if auto_segmenter:
                 mask_refined = auto_segmenter.process(frame_colorido)
@@ -187,6 +197,10 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
             resized_gray = cv2.resize(frame_gray, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
+
+            if prev_gray is not None:
+                resized_gray = cv2.addWeighted(resized_gray, 0.7, prev_gray, 0.3, 0)
+            prev_gray = resized_gray.copy()
 
             if render_mode == 'user':
                 resized_color[resized_mask > 127] = 0
@@ -228,32 +242,37 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
             if postfx_processor:
                 frame_image = postfx_processor.process(frame_image)
 
-            frame_filename = os.path.join(temp_dir, f"frame_{frame_count:06d}.png")
+            frame_filename = os.path.join(temp_dir, f"frame_{saved_frame_count:06d}.png")
             cv2.imwrite(frame_filename, frame_image)
 
+            saved_frame_count += 1
             frame_count += 1
 
             if progress_callback:
-                if frame_count % 30 == 0:
+                if saved_frame_count % 30 == 0:
                     progress_callback(frame_count, total_frames, frame_image)
                 else:
                     progress_callback(frame_count, total_frames)
 
-            if frame_count % 30 == 0:
-                print(f"Processado: {frame_count}/{total_frames} frames ({frame_count/total_frames*100:.1f}%)")
+            if saved_frame_count % 30 == 0:
+                print(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
 
         captura.release()
-        print(f"Total de frames renderizados: {frame_count}")
+        print(f"Total de frames renderizados: {saved_frame_count}")
 
         print("Criando video ASCII (sem audio)...")
         temp_video = os.path.join(temp_dir, "temp_video.mp4")
+        actual_fps_int = int(round(actual_fps))
         cmd_video = [
             'ffmpeg', '-y',
-            '-framerate', str(fps),
+            '-framerate', str(actual_fps_int),
             '-i', os.path.join(temp_dir, 'frame_%06d.png'),
             '-c:v', 'libx264',
             '-preset', 'medium',
-            '-crf', '23',
+            '-crf', '18',
+            '-tune', 'animation',
+            '-bf', '0',
+            '-movflags', '+faststart',
             '-pix_fmt', 'yuv420p',
             temp_video
         ]

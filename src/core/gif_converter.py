@@ -137,8 +137,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
     fps = captura.get(cv2.CAP_PROP_FPS)
     total_frames = int(captura.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    # Limitar FPS para GIF para evitar arquivos gigantes
-    target_fps = min(fps, 15)  # Cap em 15fps para GIF
+    target_fps = min(fps, 15)
 
     source_width = captura.get(cv2.CAP_PROP_FRAME_WIDTH)
     source_height = captura.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -154,7 +153,10 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
     target_dimensions = (target_width, target_height)
 
     print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
-    print(f"FPS Original: {fps} -> GIF FPS: {target_fps}")
+    frame_interval = max(1, round(fps / target_fps))
+    actual_fps = fps / frame_interval
+
+    print(f"FPS Original: {fps} -> GIF FPS: {actual_fps} (interval={frame_interval})")
 
     temp_dir = tempfile.mkdtemp(prefix="ascii_gif_")
     print(f"Frames temporarios em: {temp_dir}")
@@ -162,14 +164,13 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
     try:
         frame_count = 0
         saved_frame_count = 0
-        frame_interval = max(1, int(fps / target_fps))
+        prev_gray = None
 
         while True:
             sucesso, frame_colorido = captura.read()
             if not sucesso:
                 break
 
-            # Frame skipping para atingir target_fps
             if frame_count % frame_interval != 0:
                 frame_count += 1
                 continue
@@ -197,6 +198,10 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             resized_gray = cv2.resize(frame_gray, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
+
+            if prev_gray is not None:
+                resized_gray = cv2.addWeighted(resized_gray, 0.7, prev_gray, 0.3, 0)
+            prev_gray = resized_gray.copy()
 
             if render_mode == 'user':
                 resized_color[resized_mask > 127] = 0
@@ -232,7 +237,6 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             cv2.imwrite(frame_filename, frame_image)
 
             saved_frame_count += 1
-            frame_count += 1
 
             if progress_callback:
                 if saved_frame_count % 30 == 0:
@@ -240,8 +244,10 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
                 else:
                     progress_callback(frame_count, total_frames)
 
-            if frame_count % 30 == 0:
-                print(f"Processado: {frame_count}/{total_frames} frames")
+            frame_count += 1
+
+            if saved_frame_count % 30 == 0:
+                print(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
 
         captura.release()
         print(f"Total de frames salvos: {saved_frame_count}")
@@ -251,20 +257,21 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         cmd_palette = [
             'ffmpeg', '-y',
             '-i', os.path.join(temp_dir, 'frame_%06d.png'),
-            '-vf', 'palettegen',
+            '-vf', 'palettegen=stats_mode=full:reserve_transparent=0',
             palette_path
         ]
         result = subprocess.run(cmd_palette, capture_output=True, text=True, encoding='utf-8', errors='replace')
         if result.returncode != 0:
             raise RuntimeError(f"Erro ao gerar paleta: {result.stderr}")
 
-        print("Criando GIF animado...")
+        actual_fps_int = int(round(actual_fps))
+        print(f"Criando GIF animado ({actual_fps_int}fps)...")
         cmd_gif = [
             'ffmpeg', '-y',
-            '-framerate', str(target_fps),
+            '-framerate', str(actual_fps_int),
             '-i', os.path.join(temp_dir, 'frame_%06d.png'),
             '-i', palette_path,
-            '-filter_complex', 'paletteuse',
+            '-filter_complex', '[0:v][1:v]paletteuse=diff_mode=none:dither=none',
             output_gif
         ]
 

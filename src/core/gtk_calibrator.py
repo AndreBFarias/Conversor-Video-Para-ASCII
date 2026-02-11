@@ -1360,7 +1360,10 @@ class GTKCalibrator:
                 '-i', os.path.join(self.mp4_temp_dir, 'frame_%06d.png'),
                 '-c:v', 'libx264',
                 '-preset', 'medium',
-                '-crf', '23',
+                '-crf', '18',
+                '-tune', 'animation',
+                '-bf', '0',
+                '-movflags', '+faststart',
                 '-pix_fmt', 'yuv420p',
                 temp_video
             ]
@@ -1381,6 +1384,7 @@ class GTKCalibrator:
                     '-c:a', 'aac',
                     '-b:a', '192k',
                     '-shortest',
+                    '-movflags', '+faststart',
                     self.mp4_output_file
                 ]
                 result = subprocess.run(cmd_mux, capture_output=True, text=True, encoding='utf-8', errors='replace')

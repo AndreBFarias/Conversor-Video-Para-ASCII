@@ -12,6 +12,7 @@ from .actions.conversion_actions import ConversionActionsMixin
 from .actions.playback_actions import PlaybackActionsMixin
 from .actions.calibration_actions import CalibrationActionsMixin
 from .actions.options_actions import OptionsActionsMixin
+from .actions.postfx_actions import PostFXActionsMixin
 
 
 class App(
@@ -19,7 +20,8 @@ class App(
     ConversionActionsMixin,
     PlaybackActionsMixin,
     CalibrationActionsMixin,
-    OptionsActionsMixin
+    OptionsActionsMixin,
+    PostFXActionsMixin
 ):
     def __init__(self, logger):
         self.logger = logger
