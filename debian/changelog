@@ -1,3 +1,16 @@
+extase-em-4r73 (2.6.0) unstable; urgency=medium
+
+  * Sprint 34: Encoder Pipeline + Async GPU Fix
+    - MP4 encoder reescrito: pipe rawvideo + -vsync cfr (elimina stutter)
+    - Fix buffer aliasing no async GPU converter (frames duplicados)
+    - -vsync cfr em todos os paths ffmpeg (sync, async, CPU)
+    - Preview bidirecional com GtkToggleButton
+    - Popup de conclusao com 4 acoes
+    - Graceful shutdown com ollama stop
+    - CLI parity: --folder, --no-preview
+
+ -- AndreBFarias <andrebfarias@users.noreply.github.com>  Tue, 11 Feb 2026 00:00:00 +0000
+
 extase-em-4r73 (2.3.0) unstable; urgency=medium
 
   * Sprint 15: Impacto Visual Real

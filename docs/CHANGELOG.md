@@ -2,9 +2,43 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
-## [2.4.0] - 2026-02-11
+## [2.6.0] - 2026-02-11
 
-### Sprint 33: Preview Bidirecional + Qualidade MP4 + UX
+### Sprint 34: Encoder Pipeline + Async GPU Fix
+
+#### MP4 Encoder: Pipe Rawvideo (CPU)
+- mp4_converter reescrito para pipe rawvideo direto ao ffmpeg
+- Eliminado intermediario de PNGs que causava VFR (Variable Frame Rate)
+- `-vsync cfr` forca Constant Frame Rate no container MP4
+- Dimensoes de saida forcadas pares para compatibilidade yuv420p
+
+#### MP4 Encoder: -vsync cfr (GPU sync + async)
+- Adicionado `-vsync cfr` nos paths sync e async do gpu_converter
+- Stderr do ffmpeg redirecionado para arquivo (previne deadlock de pipe)
+
+#### Async GPU Converter: Buffer Aliasing Fix
+- Bug critico: process_batch() usava N buffers para batch > N frames
+- Frames 0..N-1 eram sobrescritos por frames N..2N-1 no mesmo batch
+- Causava frames duplicados/saltados = stutter no video final
+- Fix: processar em chunks de num_streams, sincronizar e copiar para CPU antes de reusar
+- Mesmo fix aplicado ao render_batch_async()
+
+#### Parametros ffmpeg Validados
+- `-crf 12 -tune animation -g 24 -bf 0 -vsync cfr -movflags +faststart -pix_fmt yuv420p`
+- yuv444p PROIBIDO (High 4:4:4 Predictive incompativel com hardware decoders)
+- `-tune stillimage` PROIBIDO (rc-lookahead=0 mata keyframes)
+- Image sequence PNG PROIBIDO para MP4 (causa VFR)
+
+### Arquivos Modificados
+- `src/core/mp4_converter.py` - Reescrito: pipe rawvideo + -vsync cfr
+- `src/core/gpu_converter.py` - -vsync cfr em sync e async paths + stderr file
+- `src/core/async_gpu_converter.py` - Fix buffer aliasing em process_batch e render_batch_async
+
+---
+
+## [2.5.0] - 2026-02-11
+
+### Sprint 33: Preview Bidirecional + UX
 
 #### Preview Bidirecional
 - Preview ASCII estatico ao selecionar arquivo (botao toggle)
@@ -12,11 +46,6 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Fade-out automatico do thumbnail ao finalizar conversao
 - Config watcher: preview atualiza automaticamente ao editar config.ini
 - `preview_during_conversion` configuravel via config.ini
-
-#### Qualidade MP4
-- Anti-aliasing removido do rendering: `LINE_AA` -> `LINE_8` (pixel-perfect)
-- ffmpeg otimizado para conteudo sintetico: CRF 12, tune stillimage, yuv444p
-- Eliminado chroma subsampling que degradava texto colorido
 
 #### Preview Button Toggle Visual
 - `GtkButton` -> `GtkToggleButton` com CSS `:checked`
@@ -36,6 +65,10 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - `mp4_target_fps` no config.ini (1-60, padrao 15)
 - Frame skipping inteligente em todos os converters MP4/GIF
 
+#### Qualidade MP4
+- CRF 18 -> 12 para melhor nitidez em conteudo sintetico
+- `-g 24` obrigatorio para keyframes regulares
+
 #### CLI Parity
 - `--folder` para conversao em lote via CLI
 - `--no-preview` para desativar preview durante conversao
@@ -45,9 +78,8 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - `src/app/app.py` - CSS :checked, _shutdown_app, destroy handler
 - `src/app/actions/preview_actions.py` - Handler toggled
 - `src/app/actions/conversion_actions.py` - Popup 4 botoes, preview durante conversao
-- `src/core/renderer.py` - LINE_8
-- `src/core/gpu_converter.py` - LINE_8, ffmpeg stillimage/yuv444p
-- `src/core/mp4_converter.py` - ffmpeg stillimage/yuv444p
+- `src/core/gpu_converter.py` - CRF 12, -g 24
+- `src/core/mp4_converter.py` - CRF 12, -g 24
 - `src/main.py` - SIGTERM handler, Ctrl+C cleanup
 
 ---
