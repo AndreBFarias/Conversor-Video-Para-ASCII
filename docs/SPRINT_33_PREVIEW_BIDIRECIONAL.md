@@ -1,6 +1,6 @@
 # Sprint 33: Aba Preview + Bidirecionalidade
 
-**Status:** PENDENTE
+**Status:** CONCLUIDO
 **Prioridade:** ALTA
 **Dependencias:** Sprint 31 (usa GtkFullscreenPlayer como referencia de pipeline)
 **Estimativa de Complexidade:** Alta

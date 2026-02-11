@@ -41,6 +41,7 @@ class CalibrationActionsMixin:
             self.logger.info(f"Executando calibrador GTK: {cmd}")
             result = subprocess.run(cmd)
             self.reload_config()
+            self._refresh_preview()
             self.logger.info("Calibrador GTK fechado. Configuracoes recarregadas.")
         except Exception as e:
             self.logger.error(f"Erro ao lancar calibrador GTK: {e}")

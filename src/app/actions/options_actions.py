@@ -791,6 +791,7 @@ class OptionsActionsMixin:
             self._save_postfx_config()
 
             self.save_config()
+            self._refresh_preview()
 
         except Exception as e:
             self.show_error_dialog("Erro ao Salvar", f"Nao foi possivel salvar as configuracoes:\n{e}")

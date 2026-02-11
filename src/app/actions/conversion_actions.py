@@ -83,6 +83,7 @@ class ConversionActionsMixin:
         GLib.idle_add(self._update_progress, 0.0, f"Iniciando conversao de {total} arquivo(s)...")
 
         output_format = self.config.get('Output', 'format', fallback='txt').lower()
+        preview_enabled = self.config.getboolean('Preview', 'preview_during_conversion', fallback=True)
         chroma_override = None
 
         for i, file_path in enumerate(file_paths):
@@ -139,7 +140,7 @@ class ConversionActionsMixin:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
                         GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
-                        if frame_data is not None:
+                        if frame_data is not None and preview_enabled:
                             GLib.idle_add(self._update_thumbnail, frame_data)
 
                     if gpu_enabled:
@@ -171,7 +172,7 @@ class ConversionActionsMixin:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
                         GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
-                        if frame_data is not None:
+                        if frame_data is not None and preview_enabled:
                             GLib.idle_add(self._update_thumbnail, frame_data)
 
                     output_file = converter_video_para_gif(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
@@ -188,7 +189,7 @@ class ConversionActionsMixin:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
                         GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
-                        if frame_data is not None:
+                        if frame_data is not None and preview_enabled:
                             GLib.idle_add(self._update_thumbnail, frame_data)
 
                     output_file = converter_video_para_html(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
@@ -205,7 +206,7 @@ class ConversionActionsMixin:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
                         GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
-                        if frame_data is not None:
+                        if frame_data is not None and preview_enabled:
                             GLib.idle_add(self._update_thumbnail, frame_data)
 
                     output_file = converter_video_para_png_primeiro(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
@@ -222,7 +223,7 @@ class ConversionActionsMixin:
                     def progress_cb(current, total_frames, frame_data=None):
                         sub_progress = (i + (current / total_frames)) / total
                         GLib.idle_add(self._update_progress, sub_progress, f"({i+1}/{total}): {file_name} - Frame {current}/{total_frames}")
-                        if frame_data is not None:
+                        if frame_data is not None and preview_enabled:
                             GLib.idle_add(self._update_thumbnail, frame_data)
 
                     output_file = converter_video_para_png_todos(file_path, self.output_dir, self.config, progress_callback=progress_cb, chroma_override=chroma_override)
@@ -296,7 +297,7 @@ class ConversionActionsMixin:
 
         final_message = f"Concluído: {len(output_files)}/{total} sucesso"
         GLib.idle_add(self._update_progress, 1.0, final_message)
-        GLib.idle_add(self._hide_thumbnail)
+        GLib.idle_add(self._fade_out_thumbnail)
         GLib.idle_add(self.update_button_states)
         if output_files:
             GLib.idle_add(self.show_completion_popup, output_files)
@@ -309,6 +310,9 @@ class ConversionActionsMixin:
         return False
 
     def _update_thumbnail(self, frame_array: np.ndarray):
+        if hasattr(self, '_preview_active') and not self._preview_active:
+            return False
+
         if not hasattr(self, 'preview_thumbnail') or not self.preview_thumbnail:
             self.logger.debug("preview_thumbnail nao disponivel")
             return False
@@ -371,6 +375,33 @@ class ConversionActionsMixin:
 
         return False
 
+    def _fade_out_thumbnail(self, steps=10, interval_ms=50):
+        if not hasattr(self, 'preview_thumbnail') or not self.preview_thumbnail:
+            return False
+        if not hasattr(self, 'preview_frame') or not self.preview_frame:
+            return False
+        if not self.preview_frame.get_visible():
+            return False
+        if hasattr(self, '_preview_active') and self._preview_active:
+            self._refresh_preview()
+            return False
+        self._fade_step = 0
+        self._fade_total = steps
+        GLib.timeout_add(interval_ms, self._fade_step_callback)
+        return False
+
+    def _fade_step_callback(self):
+        self._fade_step += 1
+        opacity = 1.0 - (self._fade_step / self._fade_total)
+        if hasattr(self, 'preview_frame') and self.preview_frame:
+            self.preview_frame.set_opacity(opacity)
+        if self._fade_step >= self._fade_total:
+            self._hide_thumbnail()
+            if hasattr(self, 'preview_frame') and self.preview_frame:
+                self.preview_frame.set_opacity(1.0)
+            return False
+        return True
+
     def _hide_thumbnail(self):
         if hasattr(self, 'preview_thumbnail') and self.preview_thumbnail:
             self.preview_thumbnail.set_visible(False)
@@ -397,15 +428,49 @@ class ConversionActionsMixin:
         if not self.window or not self.window.is_visible():
             return False
 
-        dialog = Gtk.MessageDialog(
+        RESPONSE_OPEN_FILE = 1
+        RESPONSE_OPEN_FOLDER = 2
+        RESPONSE_QUIT = 3
+
+        dialog = Gtk.Dialog(
+            title="Conversao Concluida",
             transient_for=self.window,
             flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            message_type=Gtk.MessageType.INFO,
-            buttons=Gtk.ButtonsType.OK,
-            text="Conversao Concluida"
         )
+
         files_str = "\n".join([os.path.basename(f) for f in output_files])
-        dialog.format_secondary_text(f"Arquivo(s) gerado(s) em:\n'{self.output_dir}':\n\n{files_str}")
-        dialog.connect("response", lambda d, r: d.destroy())
+        content = dialog.get_content_area()
+        content.set_spacing(10)
+        content.set_margin_top(15)
+        content.set_margin_bottom(5)
+        content.set_margin_start(15)
+        content.set_margin_end(15)
+
+        label = Gtk.Label()
+        label.set_markup(f"<b>{len(output_files)} arquivo(s) gerado(s)</b>\n\n{files_str}\n\nPasta: {self.output_dir}")
+        label.set_line_wrap(True)
+        label.set_max_width_chars(60)
+        label.set_xalign(0)
+        content.add(label)
+
+        dialog.add_button("Abrir Arquivo", RESPONSE_OPEN_FILE)
+        dialog.add_button("Abrir Pasta", RESPONSE_OPEN_FOLDER)
+        dialog.add_button("Encerrar", RESPONSE_QUIT)
+        dialog.add_button("OK", Gtk.ResponseType.OK)
+
         dialog.show_all()
+        response = dialog.run()
+        dialog.destroy()
+
+        if response == RESPONSE_OPEN_FILE and output_files:
+            first_file = output_files[0]
+            if first_file.lower().endswith('.txt'):
+                self._launch_player_gtk(first_file)
+            else:
+                self.open_path(first_file)
+        elif response == RESPONSE_OPEN_FOLDER:
+            self.open_path(self.output_dir)
+        elif response == RESPONSE_QUIT:
+            self._shutdown_app()
+
         return False

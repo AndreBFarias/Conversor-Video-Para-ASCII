@@ -17,38 +17,16 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
 from src.core.renderer import render_ascii_as_image, ASCII_CHAR_WIDTH, ASCII_CHAR_HEIGHT
 from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
+from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
 
-try:
-    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
-    POSTFX_AVAILABLE = True
-except ImportError:
-    POSTFX_AVAILABLE = False
+if POSTFX_AVAILABLE:
+    from src.core.post_fx_gpu import PostFXProcessor
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
     AUTO_SEG_AVAILABLE = auto_seg_available()
 except ImportError:
     AUTO_SEG_AVAILABLE = False
-
-
-def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
-    if not POSTFX_AVAILABLE:
-        return None
-
-    return PostFXConfig(
-        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
-        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
-        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
-        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
-        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
-        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
-        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
-        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
-        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
-        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
-        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
-        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
-    )
 
 
 def converter_video_para_mp4(video_path: str, output_dir: str, config: configparser.ConfigParser, progress_callback=None, chroma_override=None) -> str:
@@ -75,7 +53,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
             print("AutoSeg habilitado para conversao")
 
         postfx_processor = None
-        postfx_config = _load_postfx_config(config)
+        postfx_config = load_postfx_config(config)
         if postfx_config and POSTFX_AVAILABLE:
             has_any_fx = any([
                 postfx_config.bloom_enabled,
@@ -151,15 +129,59 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
 
     target_dimensions = (target_width, target_height)
 
-    target_fps = min(fps, 15)
+    mp4_target_fps = config.getint('Output', 'mp4_target_fps', fallback=0)
+    target_fps = min(fps, mp4_target_fps) if mp4_target_fps > 0 else fps
     frame_interval = max(1, round(fps / target_fps))
     actual_fps = fps / frame_interval
+
+    temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
+    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
 
     print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
     print(f"FPS Original: {fps} -> MP4 FPS: {actual_fps} (interval={frame_interval})")
 
+    out_h = target_height * ASCII_CHAR_HEIGHT
+    out_w = target_width * ASCII_CHAR_WIDTH
+    if out_h % 2 != 0:
+        out_h += 1
+    if out_w % 2 != 0:
+        out_w += 1
+
     temp_dir = tempfile.mkdtemp(prefix="ascii_mp4_")
-    print(f"Frames temporarios em: {temp_dir}")
+    temp_video = os.path.join(temp_dir, "temp_video.mp4")
+    actual_fps_int = int(round(actual_fps))
+
+    print(f"Output: {out_w}x{out_h} @ {actual_fps_int}fps (CFR pipe)")
+
+    cmd_ffmpeg = [
+        'ffmpeg', '-y',
+        '-f', 'rawvideo',
+        '-vcodec', 'rawvideo',
+        '-s', f'{out_w}x{out_h}',
+        '-pix_fmt', 'bgr24',
+        '-r', str(actual_fps_int),
+        '-i', '-',
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '12',
+        '-tune', 'animation',
+        '-g', '24',
+        '-bf', '0',
+        '-vsync', 'cfr',
+        '-movflags', '+faststart',
+        '-pix_fmt', 'yuv420p',
+        temp_video
+    ]
+
+    stderr_log = os.path.join(temp_dir, "ffmpeg_stderr.log")
+    stderr_file = open(stderr_log, 'w')
+
+    proc = subprocess.Popen(
+        cmd_ffmpeg,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=stderr_file
+    )
 
     try:
         frame_count = 0
@@ -198,8 +220,10 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
 
-            if prev_gray is not None:
-                resized_gray = cv2.addWeighted(resized_gray, 0.7, prev_gray, 0.3, 0)
+            if temporal_enabled and prev_gray is not None:
+                diff = np.abs(resized_gray.astype(np.int32) - prev_gray.astype(np.int32))
+                temporal_mask = diff < temporal_threshold
+                resized_gray = np.where(temporal_mask, prev_gray, resized_gray).astype(np.uint8)
             prev_gray = resized_gray.copy()
 
             if render_mode == 'user':
@@ -229,28 +253,21 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
 
             frame_image = render_ascii_as_image(ascii_string, font_scale=0.5)
 
-            expected_h = target_height * ASCII_CHAR_HEIGHT
-            expected_w = target_width * ASCII_CHAR_WIDTH
+            canvas = np.zeros((out_h, out_w, 3), dtype=np.uint8)
             fh, fw = frame_image.shape[:2]
-            if fh != expected_h or fw != expected_w:
-                canvas = np.zeros((expected_h, expected_w, 3), dtype=np.uint8)
-                copy_h = min(fh, expected_h)
-                copy_w = min(fw, expected_w)
-                canvas[:copy_h, :copy_w] = frame_image[:copy_h, :copy_w]
-                frame_image = canvas
+            canvas[:min(fh, out_h), :min(fw, out_w)] = frame_image[:min(fh, out_h), :min(fw, out_w)]
 
             if postfx_processor:
-                frame_image = postfx_processor.process(frame_image)
+                canvas = postfx_processor.process(canvas)
 
-            frame_filename = os.path.join(temp_dir, f"frame_{saved_frame_count:06d}.png")
-            cv2.imwrite(frame_filename, frame_image)
+            proc.stdin.write(canvas.tobytes())
 
             saved_frame_count += 1
             frame_count += 1
 
             if progress_callback:
                 if saved_frame_count % 30 == 0:
-                    progress_callback(frame_count, total_frames, frame_image)
+                    progress_callback(frame_count, total_frames, canvas)
                 else:
                     progress_callback(frame_count, total_frames)
 
@@ -258,28 +275,18 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
                 print(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
 
         captura.release()
+        proc.stdin.close()
+        proc.wait()
+        stderr_file.close()
+
+        if proc.returncode != 0:
+            stderr_out = ''
+            if os.path.exists(stderr_log):
+                with open(stderr_log, 'r') as f:
+                    stderr_out = f.read()[-500:]
+            raise RuntimeError(f"Erro ao criar video: {stderr_out}")
+
         print(f"Total de frames renderizados: {saved_frame_count}")
-
-        print("Criando video ASCII (sem audio)...")
-        temp_video = os.path.join(temp_dir, "temp_video.mp4")
-        actual_fps_int = int(round(actual_fps))
-        cmd_video = [
-            'ffmpeg', '-y',
-            '-framerate', str(actual_fps_int),
-            '-i', os.path.join(temp_dir, 'frame_%06d.png'),
-            '-c:v', 'libx264',
-            '-preset', 'medium',
-            '-crf', '18',
-            '-tune', 'animation',
-            '-bf', '0',
-            '-movflags', '+faststart',
-            '-pix_fmt', 'yuv420p',
-            temp_video
-        ]
-
-        result = subprocess.run(cmd_video, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        if result.returncode != 0:
-            raise RuntimeError(f"Erro ao criar video: {result.stderr}")
 
         print("Extraindo audio do video original...")
         temp_audio = extract_audio_as_aac(video_path, temp_dir)
@@ -290,8 +297,16 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
         print(f"Video ASCII criado: {output_mp4}")
         return output_mp4
 
+    except Exception:
+        try:
+            proc.stdin.close()
+        except Exception:
+            pass
+        proc.wait()
+        stderr_file.close()
+        raise
+
     finally:
-        print(f"Limpando arquivos temporarios...")
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 

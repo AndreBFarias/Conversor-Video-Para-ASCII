@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import signal
 import traceback
 import gi
 gi.require_version('Gtk', '3.0')
@@ -115,13 +116,25 @@ def run_app():
         sys.exit(1)
 
     if app and hasattr(app, 'window') and app.window:
+        def _signal_handler(signum, frame):
+            logger.info(f"Sinal {signum} recebido. Encerrando...")
+            if app and hasattr(app, '_shutdown_app'):
+                GLib.idle_add(app._shutdown_app)
+            else:
+                Gtk.main_quit()
+
+        signal.signal(signal.SIGTERM, _signal_handler)
+
         try:
             logger.info("Iniciando loop principal GTK...")
             Gtk.main()
             logger.info("Loop principal GTK finalizado.")
         except KeyboardInterrupt:
             logger.info("Encerrando via Ctrl+C.")
-            Gtk.main_quit()
+            if app and hasattr(app, '_shutdown_app'):
+                app._shutdown_app()
+            else:
+                Gtk.main_quit()
         except Exception as e:
             logger.error(f"Erro no loop principal GTK: {e}")
             traceback.print_exc(file=sys.stderr)

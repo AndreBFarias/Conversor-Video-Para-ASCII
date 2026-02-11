@@ -28,11 +28,10 @@ from src.core.utils.image import apply_morphological_refinement
 from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
 from src.app.constants import USER_CACHE_DIR
 
-try:
-    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
-    POSTFX_AVAILABLE = True
-except ImportError:
-    POSTFX_AVAILABLE = False
+from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
+
+if POSTFX_AVAILABLE:
+    from src.core.post_fx_gpu import PostFXProcessor
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
@@ -40,26 +39,6 @@ try:
 except ImportError:
     AUTO_SEG_AVAILABLE = False
     AutoSegmenter = None
-
-
-def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
-    if not POSTFX_AVAILABLE:
-        return None
-
-    return PostFXConfig(
-        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
-        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
-        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
-        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
-        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
-        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
-        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
-        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
-        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
-        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
-        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
-        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
-    )
 
 RENDER_KERNEL = cp.RawKernel(r'''
 extern "C" __global__
@@ -607,7 +586,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         matrix_rain_enabled = config.getboolean('MatrixRain', 'enabled', fallback=False)
         matrix_num_particles = config.getint('MatrixRain', 'num_particles', fallback=5000)
         matrix_char_set = config.get('MatrixRain', 'char_set', fallback='katakana')
-        matrix_speed = config.getfloat('MatrixRain', 'speed', fallback=1.0)
+        matrix_speed = config.getfloat('MatrixRain', 'speed_multiplier', fallback=1.0)
         matrix_mode = config.get('MatrixRain', 'mode', fallback='overlay')
 
         if braille_enabled:
@@ -644,7 +623,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             dilate_size = config.getint('ChromaKey', 'dilate', fallback=2)
 
         postfx_processor = None
-        postfx_config = _load_postfx_config(config)
+        postfx_config = load_postfx_config(config)
         if postfx_config and POSTFX_AVAILABLE:
             has_any_fx = any([
                 postfx_config.bloom_enabled,
@@ -738,7 +717,8 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
     else:
         resize_target = target_dim
 
-    target_fps = min(fps, 15)
+    mp4_target_fps = config.getint('Output', 'mp4_target_fps', fallback=0)
+    target_fps = min(fps, mp4_target_fps) if mp4_target_fps > 0 else fps
     frame_interval = max(1, round(fps / target_fps))
     actual_fps = fps / frame_interval
     actual_fps_int = int(round(actual_fps))
@@ -755,15 +735,19 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         '-i', '-',
         '-c:v', 'libx264',
         '-preset', 'fast',
-        '-crf', '18',
+        '-crf', '12',
         '-tune', 'animation',
+        '-g', '24',
         '-bf', '0',
+        '-vsync', 'cfr',
         '-movflags', '+faststart',
         '-pix_fmt', 'yuv420p',
         temp_video_no_audio
     ]
 
-    proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE)
+    stderr_log_sync = os.path.join(temp_dir, "ffmpeg_stderr.log")
+    stderr_file_sync = open(stderr_log_sync, 'w')
+    proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=stderr_file_sync)
 
     processed_count = 0
     frame_count = 0
@@ -819,8 +803,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                 else:
                     full_gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
 
-                if prev_gray_cpu is not None:
-                    full_gray = cv2.addWeighted(full_gray, 0.7, prev_gray_cpu, 0.3, 0)
+                if temporal_enabled and prev_gray_cpu is not None:
+                    diff = np.abs(full_gray.astype(np.int32) - prev_gray_cpu.astype(np.int32))
+                    temporal_mask_cpu = diff < temporal_threshold
+                    full_gray = np.where(temporal_mask_cpu, prev_gray_cpu, full_gray).astype(np.uint8)
                 prev_gray_cpu = full_gray.copy()
 
                 full_gray_gpu = cp.array(full_gray)
@@ -847,8 +833,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             else:
                 if is_hifi:
                     full_gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-                    if prev_gray_cpu is not None:
-                        full_gray = cv2.addWeighted(full_gray, 0.7, prev_gray_cpu, 0.3, 0)
+                    if temporal_enabled and prev_gray_cpu is not None:
+                        diff = np.abs(full_gray.astype(np.int32) - prev_gray_cpu.astype(np.int32))
+                        temporal_mask_cpu = diff < temporal_threshold
+                        full_gray = np.where(temporal_mask_cpu, prev_gray_cpu, full_gray).astype(np.uint8)
                     prev_gray_cpu = full_gray.copy()
                     full_gray_gpu = cp.array(full_gray)
                     char_indices = gpu_renderer.render_high_fidelity(full_gray_gpu)
@@ -860,8 +848,10 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
 
                 if not is_hifi:
                     gray_cpu = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
-                    if prev_gray_cpu is not None:
-                        gray_cpu = cv2.addWeighted(gray_cpu, 0.7, prev_gray_cpu, 0.3, 0)
+                    if temporal_enabled and prev_gray_cpu is not None:
+                        diff = np.abs(gray_cpu.astype(np.int32) - prev_gray_cpu.astype(np.int32))
+                        temporal_mask_cpu = diff < temporal_threshold
+                        gray_cpu = np.where(temporal_mask_cpu, prev_gray_cpu, gray_cpu).astype(np.uint8)
                     prev_gray_cpu = gray_cpu.copy()
                     gray_gpu = cp.array(gray_cpu, dtype=cp.uint8)
 
@@ -937,6 +927,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         if proc:
             proc.stdin.close()
             proc.wait()
+        stderr_file_sync.close()
         captura.release()
         if auto_segmenter is not None:
             auto_segmenter.close()
@@ -1051,10 +1042,13 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     temp_video_no_audio = os.path.join(temp_dir, "video_no_audio.mp4")
     output_mp4 = os.path.join(output_dir, f"{nome_base}_ascii.mp4")
 
-    target_fps = min(fps, 15)
+    mp4_target_fps = config.getint('Output', 'mp4_target_fps', fallback=0)
+    target_fps = min(fps, mp4_target_fps) if mp4_target_fps > 0 else fps
     frame_interval = max(1, round(fps / target_fps))
     actual_fps = fps / frame_interval
     actual_fps_int = int(round(actual_fps))
+
+    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
 
     print(f"[ASYNC] FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
 
@@ -1068,15 +1062,19 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
         '-i', '-',
         '-c:v', 'libx264',
         '-preset', 'fast',
-        '-crf', '18',
+        '-crf', '12',
         '-tune', 'animation',
+        '-g', '24',
         '-bf', '0',
+        '-vsync', 'cfr',
         '-movflags', '+faststart',
         '-pix_fmt', 'yuv420p',
         temp_video_no_audio
     ]
 
-    proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE)
+    stderr_log_async = os.path.join(temp_dir, "ffmpeg_stderr.log")
+    stderr_file_async = open(stderr_log_async, 'w')
+    proc = subprocess.Popen(cmd_ffmpeg, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=stderr_file_async)
 
     processed_count = 0
     frame_count = 0
@@ -1123,8 +1121,10 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
                 resized[mask_cpu > 127] = [0, 0, 0]
 
             gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-            if prev_gray_cpu is not None:
-                gray = cv2.addWeighted(gray, 0.7, prev_gray_cpu, 0.3, 0)
+            if temporal_enabled and prev_gray_cpu is not None:
+                diff = np.abs(gray.astype(np.int32) - prev_gray_cpu.astype(np.int32))
+                temporal_mask_cpu = diff < temporal_threshold
+                gray = np.where(temporal_mask_cpu, prev_gray_cpu, gray).astype(np.uint8)
             prev_gray_cpu = gray.copy()
 
             gray_batch.append(gray)
@@ -1173,6 +1173,7 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     except Exception as e:
         proc.stdin.close()
         proc.wait()
+        stderr_file_async.close()
         captura.release()
         if auto_segmenter is not None:
             auto_segmenter.close()
@@ -1180,6 +1181,7 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
 
     proc.stdin.close()
     proc.wait()
+    stderr_file_async.close()
     captura.release()
     if auto_segmenter is not None:
         auto_segmenter.close()

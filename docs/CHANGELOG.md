@@ -2,6 +2,56 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.4.0] - 2026-02-11
+
+### Sprint 33: Preview Bidirecional + Qualidade MP4 + UX
+
+#### Preview Bidirecional
+- Preview ASCII estatico ao selecionar arquivo (botao toggle)
+- Preview em tempo real durante conversao MP4/GIF/HTML/PNG
+- Fade-out automatico do thumbnail ao finalizar conversao
+- Config watcher: preview atualiza automaticamente ao editar config.ini
+- `preview_during_conversion` configuravel via config.ini
+
+#### Qualidade MP4
+- Anti-aliasing removido do rendering: `LINE_AA` -> `LINE_8` (pixel-perfect)
+- ffmpeg otimizado para conteudo sintetico: CRF 12, tune stillimage, yuv444p
+- Eliminado chroma subsampling que degradava texto colorido
+
+#### Preview Button Toggle Visual
+- `GtkButton` -> `GtkToggleButton` com CSS `:checked`
+- Estado visual acompanha estado logico automaticamente
+
+#### Popup de Conclusao
+- Dialog customizado com 4 acoes: Abrir Arquivo, Abrir Pasta, Encerrar, OK
+- Arquivos .txt abrem no player GTK fullscreen
+- Outros formatos abrem com xdg-open
+
+#### Cleanup ao Sair
+- `_shutdown_app()` executa `ollama stop` para liberar GPU
+- Handler em destroy, Ctrl+C e SIGTERM
+- Graceful shutdown em todos os pontos de saida
+
+#### FPS Configuravel
+- `mp4_target_fps` no config.ini (1-60, padrao 15)
+- Frame skipping inteligente em todos os converters MP4/GIF
+
+#### CLI Parity
+- `--folder` para conversao em lote via CLI
+- `--no-preview` para desativar preview durante conversao
+
+### Arquivos Modificados
+- `src/gui/main.glade` - GtkToggleButton
+- `src/app/app.py` - CSS :checked, _shutdown_app, destroy handler
+- `src/app/actions/preview_actions.py` - Handler toggled
+- `src/app/actions/conversion_actions.py` - Popup 4 botoes, preview durante conversao
+- `src/core/renderer.py` - LINE_8
+- `src/core/gpu_converter.py` - LINE_8, ffmpeg stillimage/yuv444p
+- `src/core/mp4_converter.py` - ffmpeg stillimage/yuv444p
+- `src/main.py` - SIGTERM handler, Ctrl+C cleanup
+
+---
+
 ## [2.3.0] - 2026-01-14
 
 ### Sprint 15: Impacto Visual Real
@@ -288,4 +338,4 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Interface GTK
 - Calibrador manual
 
-**Desenvolvedor Original:** [AndreBFarias](https://github.com/AndreBFarias)
+**Desenvolvedor Original:** [[REDACTED]](https://github.com/[REDACTED])

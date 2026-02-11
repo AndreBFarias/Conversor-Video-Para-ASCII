@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import configparser
 import threading
 import gi
@@ -13,6 +14,7 @@ from .actions.playback_actions import PlaybackActionsMixin
 from .actions.calibration_actions import CalibrationActionsMixin
 from .actions.options_actions import OptionsActionsMixin
 from .actions.postfx_actions import PostFXActionsMixin
+from .actions.preview_actions import PreviewActionsMixin
 
 
 class App(
@@ -21,7 +23,8 @@ class App(
     PlaybackActionsMixin,
     CalibrationActionsMixin,
     OptionsActionsMixin,
-    PostFXActionsMixin
+    PostFXActionsMixin,
+    PreviewActionsMixin
 ):
     def __init__(self, logger):
         self.logger = logger
@@ -54,7 +57,7 @@ class App(
 
         self.window.set_title("Extase em 4R73")
         self.window.set_wmclass("extase-em-4r73", "Extase em 4R73")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda w: self._shutdown_app())
         self.window.connect("key-press-event", self.on_key_press)
         self._apply_custom_css()
 
@@ -120,6 +123,8 @@ class App(
         self._create_quality_preset_combo()
         self._create_effects_tab()
         self._init_postfx_widgets()
+        self._init_preview()
+        self._start_config_watcher()
         self.update_button_states()
         self.window.show_all()
 
@@ -240,7 +245,7 @@ class App(
             /* File/Folder and Conversion Buttons (Green Borders) */
             /* Explicitly target the buttons we want to look "Green" */
             #select_file_button, #select_folder_button, #select_ascii_button,
-            #convert_button, #convert_all_button {
+            #convert_button, #convert_all_button, #preview_button {
                  border: 2px solid #418a69;
                  border-radius: 4px;
                  color: #ffffff;
@@ -249,13 +254,23 @@ class App(
                  box-shadow: none;
             }
             #select_file_button:hover, #select_folder_button:hover, #select_ascii_button:hover,
-            #convert_button:hover, #convert_all_button:hover {
+            #convert_button:hover, #convert_all_button:hover, #preview_button:hover {
                  background-color: alpha(#418a69, 0.2);
             }
             #convert_button:disabled, #convert_all_button:disabled {
                  border-color: alpha(#418a69, 0.3);
                  color: alpha(#ffffff, 0.3);
                  background-color: transparent;
+            }
+
+            /* Preview Button Active State (toggle ON) */
+            #preview_button:checked {
+                 background-color: #418a69;
+                 color: #ffffff;
+                 border-color: #418a69;
+            }
+            #preview_button:hover:not(:checked) {
+                 background-color: alpha(#418a69, 0.2);
             }
 
             /* Selected File Highlights */
@@ -389,6 +404,8 @@ class App(
             self.opt_font_size_spin = self.builder.get_object("opt_font_size_spin")
 
             self.opt_luminance_preset_combo = self.builder.get_object("opt_luminance_preset_combo")
+
+            self.preview_button = self.builder.get_object("preview_button")
 
             required_widgets = [
                 self.selected_path_label, self.convert_button,
@@ -669,13 +686,24 @@ class App(
             self.pref_audio_mids_scale = None
             self.pref_audio_treble_scale = None
 
+    def _shutdown_app(self):
+        self.logger.info("Encerrando aplicacao...")
+        try:
+            subprocess.run(["ollama", "stop"], capture_output=True, timeout=5)
+            self.logger.info("ollama stop executado.")
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+        Gtk.main_quit()
+
     def on_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_q or event.keyval == Gdk.KEY_Q:
             self.logger.info("Atalho 'Q' pressionado. Encerrando...")
-            Gtk.main_quit()
+            self._shutdown_app()
             return True
         return False
 
     def on_quit_button_clicked(self, widget):
-        self.logger.info("Botao Sair pressionado. Encerrando GTK...")
-        Gtk.main_quit()
+        self.logger.info("Botao Sair pressionado. Encerrando...")
+        self._shutdown_app()

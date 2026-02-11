@@ -16,38 +16,16 @@ from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
 from src.core.renderer import render_ascii_as_image
+from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
 
-try:
-    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
-    POSTFX_AVAILABLE = True
-except ImportError:
-    POSTFX_AVAILABLE = False
+if POSTFX_AVAILABLE:
+    from src.core.post_fx_gpu import PostFXProcessor
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
     AUTO_SEG_AVAILABLE = auto_seg_available()
 except ImportError:
     AUTO_SEG_AVAILABLE = False
-
-
-def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
-    if not POSTFX_AVAILABLE:
-        return None
-
-    return PostFXConfig(
-        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
-        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
-        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
-        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
-        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
-        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
-        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
-        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
-        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
-        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
-        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
-        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
-    )
 
 
 def converter_video_para_gif(video_path: str, output_dir: str, config: configparser.ConfigParser, progress_callback=None, chroma_override=None) -> str:
@@ -74,7 +52,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             print("AutoSeg habilitado para conversao GIF")
 
         postfx_processor = None
-        postfx_config = _load_postfx_config(config)
+        postfx_config = load_postfx_config(config)
         if postfx_config and POSTFX_AVAILABLE:
             has_any_fx = any([
                 postfx_config.bloom_enabled,
@@ -137,7 +115,8 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
     fps = captura.get(cv2.CAP_PROP_FPS)
     total_frames = int(captura.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    target_fps = min(fps, 15)
+    mp4_target_fps = config.getint('Output', 'mp4_target_fps', fallback=0)
+    target_fps = min(fps, mp4_target_fps) if mp4_target_fps > 0 else fps
 
     source_width = captura.get(cv2.CAP_PROP_FRAME_WIDTH)
     source_height = captura.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -155,6 +134,9 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
     print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
     frame_interval = max(1, round(fps / target_fps))
     actual_fps = fps / frame_interval
+
+    temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
+    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
 
     print(f"FPS Original: {fps} -> GIF FPS: {actual_fps} (interval={frame_interval})")
 
@@ -199,8 +181,10 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             resized_color = cv2.resize(frame_colorido, target_dimensions, interpolation=cv2.INTER_AREA)
             resized_mask = cv2.resize(mask_refined, target_dimensions, interpolation=cv2.INTER_NEAREST)
 
-            if prev_gray is not None:
-                resized_gray = cv2.addWeighted(resized_gray, 0.7, prev_gray, 0.3, 0)
+            if temporal_enabled and prev_gray is not None:
+                diff = np.abs(resized_gray.astype(np.int32) - prev_gray.astype(np.int32))
+                temporal_mask = diff < temporal_threshold
+                resized_gray = np.where(temporal_mask, prev_gray, resized_gray).astype(np.uint8)
             prev_gray = resized_gray.copy()
 
             if render_mode == 'user':

@@ -125,7 +125,16 @@ Configuracoes de saida.
 
 | Opcao | Tipo | Valores | Descricao |
 |-------|------|---------|-----------|
-| `format` | string | txt, html, ansi | Formato do arquivo de saida |
+| `format` | string | txt, mp4, gif, html, png, png_all | Formato do arquivo de saida |
+| `mp4_target_fps` | int | 1-60 | FPS alvo para conversao MP4 (padrao: 15) |
+
+## [Preview]
+
+Configuracoes de preview durante conversao.
+
+| Opcao | Tipo | Padrao | Descricao |
+|-------|------|--------|-----------|
+| `preview_during_conversion` | bool | true | Mostrar thumbnail durante conversao |
 
 ---
 

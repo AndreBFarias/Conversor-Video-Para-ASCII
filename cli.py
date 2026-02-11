@@ -15,7 +15,7 @@ if ROOT_DIR not in sys.path:
 from src.app.constants import (
     QUALITY_PRESETS, STYLE_PRESETS, LUMINANCE_RAMPS,
     FIXED_PALETTES, BIT_PRESETS, DEFAULT_CONFIG_PATH,
-    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+    CONFIG_PATH, VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
 )
 
 DEFAULT_OUTPUT_DIR = os.path.join(ROOT_DIR, "data_output")
@@ -24,11 +24,10 @@ DEFAULT_OUTPUT_DIR = os.path.join(ROOT_DIR, "data_output")
 def _resolve_config_path(args_config: str | None) -> str:
     if args_config:
         return os.path.abspath(args_config)
+    if os.path.exists(CONFIG_PATH):
+        return CONFIG_PATH
     if os.path.exists(DEFAULT_CONFIG_PATH):
         return DEFAULT_CONFIG_PATH
-    local = os.path.join(ROOT_DIR, "config.ini")
-    if os.path.exists(local):
-        return local
     print("[FAIL] config.ini nao encontrado", file=sys.stderr)
     sys.exit(1)
 
@@ -77,6 +76,11 @@ def _apply_overrides(config: configparser.ConfigParser, args: argparse.Namespace
             fmt = 'png_first'
         config.set('Output', 'format', fmt)
 
+    if hasattr(args, 'no_preview') and args.no_preview:
+        if not config.has_section('Preview'):
+            config.add_section('Preview')
+        config.set('Preview', 'preview_during_conversion', 'false')
+
 
 def _detect_input_type(file_path: str) -> str:
     ext = os.path.splitext(file_path)[1].lower()
@@ -114,37 +118,8 @@ def cli_progress(current: int, total: int, frame_data=None) -> None:
         print()
 
 
-def cmd_convert(args: argparse.Namespace) -> int:
-    config_path = _resolve_config_path(args.config)
-    config = _load_config(config_path)
-    _apply_overrides(config, args)
-
-    if args.video and args.image:
-        print("[FAIL] Use --video ou --image, nao ambos", file=sys.stderr)
-        return 1
-
-    file_path = args.video or args.image
-    if not file_path:
-        print("[FAIL] Especifique --video ou --image", file=sys.stderr)
-        return 1
-
-    if not os.path.exists(file_path):
-        print(f"[FAIL] Arquivo nao encontrado: {file_path}", file=sys.stderr)
-        return 1
-
-    input_type = _detect_input_type(file_path)
-    if input_type == "unknown":
-        if args.video:
-            input_type = "video"
-        elif args.image:
-            input_type = "image"
-        else:
-            print(f"[FAIL] Extensao nao reconhecida: {file_path}", file=sys.stderr)
-            return 1
-
-    output_dir = args.output or config.get('Pastas', 'output_dir', fallback='') or DEFAULT_OUTPUT_DIR
-    os.makedirs(output_dir, exist_ok=True)
-
+def _convert_single(file_path: str, input_type: str, output_dir: str,
+                     config: configparser.ConfigParser) -> int:
     output_format = config.get('Output', 'format', fallback='txt').lower()
     conversion_mode = config.get('Mode', 'conversion_mode', fallback='ascii').lower()
 
@@ -227,6 +202,75 @@ def cmd_convert(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"\n[FAIL] Erro na conversao: {e}", file=sys.stderr)
         return 1
+
+
+def cmd_convert(args: argparse.Namespace) -> int:
+    config_path = _resolve_config_path(args.config)
+    config = _load_config(config_path)
+    _apply_overrides(config, args)
+
+    if args.folder:
+        folder_path = os.path.abspath(args.folder)
+        if not os.path.isdir(folder_path):
+            print(f"[FAIL] Pasta nao encontrada: {folder_path}", file=sys.stderr)
+            return 1
+
+        output_dir = args.output or config.get('Pastas', 'output_dir', fallback='') or DEFAULT_OUTPUT_DIR
+        os.makedirs(output_dir, exist_ok=True)
+
+        files = sorted([
+            os.path.join(folder_path, f)
+            for f in os.listdir(folder_path)
+            if os.path.splitext(f)[1].lower() in VIDEO_EXTENSIONS + IMAGE_EXTENSIONS
+        ])
+
+        if not files:
+            print(f"[FAIL] Nenhum arquivo de midia encontrado em: {folder_path}", file=sys.stderr)
+            return 1
+
+        _print_header(f"Conversao em lote: {len(files)} arquivo(s)")
+        errors = 0
+        for i, fp in enumerate(files, 1):
+            print(f"\n  [{i}/{len(files)}]")
+            input_type = _detect_input_type(fp)
+            if input_type == "unknown":
+                print(f"  [SKIP] Formato nao reconhecido: {os.path.basename(fp)}")
+                continue
+            rc = _convert_single(fp, input_type, output_dir, config)
+            if rc != 0:
+                errors += 1
+
+        _print_header("Resultado do Lote")
+        print(f"  {len(files) - errors}/{len(files)} concluidos com sucesso")
+        return 1 if errors > 0 else 0
+
+    if args.video and args.image:
+        print("[FAIL] Use --video ou --image, nao ambos", file=sys.stderr)
+        return 1
+
+    file_path = args.video or args.image
+    if not file_path:
+        print("[FAIL] Especifique --video, --image ou --folder", file=sys.stderr)
+        return 1
+
+    if not os.path.exists(file_path):
+        print(f"[FAIL] Arquivo nao encontrado: {file_path}", file=sys.stderr)
+        return 1
+
+    input_type = _detect_input_type(file_path)
+    if input_type == "unknown":
+        if args.video:
+            input_type = "video"
+        elif args.image:
+            input_type = "image"
+        else:
+            print(f"[FAIL] Extensao nao reconhecida: {file_path}", file=sys.stderr)
+            return 1
+
+    output_dir = args.output or config.get('Pastas', 'output_dir', fallback='') or DEFAULT_OUTPUT_DIR
+    os.makedirs(output_dir, exist_ok=True)
+
+    return _convert_single(file_path, input_type, output_dir, config)
 
 
 def cmd_config(args: argparse.Namespace) -> int:
@@ -631,8 +675,10 @@ def build_parser() -> argparse.ArgumentParser:
     gpu_group = p_convert.add_mutually_exclusive_group()
     gpu_group.add_argument('--gpu', action='store_true', default=None, dest='gpu', help='Forcar GPU')
     gpu_group.add_argument('--no-gpu', action='store_false', dest='gpu', help='Forcar CPU')
+    p_convert.add_argument('--no-preview', action='store_true', help='Desabilitar preview durante conversao')
     p_convert.add_argument('--width', type=int, help='Largura em caracteres')
     p_convert.add_argument('--height', type=int, help='Altura em caracteres')
+    p_convert.add_argument('--folder', type=str, help='Pasta com videos para conversao em lote')
     p_convert.add_argument('--output', type=str, help='Diretorio de saida')
     p_convert.add_argument('--config', type=str, help='Caminho do config.ini')
 

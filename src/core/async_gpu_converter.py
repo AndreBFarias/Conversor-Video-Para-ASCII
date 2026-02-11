@@ -129,23 +129,31 @@ class AsyncGPUConverter:
         color_frames: List[np.ndarray]
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
         num_frames = len(gray_frames)
-        results = [None] * num_frames
+        results = []
 
-        for i in range(num_frames):
-            stream_idx = i % self.num_streams
-            results[i] = self.process_frame_async(
-                gray_frames[i],
-                color_frames[i],
-                stream_idx
-            )
+        for chunk_start in range(0, num_frames, self.num_streams):
+            chunk_end = min(chunk_start + self.num_streams, num_frames)
+            chunk_refs = []
 
-        for stream in self.streams:
-            stream.synchronize()
+            for i in range(chunk_start, chunk_end):
+                stream_idx = i - chunk_start
+                self.process_frame_async(
+                    gray_frames[i],
+                    color_frames[i],
+                    stream_idx
+                )
+                chunk_refs.append(stream_idx)
 
-        return [
-            (char_buf.get(), color_buf.get())
-            for char_buf, color_buf in results
-        ]
+            for stream in self.streams:
+                stream.synchronize()
+
+            for idx in chunk_refs:
+                results.append((
+                    self.char_indices_buffers[idx].get(),
+                    self.color_indices_buffers[idx].get()
+                ))
+
+        return results
 
     def render_batch_async(
         self,
@@ -153,23 +161,30 @@ class AsyncGPUConverter:
         color_indices_batch: List[cp.ndarray]
     ) -> List[np.ndarray]:
         num_frames = len(char_indices_batch)
-        results = [None] * num_frames
+        results = []
 
-        for i in range(num_frames):
-            stream_idx = i % self.num_streams
-            stream = self.streams[stream_idx]
+        for chunk_start in range(0, num_frames, self.num_streams):
+            chunk_end = min(chunk_start + self.num_streams, num_frames)
+            chunk_gpu_results = []
 
-            with stream:
-                result_gpu = self.gpu_converter.render_frame(
-                    char_indices_batch[i],
-                    color_indices_batch[i]
-                )
-                results[i] = result_gpu
+            for i in range(chunk_start, chunk_end):
+                stream_idx = i - chunk_start
+                stream = self.streams[stream_idx]
 
-        for stream in self.streams:
-            stream.synchronize()
+                with stream:
+                    result_gpu = self.gpu_converter.render_frame(
+                        char_indices_batch[i],
+                        color_indices_batch[i]
+                    )
+                    chunk_gpu_results.append(result_gpu)
 
-        return [result.get() if result is not None else None for result in results]
+            for stream in self.streams:
+                stream.synchronize()
+
+            for result_gpu in chunk_gpu_results:
+                results.append(result_gpu.get() if result_gpu is not None else None)
+
+        return results
 
 
 class AsyncPipeline:

@@ -51,6 +51,7 @@ class FileActionsMixin:
             self.logger.info(f"Arquivo selecionado: {self.selected_file_path}")
         dialog.destroy()
         self.update_button_states()
+        self._refresh_preview()
 
     def on_select_folder_button_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(
@@ -75,6 +76,7 @@ class FileActionsMixin:
             self.logger.info(f"Pasta selecionada: {self.selected_folder_path}")
         dialog.destroy()
         self.update_button_states()
+        self._refresh_preview()
 
     def on_select_ascii_button_clicked(self, widget):
         dialog = Gtk.FileChooserDialog(

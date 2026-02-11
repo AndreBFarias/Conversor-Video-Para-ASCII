@@ -31,6 +31,8 @@ python cli.py convert --image FILE [opcoes]
 | `--style` | clean/cyberpunk/retro/high_contrast | Preset de estilo |
 | `--luminance` | standard/simple/blocks/minimal/binary/dots/detailed/letters/numbers/arrows | Rampa de luminancia |
 | `--gpu / --no-gpu` | bool | Forcar GPU ou CPU |
+| `--folder DIR` | path | Converter todos os videos da pasta |
+| `--no-preview` | bool | Desativar preview durante conversao |
 | `--width N` | int | Largura em caracteres |
 | `--height N` | int | Altura em caracteres |
 | `--output DIR` | path | Diretorio de saida |
@@ -59,6 +61,12 @@ python cli.py convert --image data_input/foto.png --mode pixelart
 
 # Forcar CPU mesmo com GPU disponivel
 python cli.py convert --video data_input/video.mp4 --format mp4 --no-gpu
+
+# Converter todos os videos de uma pasta
+python cli.py convert --folder data_input/ --format mp4
+
+# Conversao sem preview (mais rapido)
+python cli.py convert --video data_input/video.mp4 --format mp4 --no-preview
 ```
 
 #### Dispatch Table

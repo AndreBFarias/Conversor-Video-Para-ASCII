@@ -283,6 +283,22 @@
                         <property name="position">2</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkToggleButton" id="preview_button">
+                        <property name="label" translatable="yes">Preview</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="tooltip-text" translatable="yes">Preview ASCII do arquivo selecionado</property>
+                        <property name="hexpand">True</property>
+                        <signal name="toggled" handler="on_preview_button_toggled" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
