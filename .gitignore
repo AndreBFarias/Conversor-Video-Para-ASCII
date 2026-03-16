@@ -81,3 +81,6 @@ venv_requirements-appimage/
 
 # CI cache
 .github-cache-bust
+
+# Arquivo pessoal externo
+KIMI.md
