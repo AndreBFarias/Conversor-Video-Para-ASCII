@@ -1354,9 +1354,11 @@ class GTKCalibrator:
                 '-i', os.path.join(self.mp4_temp_dir, 'frame_%06d.png'),
                 '-c:v', 'libx264',
                 '-preset', 'medium',
-                '-crf', '18',
+                '-crf', '12',
                 '-tune', 'animation',
+                '-g', '24',
                 '-bf', '0',
+                '-vsync', 'cfr',
                 '-movflags', '+faststart',
                 '-pix_fmt', 'yuv420p',
                 temp_video
