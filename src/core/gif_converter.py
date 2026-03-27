@@ -2,7 +2,10 @@
 import cv2
 import os
 import sys
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 import configparser
 import subprocess
 import tempfile
@@ -49,7 +52,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         auto_segmenter = None
         if auto_seg_enabled and AUTO_SEG_AVAILABLE:
             auto_segmenter = AutoSegmenter()
-            print("AutoSeg habilitado para conversao GIF")
+            logger.info("AutoSeg habilitado para conversao GIF")
 
         postfx_processor = None
         postfx_config = load_postfx_config(config)
@@ -71,7 +74,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
                     fx_list.append("Scanlines")
                 if postfx_config.glitch_enabled:
                     fx_list.append("Glitch")
-                print(f"PostFX habilitado para GIF: {', '.join(fx_list)}")
+                logger.info(f"PostFX habilitado para GIF: {', '.join(fx_list)}")
 
         if chroma_override:
             lower_green = np.array([
@@ -131,17 +134,17 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
 
     target_dimensions = (target_width, target_height)
 
-    print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
+    logger.info(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
     frame_interval = max(1, round(fps / target_fps))
     actual_fps = fps / frame_interval
 
     temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
     temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
 
-    print(f"FPS Original: {fps} -> GIF FPS: {actual_fps} (interval={frame_interval})")
+    logger.info(f"FPS Original: {fps} -> GIF FPS: {actual_fps} (interval={frame_interval})")
 
     temp_dir = tempfile.mkdtemp(prefix="ascii_gif_")
-    print(f"Frames temporarios em: {temp_dir}")
+    logger.info(f"Frames temporarios em: {temp_dir}")
 
     try:
         frame_count = 0
@@ -231,12 +234,12 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             frame_count += 1
 
             if saved_frame_count % 30 == 0:
-                print(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
+                logger.info(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
 
         captura.release()
-        print(f"Total de frames salvos: {saved_frame_count}")
+        logger.info(f"Total de frames salvos: {saved_frame_count}")
 
-        print("Gerando paleta de cores otimizada...")
+        logger.info("Gerando paleta de cores otimizada...")
         palette_path = os.path.join(temp_dir, "palette.png")
         cmd_palette = [
             'ffmpeg', '-y',
@@ -249,7 +252,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
             raise RuntimeError(f"Erro ao gerar paleta: {result.stderr}")
 
         actual_fps_int = int(round(actual_fps))
-        print(f"Criando GIF animado ({actual_fps_int}fps)...")
+        logger.info(f"Criando GIF animado ({actual_fps_int}fps)...")
         cmd_gif = [
             'ffmpeg', '-y',
             '-framerate', str(actual_fps_int),
@@ -263,11 +266,11 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         if result.returncode != 0:
             raise RuntimeError(f"Erro ao criar GIF: {result.stderr}")
 
-        print(f"GIF criado: {output_gif}")
+        logger.info(f"GIF criado: {output_gif}")
         return output_gif
 
     finally:
-        print(f"Limpando arquivos temporarios...")
+        logger.info("Limpando arquivos temporarios...")
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 if __name__ == "__main__":

@@ -2,8 +2,11 @@
 import cv2
 import os
 import sys
+import logging
 import numpy as np
 import configparser
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -14,37 +17,16 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
 from src.core.renderer import render_ascii_as_image
 
-try:
-    from src.core.post_fx_gpu import PostFXProcessor, PostFXConfig
-    POSTFX_AVAILABLE = True
-except ImportError:
-    POSTFX_AVAILABLE = False
+from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
+
+if POSTFX_AVAILABLE:
+    from src.core.post_fx_gpu import PostFXProcessor
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
     AUTO_SEG_AVAILABLE = auto_seg_available()
 except ImportError:
     AUTO_SEG_AVAILABLE = False
-
-
-def _load_postfx_config(config: configparser.ConfigParser) -> 'PostFXConfig':
-    if not POSTFX_AVAILABLE:
-        return None
-
-    return PostFXConfig(
-        bloom_enabled=config.getboolean('PostFX', 'bloom_enabled', fallback=False),
-        bloom_intensity=config.getfloat('PostFX', 'bloom_intensity', fallback=1.2),
-        bloom_radius=config.getint('PostFX', 'bloom_radius', fallback=21),
-        bloom_threshold=config.getint('PostFX', 'bloom_threshold', fallback=80),
-        chromatic_enabled=config.getboolean('PostFX', 'chromatic_enabled', fallback=False),
-        chromatic_shift=config.getint('PostFX', 'chromatic_shift', fallback=12),
-        scanlines_enabled=config.getboolean('PostFX', 'scanlines_enabled', fallback=False),
-        scanlines_intensity=config.getfloat('PostFX', 'scanlines_intensity', fallback=0.7),
-        scanlines_spacing=config.getint('PostFX', 'scanlines_spacing', fallback=2),
-        glitch_enabled=config.getboolean('PostFX', 'glitch_enabled', fallback=False),
-        glitch_intensity=config.getfloat('PostFX', 'glitch_intensity', fallback=0.6),
-        glitch_block_size=config.getint('PostFX', 'glitch_block_size', fallback=8)
-    )
 
 
 def _read_config_params(config: configparser.ConfigParser, chroma_override=None):
@@ -180,7 +162,7 @@ def converter_video_para_png_primeiro(video_path: str, output_dir: str, config: 
         auto_segmenter = AutoSegmenter()
 
     postfx_processor = None
-    postfx_config = _load_postfx_config(config)
+    postfx_config = load_postfx_config(config)
     if postfx_config and POSTFX_AVAILABLE:
         has_any_fx = any([postfx_config.bloom_enabled, postfx_config.chromatic_enabled, postfx_config.scanlines_enabled, postfx_config.glitch_enabled])
         if has_any_fx:
@@ -208,7 +190,7 @@ def converter_video_para_png_primeiro(video_path: str, output_dir: str, config: 
     if progress_callback:
         progress_callback(1, 1, frame_image)
 
-    print(f"PNG gerado: {output_png}")
+    logger.info(f"PNG gerado: {output_png}")
     return output_png
 
 
@@ -231,7 +213,7 @@ def converter_video_para_png_todos(video_path: str, output_dir: str, config: con
         auto_segmenter = AutoSegmenter()
 
     postfx_processor = None
-    postfx_config = _load_postfx_config(config)
+    postfx_config = load_postfx_config(config)
     if postfx_config and POSTFX_AVAILABLE:
         has_any_fx = any([postfx_config.bloom_enabled, postfx_config.chromatic_enabled, postfx_config.scanlines_enabled, postfx_config.glitch_enabled])
         if has_any_fx:
@@ -266,10 +248,10 @@ def converter_video_para_png_todos(video_path: str, output_dir: str, config: con
                 progress_callback(frame_count, total_frames)
 
         if frame_count % 100 == 0:
-            print(f"PNG frames: {frame_count}/{total_frames}")
+            logger.info(f"PNG frames: {frame_count}/{total_frames}")
 
     captura.release()
-    print(f"PNG frames gerados: {frame_count} arquivos em {output_subdir}")
+    logger.info(f"PNG frames gerados: {frame_count} arquivos em {output_subdir}")
     return output_subdir
 
 
@@ -288,7 +270,7 @@ def converter_imagem_para_png(image_path: str, output_dir: str, config: configpa
         raise IOError(f"Erro ao ler imagem: {image_path}")
 
     postfx_processor = None
-    postfx_config = _load_postfx_config(config)
+    postfx_config = load_postfx_config(config)
     if postfx_config and POSTFX_AVAILABLE:
         has_any_fx = any([postfx_config.bloom_enabled, postfx_config.chromatic_enabled, postfx_config.scanlines_enabled, postfx_config.glitch_enabled])
         if has_any_fx:
@@ -303,7 +285,7 @@ def converter_imagem_para_png(image_path: str, output_dir: str, config: configpa
     output_png = os.path.join(output_dir, f"{nome_base}_ascii.png")
     cv2.imwrite(output_png, frame_image)
 
-    print(f"PNG gerado: {output_png}")
+    logger.info(f"PNG gerado: {output_png}")
     return output_png
 
 

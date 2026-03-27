@@ -13,6 +13,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.app.defaults import get_default
+from src.core.utils.color import rgb_to_ansi256
+from src.core.utils.image import sharpen_frame
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
@@ -37,29 +39,6 @@ ANSI_RESET = "\033[0m"
 COLOR_SEPARATOR = "§"
 ANSI_CLEAR_AND_HOME = "\033[2J\033[H"
 LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-
-
-def sharpen_frame(frame, sharpen_amount=0.5):
-    if sharpen_amount <= 0:
-        return frame
-
-    gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
-    sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-
-    return sharpened
-
-
-def rgb_to_ansi256(r, g, b):
-    if r == g == b:
-        if r < 8:
-            return 16
-        if r > 248:
-            return 231
-        return 232 + int(((r - 8) / 247) * 23)
-    ansi_r = int(r / 255 * 5)
-    ansi_g = int(g / 255 * 5)
-    ansi_b = int(b / 255 * 5)
-    return 16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b
 
 
 def rgb_to_truecolor(r, g, b):

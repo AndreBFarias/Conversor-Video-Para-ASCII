@@ -1,9 +1,12 @@
 import cv2
 import os
 import sys
+import logging
 import numpy as np
 import configparser
 import argparse
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -40,7 +43,7 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
 
         luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP).rstrip('|')
-        print(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
+        logger.info(f"Usando rampa: {repr(luminance_ramp)} ({len(luminance_ramp)} caracteres)")
 
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
@@ -89,9 +92,9 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
                         fx_list.append("Scanlines")
                     if glitch_enabled:
                         fx_list.append("Glitch")
-                    print(f"PostFX habilitado (CPU): {', '.join(fx_list)}")
+                    logger.info(f"PostFX habilitado (CPU): {', '.join(fx_list)}")
                 except Exception as e:
-                    print(f"Aviso: PostFX falhou ao inicializar: {e}")
+                    logger.warning(f"PostFX falhou ao inicializar: {e}")
 
         if chroma_override:
             lower_green = np.array([
@@ -154,30 +157,30 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
 
         target_dimensions = (target_width, target_height)
         manual_flag = '[altura manual]' if config_height > 0 else ''
-        print(f"Video de origem: {int(source_width)}x{int(source_height)}. Convertendo para: {target_width}x{target_height} (caracteres).{manual_flag}")
+        logger.info(f"Video de origem: {int(source_width)}x{int(source_height)}. Convertendo para: {target_width}x{target_height} (caracteres).{manual_flag}")
     except Exception as e:
-        print(f"Aviso: Nao foi possivel calcular a proporcao. Usando 80x25. Erro: {e}")
+        logger.warning(f"Nao foi possivel calcular a proporcao. Usando 80x25. Erro: {e}")
         target_dimensions = (target_width, 25)
 
     auto_segmenter = None
     if auto_seg_enabled and AUTO_SEG_AVAILABLE:
         try:
             auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=False)
-            print("Auto Seg ativado para conversao (CPU)")
+            logger.info("Auto Seg ativado para conversao (CPU)")
         except Exception as e:
-            print(f"Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+            logger.warning(f"Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
             auto_segmenter = None
     elif auto_seg_enabled and not AUTO_SEG_AVAILABLE:
-        print("Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+        logger.warning("Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
 
     if temporal_enabled:
-        print(f"Temporal Coherence ativado: threshold={temporal_threshold}")
+        logger.info(f"Temporal Coherence ativado: threshold={temporal_threshold}")
 
     if braille_enabled:
-        print("Aviso: Braille requer GPU Converter (gpu_converter.py), ignorado em conversao CPU")
+        logger.warning("Braille requer GPU Converter (gpu_converter.py), ignorado em conversao CPU")
 
     if render_mode != 'both':
-        print(f"Render Mode: {render_mode}")
+        logger.info(f"Render Mode: {render_mode}")
 
     prev_gray_frame = None
 

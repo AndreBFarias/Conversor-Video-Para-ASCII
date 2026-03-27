@@ -2,7 +2,10 @@
 import cv2
 import os
 import sys
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 import configparser
 import subprocess
 import tempfile
@@ -50,7 +53,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
         auto_segmenter = None
         if auto_seg_enabled and AUTO_SEG_AVAILABLE:
             auto_segmenter = AutoSegmenter()
-            print("AutoSeg habilitado para conversao")
+            logger.info("AutoSeg habilitado para conversao")
 
         postfx_processor = None
         postfx_config = load_postfx_config(config)
@@ -72,7 +75,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
                     fx_list.append("Scanlines")
                 if postfx_config.glitch_enabled:
                     fx_list.append("Glitch")
-                print(f"PostFX habilitado: {', '.join(fx_list)}")
+                logger.info(f"PostFX habilitado: {', '.join(fx_list)}")
 
         if chroma_override:
             lower_green = np.array([
@@ -137,8 +140,8 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
     temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
     temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
 
-    print(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
-    print(f"FPS Original: {fps} -> MP4 FPS: {actual_fps} (interval={frame_interval})")
+    logger.info(f"Video: {int(source_width)}x{int(source_height)} -> ASCII: {target_width}x{target_height}")
+    logger.info(f"FPS Original: {fps} -> MP4 FPS: {actual_fps} (interval={frame_interval})")
 
     out_h = target_height * ASCII_CHAR_HEIGHT
     out_w = target_width * ASCII_CHAR_WIDTH
@@ -151,7 +154,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
     temp_video = os.path.join(temp_dir, "temp_video.mp4")
     actual_fps_int = int(round(actual_fps))
 
-    print(f"Output: {out_w}x{out_h} @ {actual_fps_int}fps (CFR pipe)")
+    logger.info(f"Output: {out_w}x{out_h} @ {actual_fps_int}fps (CFR pipe)")
 
     cmd_ffmpeg = [
         'ffmpeg', '-y',
@@ -272,7 +275,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
                     progress_callback(frame_count, total_frames)
 
             if saved_frame_count % 30 == 0:
-                print(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
+                logger.info(f"Processado: {frame_count}/{total_frames} frames ({saved_frame_count} salvos)")
 
         captura.release()
         proc.stdin.close()
@@ -286,15 +289,15 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
                     stderr_out = f.read()[-500:]
             raise RuntimeError(f"Erro ao criar video: {stderr_out}")
 
-        print(f"Total de frames renderizados: {saved_frame_count}")
+        logger.info(f"Total de frames renderizados: {saved_frame_count}")
 
-        print("Extraindo audio do video original...")
+        logger.info("Extraindo audio do video original...")
         temp_audio = extract_audio_as_aac(video_path, temp_dir)
 
-        print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+        logger.info("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
         mux_video_audio(temp_video, temp_audio, output_mp4)
 
-        print(f"Video ASCII criado: {output_mp4}")
+        logger.info(f"Video ASCII criado: {output_mp4}")
         return output_mp4
 
     except Exception:

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import cv2
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
 try:
     import cupy as cp
     CUPY_AVAILABLE = True
@@ -226,12 +230,12 @@ def generate_atlas_cpu():
         try:
             with open(cache_file, 'rb') as f:
                 atlas = pickle.load(f)
-            print(f"Atlas carregado do cache: {cache_file}")
+            logger.info(f"Atlas carregado do cache: {cache_file}")
             return atlas
         except Exception as e:
-            print(f"Erro ao carregar cache, regenerando: {e}")
+            logger.error(f" ao carregar cache, regenerando: {e}")
 
-    print("Gerando atlas de caracteres...")
+    logger.info("Gerando atlas de caracteres...")
     chars = [chr(i) for i in range(256)]
     atlas_h = ASCII_CHAR_HEIGHT
     atlas_w = ASCII_CHAR_WIDTH
@@ -256,9 +260,9 @@ def generate_atlas_cpu():
     try:
         with open(cache_file, 'wb') as f:
             pickle.dump(atlas, f)
-        print(f"Atlas salvo em cache: {cache_file}")
+        logger.info(f"Atlas salvo em cache: {cache_file}")
     except Exception as e:
-        print(f"Erro ao salvar cache: {e}")
+        logger.error(f" ao salvar cache: {e}")
 
     return atlas
 
@@ -270,12 +274,12 @@ def generate_braille_atlas_cpu():
         try:
             with open(cache_file, 'rb') as f:
                 atlas = pickle.load(f)
-            print(f"Braille atlas carregado do cache: {cache_file}")
+            logger.info(f"Braille atlas carregado do cache: {cache_file}")
             return atlas
         except Exception as e:
-            print(f"Erro ao carregar braille cache, regenerando: {e}")
+            logger.error(f" ao carregar braille cache, regenerando: {e}")
 
-    print("Gerando atlas Braille (256 padroes)...")
+    logger.info("Gerando atlas Braille (256 padroes)...")
     atlas_h = ASCII_CHAR_HEIGHT
     atlas_w = ASCII_CHAR_WIDTH
     atlas = np.zeros((256, atlas_h, atlas_w), dtype=np.uint8)
@@ -296,9 +300,9 @@ def generate_braille_atlas_cpu():
     try:
         with open(cache_file, 'wb') as f:
             pickle.dump(atlas, f)
-        print(f"Braille atlas salvo em cache: {cache_file}")
+        logger.info(f"Braille atlas salvo em cache: {cache_file}")
     except Exception as e:
-        print(f"Erro ao salvar braille cache: {e}")
+        logger.error(f" ao salvar braille cache: {e}")
 
     return atlas
 
@@ -325,7 +329,7 @@ class GPUConverter:
         matrix_speed=1.0,
         luminance_ramp=None
     ):
-        print("Inicializando GPU Converter (Cupy)...")
+        logger.info("Inicializando GPU Converter (Cupy)...")
 
         if luminance_ramp is None:
             luminance_ramp = LUMINANCE_RAMP_DEFAULT
@@ -339,7 +343,7 @@ class GPUConverter:
         self.matrix_rain_enabled = matrix_rain_enabled
 
         if braille_enabled:
-            print("Modo Braille Ativado: Resolucao 4x maior")
+            logger.info("Modo Braille Ativado: Resolucao 4x maior")
             self.atlas_cpu = generate_braille_atlas_cpu()
         else:
             self.atlas_cpu = generate_atlas_cpu()
@@ -365,10 +369,10 @@ class GPUConverter:
                            (target_height + self.match_block[1] - 1) // self.match_block[1])
 
         self.output_buffer_gpu = cp.zeros((self.out_h, self.out_w, 3), dtype=cp.uint8)
-        print(f"GPU Memory pooling: Pre-allocated {self.out_w}x{self.out_h}x3 buffer")
+        logger.info(f"GPU Memory pooling: Pre-allocated {self.out_w}x{self.out_h}x3 buffer")
 
         if temporal_coherence:
-            print("Temporal Coherence Ativado: Anti-flicker")
+            logger.info("Temporal Coherence Ativado: Anti-flicker")
             self.prev_char_indices = None
             self.prev_gray = None
         else:
@@ -376,7 +380,7 @@ class GPUConverter:
             self.prev_gray = None
 
         if matrix_rain_enabled:
-            print(f"Matrix Rain: Tentando inicializar {matrix_num_particles} particulas (char_set={matrix_char_set})")
+            logger.info(f"Matrix Rain: Tentando inicializar {matrix_num_particles} particulas (char_set={matrix_char_set})")
             try:
                 from .matrix_rain_gpu import MatrixRainGPU
                 self.matrix_rain = MatrixRainGPU(
@@ -386,9 +390,9 @@ class GPUConverter:
                     char_set=matrix_char_set,
                     speed_multiplier=matrix_speed
                 )
-                print("Matrix Rain inicializado com sucesso")
+                logger.info("Matrix Rain inicializado com sucesso")
             except Exception as e:
-                print(f"AVISO: Matrix Rain desabilitado (erro ao inicializar): {e}")
+                logger.warning(f" Matrix Rain desabilitado (erro ao inicializar): {e}")
                 self.matrix_rain = None
         else:
             self.matrix_rain = None
@@ -591,28 +595,28 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         matrix_mode = config.get('MatrixRain', 'mode', fallback='overlay')
 
         if braille_enabled:
-            print(f"Braille Mode: Threshold={braille_threshold}")
+            logger.info(f"Braille Mode: Threshold={braille_threshold}")
         if temporal_enabled:
-            print(f"Temporal Coherence: Threshold={temporal_threshold}")
+            logger.info(f"Temporal Coherence: Threshold={temporal_threshold}")
         if is_hifi:
-            print("Mode High Fidelity Activated: Texture Matching.")
+            logger.info("Mode High Fidelity Activated: Texture Matching.")
         if matrix_rain_enabled:
-            print(f"Matrix Rain Enabled: {matrix_num_particles} particles (mode={matrix_mode})")
+            logger.info(f"Matrix Rain Enabled: {matrix_num_particles} particles (mode={matrix_mode})")
 
         auto_segmenter = None
         if auto_seg_enabled:
             if AUTO_SEG_AVAILABLE:
                 try:
                     auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=True)
-                    print("Auto Seg ativado para conversao GPU")
+                    logger.info("Auto Seg ativado para conversao GPU")
                 except Exception as e:
-                    print(f"Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+                    logger.warning(f" Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
                     auto_segmenter = None
             else:
-                print("Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+                logger.warning(" Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
 
         if render_mode != 'both':
-            print(f"Render Mode: {render_mode}")
+            logger.info(f"Render Mode: {render_mode}")
 
         erode_size = 2
         dilate_size = 2
@@ -643,7 +647,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
                     fx_list.append("Scanlines")
                 if postfx_config.glitch_enabled:
                     fx_list.append("Glitch")
-                print(f"PostFX habilitado (GPU): {', '.join(fx_list)}")
+                logger.info(f"PostFX habilitado (GPU): {', '.join(fx_list)}")
 
         if chroma_override:
             lower_green = cp.array([
@@ -682,7 +686,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         braille_grid_w = target_width // 2
         display_width = braille_grid_w
         display_height = braille_grid_h
-        print(f"Braille Grid: {display_width}x{display_height} chars (from {target_width}x{target_height} pixels)")
+        logger.info(f"Braille Grid: {display_width}x{display_height} chars (from {target_width}x{target_height} pixels)")
     else:
         display_width = target_width
         display_height = target_height
@@ -693,7 +697,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
     except:
         device_name = "CUDA Device"
 
-    print(f"GPU Mode: {display_width}x{display_height}, Device: {device_name}")
+    logger.info(f"GPU Mode: {display_width}x{display_height}, Device: {device_name}")
 
     gpu_renderer = GPUConverter(
         display_width, display_height,
@@ -714,7 +718,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
 
     if is_hifi:
         resize_target = (target_width * ASCII_CHAR_WIDTH, target_height * ASCII_CHAR_HEIGHT)
-        print(f"High Fidelity: Resizing to full char resolution {resize_target}")
+        logger.info(f"High Fidelity: Resizing to full char resolution {resize_target}")
     else:
         resize_target = target_dim
 
@@ -724,7 +728,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
     actual_fps = fps / frame_interval
     actual_fps_int = int(round(actual_fps))
 
-    print(f"FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
+    logger.info(f"FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
 
     cmd_ffmpeg = [
         'ffmpeg', '-y',
@@ -917,13 +921,13 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
             frame_count += 1
 
             if processed_count % 30 == 0:
-                print(f"GPU Processed: {processed_count} saved / {frame_count}/{total_frames} read")
+                logger.info(f"GPU Processed: {processed_count} saved / {frame_count}/{total_frames} read")
 
             if progress_callback and processed_count % 30 == 0:
                 progress_callback(frame_count, total_frames, output_cpu)
 
     except BrokenPipeError:
-        print("FFmpeg pipe broke.")
+        logger.info("FFmpeg pipe broke.")
     finally:
         if proc:
             proc.stdin.close()
@@ -933,14 +937,14 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         if auto_segmenter is not None:
             auto_segmenter.close()
 
-    print("Extraindo audio do video original...")
+    logger.info("Extraindo audio do video original...")
     temp_audio = extract_audio_as_aac(video_path, temp_dir)
 
-    print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+    logger.info("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
     mux_video_audio(temp_video_no_audio, temp_audio, output_mp4)
 
     shutil.rmtree(temp_dir, ignore_errors=True)
-    print(f"GPU Video ASCII criado: {output_mp4}")
+    logger.info(f"GPU Video ASCII criado: {output_mp4}")
     return output_mp4
 
 
@@ -950,7 +954,7 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     batch_size = config.getint('Conversor', 'gpu_async_batch_size', fallback=8)
     num_streams = config.getint('Conversor', 'gpu_async_num_streams', fallback=4)
 
-    print(f"[ASYNC MODE] Streams: {num_streams}, Batch size: {batch_size}")
+    logger.info(f"[ASYNC MODE] Streams: {num_streams}, Batch size: {batch_size}")
 
     try:
         target_width = config.getint('Conversor', 'target_width')
@@ -995,15 +999,15 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
         if AUTO_SEG_AVAILABLE:
             try:
                 auto_segmenter = AutoSegmenter(threshold=0.5, use_gpu=True)
-                print("[ASYNC] Auto Seg ativado para conversao GPU")
+                logger.info("[ASYNC] Auto Seg ativado para conversao GPU")
             except Exception as e:
-                print(f"[ASYNC] Aviso: Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
+                logger.warning(f"[ASYNC] Auto Seg falhou ao inicializar, usando ChromaKey HSV. Erro: {e}")
                 auto_segmenter = None
         else:
-            print("[ASYNC] Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
+            logger.info("[ASYNC] Aviso: Auto Seg solicitado mas MediaPipe nao disponivel, usando ChromaKey HSV")
 
     if render_mode != 'both':
-        print(f"[ASYNC] Render Mode: {render_mode}")
+        logger.info(f"[ASYNC] Render Mode: {render_mode}")
 
     captura = cv2.VideoCapture(video_path)
     if not captura.isOpened():
@@ -1051,7 +1055,7 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
 
     temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=get_default('Conversor', 'temporal_threshold'))
 
-    print(f"[ASYNC] FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
+    logger.info(f"[ASYNC] FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
 
     cmd_ffmpeg = [
         'ffmpeg', '-y',
@@ -1190,14 +1194,14 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     if not os.path.exists(temp_video_no_audio):
         raise RuntimeError("FFmpeg failed to create temp video")
 
-    print("Extraindo audio do video original...")
+    logger.info("Extraindo audio do video original...")
     temp_audio = extract_audio_as_aac(video_path, temp_dir)
 
-    print("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
+    logger.info("Muxando video + audio..." if temp_audio else "Video sem audio, copiando...")
     mux_video_audio(temp_video_no_audio, temp_audio, output_mp4)
 
     shutil.rmtree(temp_dir, ignore_errors=True)
-    print(f"[ASYNC] GPU Video ASCII criado: {output_mp4}")
+    logger.info(f"[ASYNC] GPU Video ASCII criado: {output_mp4}")
     return output_mp4
 
 
