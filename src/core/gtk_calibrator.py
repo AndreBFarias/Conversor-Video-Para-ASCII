@@ -1611,16 +1611,6 @@ class GTKCalibrator:
             import traceback
             traceback.print_exc()
 
-    def on_key_press(self, widget, event):
-        if event.keyval == Gdk.KEY_q or event.keyval == Gdk.KEY_Q:
-            self._cleanup()
-            Gtk.main_quit()
-            return True
-        elif event.keyval == Gdk.KEY_space:
-            self._toggle_pause()
-            return True
-        return False
-
     def _toggle_pause(self):
         if hasattr(self, '_paused'):
             self._paused = not self._paused
@@ -2543,14 +2533,8 @@ class GTKCalibrator:
                 self.config.write(f)
             self.config_last_load = os.path.getmtime(self.config_path)
             self._set_status("Config salvo!")
-            GLib.timeout_add(300, self._close_after_save)
         except Exception as e:
             self._set_status(f"Erro: {e}")
-
-    def _close_after_save(self):
-        self._cleanup()
-        Gtk.main_quit()
-        return False
 
     def on_record_mp4_toggled(self, widget):
         if widget.get_active():
@@ -2582,6 +2566,10 @@ class GTKCalibrator:
         if keyname in ['q', 'Q', 'Escape']:
             self._cleanup()
             Gtk.main_quit()
+            return True
+
+        if keyname == 'space':
+            self._toggle_pause()
             return True
 
         if keyname == 's':
@@ -2630,9 +2618,9 @@ class GTKCalibrator:
         gc.collect()
 
     def run(self):
-        self.window.maximize()
         self.window.show_all()
         self._update_mode_visibility()
+        self.window.maximize()
 
         GLib.timeout_add(33, self._update_frame)
 

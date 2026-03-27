@@ -154,6 +154,7 @@ Documentação completa do CLI: [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md)
 
 | Tecla | Ação |
 |-------|------|
+| Space | Pausar/retomar vídeo |
 | A | Auto-detectar verde |
 | R | Resetar valores |
 | S | Salvar configuração |

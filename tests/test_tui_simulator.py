@@ -89,10 +89,10 @@ class TUISimulator:
             icon = f"{Colors.FAIL}[FALHOU]{Colors.ENDC}"
             status_text = f"{Colors.FAIL}FAIL{Colors.ENDC}"
         elif status == "SKIP":
-            icon = f"{Colors.WARNING}○{Colors.ENDC}"
+            icon = f"{Colors.WARNING}{Colors.ENDC}"
             status_text = f"{Colors.WARNING}SKIP{Colors.ENDC}"
         else:
-            icon = f"{Colors.CYAN}►{Colors.ENDC}"
+            icon = f"{Colors.CYAN}{Colors.ENDC}"
             status_text = f"{Colors.CYAN}RUN{Colors.ENDC}"
 
         duration_str = f" ({duration:.2f}s)" if duration > 0 else ""
@@ -340,18 +340,18 @@ class TUISimulator:
         if self.test_video:
             self._run_test("Conversão de vídeo", self.test_video_conversion)
         else:
-            print(f"  {Colors.WARNING}○ Conversão de vídeo: SKIP (sem vídeo de teste){Colors.ENDC}")
+            print(f"  {Colors.WARNING} Conversão de vídeo: SKIP (sem vídeo de teste){Colors.ENDC}")
 
         if self.test_image:
             self._run_test("Conversão de imagem", self.test_image_conversion)
         else:
-            print(f"  {Colors.WARNING}○ Conversão de imagem: SKIP (sem imagem de teste){Colors.ENDC}")
+            print(f"  {Colors.WARNING} Conversão de imagem: SKIP (sem imagem de teste){Colors.ENDC}")
 
         self._print_header("6. TESTES DE FORMATO")
         try:
             self._run_test("Formato arquivo ASCII", self.test_ascii_file_format)
         except:
-            print(f"  {Colors.WARNING}○ Formato arquivo ASCII: SKIP (sem arquivos){Colors.ENDC}")
+            print(f"  {Colors.WARNING} Formato arquivo ASCII: SKIP (sem arquivos){Colors.ENDC}")
 
         self._print_summary()
 

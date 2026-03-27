@@ -78,6 +78,7 @@ packaging/build/
 
 # Build venvs extras
 venv_requirements-appimage/
+venv_appimage/
 
 # CI cache
 .github-cache-bust
