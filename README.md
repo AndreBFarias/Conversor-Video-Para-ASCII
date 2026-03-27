@@ -77,8 +77,8 @@ flatpak run com.github.andrebfarias.extase-em-4r73
 #### Ubuntu/Debian (.deb)
 
 ```bash
-wget https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/releases/latest/download/extase-em-4r73_2.4.0_all.deb
-sudo dpkg -i extase-em-4r73_2.4.0_all.deb
+wget https://github.com/[REDACTED]/Conversor-Video-Para-ASCII/releases/latest/download/extase-em-4r73_2.5.0_all.deb
+sudo dpkg -i extase-em-4r73_2.5.0_all.deb
 sudo apt-get install -f
 extase-em-4r73
 ```
