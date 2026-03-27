@@ -1041,7 +1041,7 @@
                             <items>
                                 <item id="fast" translatable="yes">Rápido (Fast)</item>
                                 <item id="balanced" translatable="yes">Balanceado</item>
-                                <item id="high_quality" translatable="yes">Alta Qualidade</item>
+                                <item id="high_fidelity" translatable="yes">Alta Fidelidade</item>
                             </items>
                         </object>
                         <packing><property name="left-attach">1</property><property name="top-attach">8</property></packing>
