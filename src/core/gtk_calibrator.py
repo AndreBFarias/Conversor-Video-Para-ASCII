@@ -1756,6 +1756,14 @@ class GTKCalibrator:
             self.conversion_mode = MODE_PIXELART
             self._set_status("Modo: Pixel Art")
 
+        if self.conversion_mode == MODE_PIXELART and self.braille_enabled:
+            self.braille_enabled = False
+            self._block_signals = True
+            if self.chk_braille:
+                self.chk_braille.set_active(False)
+            self._block_signals = False
+            self._set_status("Braille desativado: incompativel com PixelArt")
+
         self._update_mode_visibility()
 
     def on_render_mode_changed(self, widget):
@@ -1795,7 +1803,15 @@ class GTKCalibrator:
         if self.temporal_enabled:
             status_parts.append(f"Temporal:{self.temporal_threshold}")
 
-        if status_parts:
+        if self.braille_enabled and self.conversion_mode == MODE_PIXELART:
+            self.conversion_mode = MODE_ASCII
+            self._block_signals = True
+            if self.radio_ascii:
+                self.radio_ascii.set_active(True)
+            self._block_signals = False
+            self._update_mode_visibility()
+            self._set_status("Modo ASCII ativado: Braille requer ASCII")
+        elif status_parts:
             self._set_status(f"GPU: {' | '.join(status_parts)}")
         else:
             self._set_status("GPU: Desativado")
@@ -1905,6 +1921,10 @@ class GTKCalibrator:
             self._set_status(f"Matrix: {self.matrix_mode.capitalize()} | {charset_label} | {self.matrix_particles}p | {self.matrix_speed:.1f}x")
         else:
             self._set_status("Matrix: Desativado")
+
+        if self.matrix_enabled and self.conversion_mode == MODE_PIXELART:
+            self._set_status("Aviso: Matrix Rain com PixelArt gera visual misto")
+
         self._force_rerender()
 
     def _reinit_matrix_rain(self):
@@ -2308,11 +2328,9 @@ class GTKCalibrator:
             self._start_audio_analyzer()
             if POSTFX_AVAILABLE:
                 if self.postfx_processor is None:
-                    self.postfx_config = PostFXConfig()
+                    if self.postfx_config is None:
+                        self.postfx_config = PostFXConfig()
                     self.postfx_processor = PostFXProcessor(self.postfx_config)
-                self.postfx_config.bloom_enabled = self.audio_modulate_bloom
-                self.postfx_config.chromatic_enabled = self.audio_modulate_chromatic
-                self.postfx_config.glitch_enabled = self.audio_modulate_glitch
                 self.postfx_enabled = True
         elif not audio_enabled and self.audio_enabled:
             self._stop_audio_analyzer()
