@@ -8,6 +8,7 @@ from gi.repository import Gtk, GLib, GdkPixbuf
 
 from src.core.utils.ascii_converter import LUMINANCE_RAMP_DEFAULT
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
+from src.app.defaults import get_default
 
 
 class PreviewActionsMixin:

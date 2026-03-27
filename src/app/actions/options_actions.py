@@ -3,6 +3,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP, LUMINANCE_RAMPS, FIXED_PALETTES, STYLE_PRESETS
+from ..defaults import get_default
 
 
 class OptionsActionsMixin:
@@ -265,10 +266,10 @@ class OptionsActionsMixin:
             loop_val = loop_val_str in ['sim', 'yes', 'true', '1', 'on']
             self.opt_loop_check.set_active(loop_val)
 
-            width_val = self.config.getint('Conversor', 'target_width', fallback=120)
+            width_val = self.config.getint('Conversor', 'target_width', fallback=get_default('Conversor', 'target_width'))
             height_val = self.config.getint('Conversor', 'target_height', fallback=0)
-            sobel_val = self.config.getint('Conversor', 'sobel_threshold', fallback=100)
-            aspect_val = self.config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.95)
+            sobel_val = self.config.getint('Conversor', 'sobel_threshold', fallback=get_default('Conversor', 'sobel_threshold'))
+            aspect_val = self.config.getfloat('Conversor', 'char_aspect_ratio', fallback=get_default('Conversor', 'char_aspect_ratio'))
 
             self.opt_width_spin.set_value(width_val)
             self.opt_height_spin.set_value(height_val)
@@ -390,7 +391,7 @@ class OptionsActionsMixin:
                 self.pref_temporal_switch.set_active(temporal_enabled)
 
             if hasattr(self, 'pref_temporal_threshold_scale') and self.pref_temporal_threshold_scale:
-                temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=20)
+                temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=get_default('Conversor', 'temporal_threshold'))
                 self.pref_temporal_threshold_scale.set_value(temporal_threshold)
 
             if hasattr(self, 'pref_async_switch') and self.pref_async_switch:
@@ -505,19 +506,19 @@ class OptionsActionsMixin:
 
     def on_options_restore_clicked(self, widget):
         self.opt_loop_check.set_active(False)
-        self.opt_width_spin.set_value(120)
-        self.opt_height_spin.set_value(0)
-        self.opt_sobel_spin.set_value(100)
-        self.opt_aspect_spin.set_value(0.95)
+        self.opt_width_spin.set_value(get_default('Conversor', 'target_width'))
+        self.opt_height_spin.set_value(get_default('Conversor', 'target_height'))
+        self.opt_sobel_spin.set_value(get_default('Conversor', 'sobel_threshold'))
+        self.opt_aspect_spin.set_value(get_default('Conversor', 'char_aspect_ratio'))
         self.opt_luminance_entry.set_text(DEFAULT_LUMINANCE_RAMP)
-        self.opt_h_min_spin.set_value(35)
-        self.opt_h_max_spin.set_value(85)
-        self.opt_s_min_spin.set_value(40)
-        self.opt_s_max_spin.set_value(255)
-        self.opt_v_min_spin.set_value(40)
-        self.opt_v_max_spin.set_value(255)
-        self.opt_erode_spin.set_value(2)
-        self.opt_dilate_spin.set_value(2)
+        self.opt_h_min_spin.set_value(get_default('ChromaKey', 'h_min'))
+        self.opt_h_max_spin.set_value(get_default('ChromaKey', 'h_max'))
+        self.opt_s_min_spin.set_value(get_default('ChromaKey', 's_min'))
+        self.opt_s_max_spin.set_value(get_default('ChromaKey', 's_max'))
+        self.opt_v_min_spin.set_value(get_default('ChromaKey', 'v_min'))
+        self.opt_v_max_spin.set_value(get_default('ChromaKey', 'v_max'))
+        self.opt_erode_spin.set_value(get_default('ChromaKey', 'erode'))
+        self.opt_dilate_spin.set_value(get_default('ChromaKey', 'dilate'))
 
         if hasattr(self, 'opt_clear_screen_check') and self.opt_clear_screen_check:
             self.opt_clear_screen_check.set_active(True)
@@ -538,7 +539,7 @@ class OptionsActionsMixin:
 
 
         if hasattr(self, 'pref_gpu_switch') and self.pref_gpu_switch:
-            self.pref_gpu_switch.set_active(False)
+            self.pref_gpu_switch.set_active(get_default('Conversor', 'gpu_enabled'))
 
         if hasattr(self, 'opt_luminance_preset_combo') and self.opt_luminance_preset_combo:
             self.opt_luminance_preset_combo.set_active(0)

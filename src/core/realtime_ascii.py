@@ -12,6 +12,8 @@ project_root = os.path.dirname(os.path.dirname(current_dir))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from src.app.defaults import get_default
+
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
 except ImportError as e:
@@ -40,10 +42,10 @@ LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~
 def sharpen_frame(frame, sharpen_amount=0.5):
     if sharpen_amount <= 0:
         return frame
-    
+
     gaussian = cv2.GaussianBlur(frame, (5, 5), 1.0)
     sharpened = cv2.addWeighted(frame, 1.0 + sharpen_amount, gaussian, -sharpen_amount, 0)
-    
+
     return sharpened
 
 
@@ -257,7 +259,7 @@ def run_realtime_ascii(config_path, video_path=None, overrides=None):
     try:
         config_width = config.getint('Conversor', 'target_width', fallback=0)
         config_height = config.getint('Conversor', 'target_height', fallback=0)
-        char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio', fallback=0.48)
+        char_aspect_ratio = config.getfloat('Conversor', 'char_aspect_ratio', fallback=get_default('Conversor', 'char_aspect_ratio'))
     except (configparser.NoSectionError, configparser.NoOptionError):
         config_width = 0
         config_height = 0
@@ -282,7 +284,7 @@ def run_realtime_ascii(config_path, video_path=None, overrides=None):
             target_height = int(180 * 0.45 * char_aspect_ratio)
 
     # Sobel, Sharpen, Edge Boost, Temporal (com overrides)
-    sobel_threshold = overrides.get('sobel_threshold') if overrides and 'sobel_threshold' in overrides else config.getint('Conversor', 'sobel_threshold', fallback=70)
+    sobel_threshold = overrides.get('sobel_threshold') if overrides and 'sobel_threshold' in overrides else config.getint('Conversor', 'sobel_threshold', fallback=get_default('Conversor', 'sobel_threshold'))
     luminance_ramp = config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT).rstrip('|')
 
     sharpen_enabled = overrides.get('sharpen_enabled') if overrides and 'sharpen_enabled' in overrides else config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
@@ -376,14 +378,14 @@ def run_realtime_ascii(config_path, video_path=None, overrides=None):
                     # Keep only background (where mask==255), set user to black
                     frame_colorido[mask < 128] = 0
                 # else 'both': keep everything, no filtering
-            
+
             # Matrix Rain
             if matrix_rain:
                  user_mask_for_rain = None
                  if mask is not None:
                      # If mask has 0 for FG and 255 for BG.
                      # We usually want a mask where 255 is where rain SHOULD NOT be (the user).
-                     # Or 255 is where rain SHOULD be. 
+                     # Or 255 is where rain SHOULD be.
                      # Let's assume user_mask needs 255 for User.
                      # Seg Mask: 0=User. So bitwise_not converts 0->255 (User).
                      user_mask_for_rain = cv2.bitwise_not(mask)
@@ -391,7 +393,7 @@ def run_realtime_ascii(config_path, video_path=None, overrides=None):
                      # We already computed it above or need to.
                      gray_tmp = cv2.cvtColor(frame_colorido, cv2.COLOR_BGR2GRAY)
                      _, user_mask_for_rain = cv2.threshold(gray_tmp, 1, 255, cv2.THRESH_BINARY)
-                 
+
                  frame_colorido = matrix_rain.render(frame_colorido, user_mask_for_rain)
 
             # PostFX

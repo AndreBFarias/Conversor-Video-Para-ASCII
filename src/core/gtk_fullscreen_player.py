@@ -17,6 +17,7 @@ if BASE_DIR not in sys.path:
 
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
+from src.app.defaults import get_default
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available

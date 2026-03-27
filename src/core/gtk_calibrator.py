@@ -27,6 +27,7 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
 from src.core.pixel_art_converter import quantize_colors
 from src.app.constants import LUMINANCE_RAMPS, FIXED_PALETTES
+from src.app.defaults import get_default
 from src.utils.terminal_font_detector import detect_terminal_font
 
 try:
@@ -79,7 +80,7 @@ CHROMA_PRESETS = {
     'bright': {'h_min': 40, 'h_max': 80, 's_min': 80, 's_max': 255, 'v_min': 80, 'v_max': 255, 'erode': 2, 'dilate': 2},
 }
 
-DEFAULT_VALUES = {'h_min': 35, 'h_max': 85, 's_min': 40, 's_max': 255, 'v_min': 40, 'v_max': 255, 'erode': 2, 'dilate': 2}
+DEFAULT_VALUES = {'h_min': 0, 'h_max': 84, 's_min': 154, 's_max': 255, 'v_min': 0, 'v_max': 228, 'erode': 1, 'dilate': 1}
 
 QUALITY_PRESETS = {
     'mobile': {'width': 100, 'height': 25},
@@ -265,9 +266,9 @@ class GTKCalibrator:
         try:
             self.converter_config = {
                 'target_width': self.config.getint('Conversor', 'target_width', fallback=80),
-                'target_height': self.config.getint('Conversor', 'target_height', fallback=22),
+                'target_height': self.config.getint('Conversor', 'target_height', fallback=get_default('Conversor', 'target_height')),
                 'char_aspect_ratio': self.config.getfloat('Conversor', 'char_aspect_ratio', fallback=1.0),
-                'sobel_threshold': self.config.getint('Conversor', 'sobel_threshold', fallback=20),
+                'sobel_threshold': self.config.getint('Conversor', 'sobel_threshold', fallback=get_default('Conversor', 'sobel_threshold')),
                 'luminance_ramp': self.config.get('Conversor', 'luminance_ramp', fallback=LUMINANCE_RAMP_DEFAULT).rstrip('|'),
                 'sharpen_enabled': self.config.getboolean('Conversor', 'sharpen_enabled', fallback=True),
                 'sharpen_amount': self.config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
@@ -587,7 +588,7 @@ class GTKCalibrator:
                 self.combo_fixed_palette.set_sensitive(use_fixed)
 
         if self.combo_render_mode:
-            saved_render_mode = self.config.get('Conversor', 'render_mode', fallback='user')
+            saved_render_mode = self.config.get('Conversor', 'render_mode', fallback=get_default('Conversor', 'render_mode'))
             render_mode_map = {'user': RENDER_MODE_USER, 'background': RENDER_MODE_BACKGROUND, 'both': RENDER_MODE_BOTH}
             self.render_mode = render_mode_map.get(saved_render_mode, RENDER_MODE_USER)
             self.combo_render_mode.set_active(self.render_mode)
@@ -603,7 +604,7 @@ class GTKCalibrator:
             self.braille_enabled = self.config.getboolean('Conversor', 'braille_enabled', fallback=False)
             self.braille_threshold = self.config.getint('Conversor', 'braille_threshold', fallback=128)
             self.temporal_enabled = self.config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
-            self.temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=10)
+            self.temporal_threshold = self.config.getint('Conversor', 'temporal_threshold', fallback=get_default('Conversor', 'temporal_threshold'))
             self.auto_seg_enabled = self.config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
             self.edge_boost_enabled = self.config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
             self.edge_boost_amount = self.config.getint('Conversor', 'edge_boost_amount', fallback=100)
@@ -2037,17 +2038,17 @@ class GTKCalibrator:
             if self.postfx_enabled:
                 self.postfx_config = PostFXConfig(
                     bloom_enabled=bloom_enabled,
-                    bloom_intensity=self.config.getfloat('PostFX', 'bloom_intensity', fallback=0.6),
-                    bloom_radius=self.config.getint('PostFX', 'bloom_radius', fallback=15),
-                    bloom_threshold=self.config.getint('PostFX', 'bloom_threshold', fallback=150),
+                    bloom_intensity=self.config.getfloat('PostFX', 'bloom_intensity', fallback=get_default('PostFX', 'bloom_intensity')),
+                    bloom_radius=self.config.getint('PostFX', 'bloom_radius', fallback=get_default('PostFX', 'bloom_radius')),
+                    bloom_threshold=self.config.getint('PostFX', 'bloom_threshold', fallback=get_default('PostFX', 'bloom_threshold')),
                     chromatic_enabled=chromatic_enabled,
-                    chromatic_shift=self.config.getint('PostFX', 'chromatic_shift', fallback=5),
+                    chromatic_shift=self.config.getint('PostFX', 'chromatic_shift', fallback=get_default('PostFX', 'chromatic_shift')),
                     scanlines_enabled=scanlines_enabled,
-                    scanlines_intensity=self.config.getfloat('PostFX', 'scanlines_intensity', fallback=0.5),
-                    scanlines_spacing=self.config.getint('PostFX', 'scanlines_spacing', fallback=3),
+                    scanlines_intensity=self.config.getfloat('PostFX', 'scanlines_intensity', fallback=get_default('PostFX', 'scanlines_intensity')),
+                    scanlines_spacing=self.config.getint('PostFX', 'scanlines_spacing', fallback=get_default('PostFX', 'scanlines_spacing')),
                     glitch_enabled=glitch_enabled,
-                    glitch_intensity=self.config.getfloat('PostFX', 'glitch_intensity', fallback=0.3),
-                    glitch_block_size=self.config.getint('PostFX', 'glitch_block_size', fallback=16)
+                    glitch_intensity=self.config.getfloat('PostFX', 'glitch_intensity', fallback=get_default('PostFX', 'glitch_intensity')),
+                    glitch_block_size=self.config.getint('PostFX', 'glitch_block_size', fallback=get_default('PostFX', 'glitch_block_size'))
                 )
                 self.postfx_processor = PostFXProcessor(self.postfx_config)
 

@@ -27,6 +27,7 @@ from src.core.utils.color import rgb_to_ansi256_vectorized
 from src.core.utils.image import apply_morphological_refinement
 from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
 from src.app.constants import USER_CACHE_DIR
+from src.app.defaults import get_default
 
 from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
 
@@ -576,7 +577,7 @@ def converter_video_para_mp4_gpu(video_path, output_dir, config, progress_callba
         braille_enabled = config.getboolean('Conversor', 'braille_enabled', fallback=False)
         braille_threshold = config.getint('Conversor', 'braille_threshold', fallback=128)
         temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
-        temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=20)
+        temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=get_default('Conversor', 'temporal_threshold'))
 
         auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
         render_mode = config.get('Conversor', 'render_mode', fallback='both')
@@ -1048,7 +1049,7 @@ def _converter_video_para_mp4_gpu_async(video_path, output_dir, config, progress
     actual_fps = fps / frame_interval
     actual_fps_int = int(round(actual_fps))
 
-    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=50)
+    temporal_threshold = config.getint('Conversor', 'temporal_threshold', fallback=get_default('Conversor', 'temporal_threshold'))
 
     print(f"[ASYNC] FPS Original: {fps} -> GPU MP4 FPS: {actual_fps} (interval={frame_interval})")
 
