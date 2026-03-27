@@ -26,7 +26,7 @@ from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
 from src.core.pixel_art_converter import quantize_colors
-from src.app.constants import LUMINANCE_RAMPS, FIXED_PALETTES
+from src.app.constants import LUMINANCE_RAMPS, FIXED_PALETTES, QUALITY_PRESETS
 from src.app.defaults import get_default
 from src.utils.terminal_font_detector import detect_terminal_font
 
@@ -82,13 +82,6 @@ CHROMA_PRESETS = {
 
 DEFAULT_VALUES = {'h_min': 0, 'h_max': 84, 's_min': 154, 's_max': 255, 'v_min': 0, 'v_max': 228, 'erode': 1, 'dilate': 1}
 
-QUALITY_PRESETS = {
-    'mobile': {'width': 100, 'height': 25},
-    'low': {'width': 120, 'height': 30},
-    'medium': {'width': 180, 'height': 45},
-    'high': {'width': 240, 'height': 60},
-    'veryhigh': {'width': 300, 'height': 75},
-}
 
 RENDER_MODE_USER = 0
 RENDER_MODE_BACKGROUND = 1
@@ -1670,10 +1663,10 @@ class GTKCalibrator:
                 self._block_signals = True
                 self.spin_width.set_value(40)
                 self._block_signals = False
-            elif w > 150:
-                w = 150
+            elif w > 300:
+                w = 300
                 self._block_signals = True
-                self.spin_width.set_value(150)
+                self.spin_width.set_value(300)
                 self._block_signals = False
 
             if 0 < h < 20:
@@ -2384,6 +2377,7 @@ class GTKCalibrator:
             self.spin_height.set_value(preset['height'])
             self.converter_config['target_width'] = preset['width']
             self.converter_config['target_height'] = preset['height']
+            self.converter_config['char_aspect_ratio'] = preset['aspect']
             self._update_target_dimensions()
             self._set_status(f"Resolucao: {preset_names[active].title()}")
 
@@ -2453,7 +2447,7 @@ class GTKCalibrator:
         self.config.set('Conversor', 'char_aspect_ratio', str(self.converter_config.get('char_aspect_ratio', 1.0)))
 
         luminance_ramp = self.converter_config.get('luminance_ramp', LUMINANCE_RAMP_DEFAULT)
-        self.config.set('Conversor', 'luminance_ramp', luminance_ramp + '|')
+        self.config.set('Conversor', 'luminance_ramp', luminance_ramp)
 
         self.config.set('Conversor', 'luminance_preset', self.converter_config.get('luminance_preset', 'standard'))
 
