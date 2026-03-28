@@ -9,8 +9,8 @@
 
 <div align="center">
 <div style="text-align: center;">
-  <h1 style="font-size: 2.2em;">Extase em 4R73</h1>
-  <img src="assets/logo.png" width="120" alt="Logo Extase em 4R73">
+  <h1 style="font-size: 2.2em;">Êxtase em 4R73</h1>
+  <img src="assets/logo.png" width="120" alt="Logo Êxtase em 4R73">
 </div>
 </div>
 </div>
@@ -44,7 +44,7 @@ Conversor de vídeo para ASCII art em tempo real com aceleração GPU (CUDA), si
 ### Interface
 
 <div align="center">
-<img src="assets/background.png" width="700" alt="Interface do Extase em 4R73">
+<img src="assets/background.png" width="700" alt="Interface do Êxtase em 4R73">
 </div>
 
 ---
@@ -116,7 +116,7 @@ chmod +x install.sh
 
 ### Uso
 
-**Via menu de aplicativos:** Procure por "Extase em 4R73"
+**Via menu de aplicativos:** Procure por "Êxtase em 4R73"
 
 **Via terminal (GUI):**
 ```bash
