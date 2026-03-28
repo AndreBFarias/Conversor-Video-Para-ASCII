@@ -583,7 +583,7 @@ class GTKCalibrator:
         if self.combo_render_mode:
             saved_render_mode = self.config.get('Conversor', 'render_mode', fallback=get_default('Conversor', 'render_mode'))
             render_mode_map = {'user': RENDER_MODE_USER, 'background': RENDER_MODE_BACKGROUND, 'both': RENDER_MODE_BOTH}
-            self.render_mode = render_mode_map.get(saved_render_mode, RENDER_MODE_USER)
+            self.render_mode = render_mode_map.get(saved_render_mode, RENDER_MODE_BOTH)
             self.combo_render_mode.set_active(self.render_mode)
 
         if self.radio_ascii and self.radio_pixelart:
