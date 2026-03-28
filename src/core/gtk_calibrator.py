@@ -125,6 +125,8 @@ class GTKCalibrator:
         self._last_click_time = 0.0
         self._last_render_time = 0.0
         self._render_fps = 0.0
+        self._fullscreen_window = None
+        self._fullscreen_image = None
 
         self.braille_enabled = False
         self.braille_threshold = 128
@@ -514,8 +516,6 @@ class GTKCalibrator:
             self.event_ascii.connect("button-press-event", self._on_ascii_button_press)
 
         self.btn_save_config = self.builder.get_object("btn_save_config")
-        if self.btn_save_config:
-            self.btn_save_config.connect("clicked", self.on_save_config_clicked)
 
     def _on_ascii_button_press(self, widget, event):
         if event.button == 1:
@@ -1169,7 +1169,10 @@ class GTKCalibrator:
             if self.postfx_enabled and self.postfx_processor:
                 result_image = self.postfx_processor.process(result_image)
 
-            self._set_frame_to_image(self.image_ascii, self.aspect_ascii, result_image)
+            if self._fullscreen_window and self._fullscreen_image:
+                self._set_frame_to_image(self._fullscreen_image, self._fullscreen_aspect, result_image)
+            else:
+                self._set_frame_to_image(self.image_ascii, self.aspect_ascii, result_image)
 
             self._cached_ascii_data = (resized_gray, resized_color, resized_mask, magnitude_norm, angle)
 
@@ -1488,125 +1491,69 @@ class GTKCalibrator:
 
     def _save_and_open_preview(self):
         self.on_save_config_clicked(None)
+        self._open_fullscreen_preview()
 
-        GLib.timeout_add(100, self._delayed_open_preview)
+    def _open_fullscreen_preview(self):
+        if self._fullscreen_window:
+            self._fullscreen_window.destroy()
 
-    def _delayed_open_preview(self):
-        self._open_terminal_preview()
-
-        GLib.timeout_add(200, self._close_window)
-        return False
-
-    def _close_window(self):
-        self._cleanup()
         self.window.hide()
 
-        GLib.timeout_add(500, self._quit_application)
+        fs_win = Gtk.Window(title="Extase em 4R73 - Real-Time")
+        fs_win.set_wmclass("extase-em-4r73", "Extase em 4R73")
+
+        screen = Gdk.Screen.get_default()
+        css = Gtk.CssProvider()
+        css.load_from_data(b"window { background-color: #000000; }")
+        Gtk.StyleContext.add_provider_for_screen(
+            screen, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        fs_win.maximize()
+
+        aspect = Gtk.AspectFrame(xalign=0.5, yalign=0.5, ratio=4/3, obey_child=False)
+        img = Gtk.Image()
+        aspect.add(img)
+        fs_win.add(aspect)
+
+        self._fullscreen_window = fs_win
+        self._fullscreen_image = img
+        self._fullscreen_aspect = aspect
+
+        fs_win.connect("key-press-event", self._on_fullscreen_key_press)
+        fs_win.connect("destroy", self._on_fullscreen_destroy)
+        fs_win.show_all()
+
+    def _on_fullscreen_key_press(self, widget, event):
+        keyname = Gdk.keyval_name(event.keyval)
+        if keyname in ['q', 'Q', 'Escape']:
+            self._close_fullscreen()
+            return True
         return False
 
-    def _quit_application(self):
+    def _on_fullscreen_destroy(self, widget):
+        self._close_fullscreen()
+
+    def _close_fullscreen(self):
+        if self._fullscreen_window:
+            try:
+                self._fullscreen_window.destroy()
+            except Exception:
+                pass
+            self._fullscreen_window = None
+            self._fullscreen_image = None
+            self._fullscreen_aspect = None
+        self._cleanup()
+        if Gtk.main_level() > 0:
+            Gtk.main_quit()
+
+    def _close_calibrator(self):
+        self._cleanup()
+        self.window.hide()
         self.window.destroy()
         if Gtk.main_level() > 0:
             Gtk.main_quit()
         return False
-
-    def _open_terminal_preview(self):
-        try:
-            tc = configparser.ConfigParser(interpolation=None)
-            for section in self.config.sections():
-                tc.add_section(section)
-                for key, val in self.config.items(section):
-                    tc.set(section, key, val)
-
-            if not tc.has_section('Conversor'):
-                tc.add_section('Conversor')
-
-            width = int(self.spin_width.get_value()) if self.spin_width else 150
-            height = int(self.spin_height.get_value()) if self.spin_height else 55
-            tc.set('Conversor', 'target_width', str(width))
-            tc.set('Conversor', 'target_height', str(height))
-
-            sobel = int(self.scale_sobel.get_value()) if self.scale_sobel else 15
-            tc.set('Conversor', 'sobel_threshold', str(sobel))
-
-            sharpen_on = self.chk_sharpen.get_active() if self.chk_sharpen else True
-            sharpen_amt = self.scale_sharpen.get_value() if self.scale_sharpen else 0.5
-            tc.set('Conversor', 'sharpen_enabled', str(sharpen_on).lower())
-            tc.set('Conversor', 'sharpen_amount', str(sharpen_amt))
-
-            edge_boost_on = self.chk_edge_boost.get_active() if self.chk_edge_boost else False
-            edge_boost_amt = int(self.scale_edge_boost_amount.get_value()) if self.scale_edge_boost_amount else 100
-            edge_chars = self.chk_use_edge_chars.get_active() if self.chk_use_edge_chars else True
-            tc.set('Conversor', 'edge_boost_enabled', str(edge_boost_on).lower())
-            tc.set('Conversor', 'edge_boost_amount', str(edge_boost_amt))
-            tc.set('Conversor', 'use_edge_chars', str(edge_chars).lower())
-
-            temporal_on = self.chk_temporal.get_active() if self.chk_temporal else False
-            temporal_thresh = int(self.scale_temporal_threshold.get_value()) if self.scale_temporal_threshold else 50
-            tc.set('Conversor', 'temporal_coherence_enabled', str(temporal_on).lower())
-            tc.set('Conversor', 'temporal_threshold', str(temporal_thresh))
-
-            auto_seg = self.chk_auto_seg.get_active() if self.chk_auto_seg else False
-            tc.set('Conversor', 'auto_seg_enabled', str(auto_seg).lower())
-
-            render_target_map = {RENDER_MODE_USER: 'user', RENDER_MODE_BACKGROUND: 'background', RENDER_MODE_BOTH: 'both'}
-            tc.set('Conversor', 'render_mode', render_target_map.get(self.render_mode, 'both'))
-
-            if not tc.has_section('ChromaKey'):
-                tc.add_section('ChromaKey')
-            hsv = self._get_current_hsv_values()
-            for key, val in hsv.items():
-                tc.set('ChromaKey', key, str(val))
-
-            if not tc.has_section('MatrixRain'):
-                tc.add_section('MatrixRain')
-            matrix_on = self.chk_matrix.get_active() if self.chk_matrix else False
-            tc.set('MatrixRain', 'enabled', str(matrix_on).lower())
-            if matrix_on:
-                tc.set('MatrixRain', 'mode', self.matrix_mode)
-                tc.set('MatrixRain', 'char_set', self.matrix_charset)
-                tc.set('MatrixRain', 'speed_multiplier', str(self.matrix_speed))
-                tc.set('MatrixRain', 'num_particles', str(self.matrix_particles))
-
-            if not tc.has_section('PostFX'):
-                tc.add_section('PostFX')
-
-            bloom_on = self.chk_bloom.get_active() if self.chk_bloom else False
-            chromatic_on = self.chk_chromatic.get_active() if self.chk_chromatic else False
-            scanlines_on = self.chk_scanlines.get_active() if self.chk_scanlines else False
-            glitch_on = self.chk_glitch.get_active() if self.chk_glitch else False
-            tc.set('PostFX', 'bloom_enabled', str(bloom_on).lower())
-            tc.set('PostFX', 'chromatic_enabled', str(chromatic_on).lower())
-            tc.set('PostFX', 'scanlines_enabled', str(scanlines_on).lower())
-            tc.set('PostFX', 'glitch_enabled', str(glitch_on).lower())
-
-            if self.postfx_config:
-                tc.set('PostFX', 'bloom_intensity', str(self.postfx_config.bloom_intensity))
-                tc.set('PostFX', 'bloom_radius', str(self.postfx_config.bloom_radius))
-                tc.set('PostFX', 'bloom_threshold', str(self.postfx_config.bloom_threshold))
-                tc.set('PostFX', 'chromatic_shift', str(self.postfx_config.chromatic_shift))
-                tc.set('PostFX', 'scanlines_intensity', str(self.postfx_config.scanlines_intensity))
-                tc.set('PostFX', 'scanlines_spacing', str(self.postfx_config.scanlines_spacing))
-                tc.set('PostFX', 'glitch_intensity', str(self.postfx_config.glitch_intensity))
-                tc.set('PostFX', 'glitch_block_size', str(self.postfx_config.glitch_block_size))
-
-            fd, temp_path = tempfile.mkstemp(suffix='.ini', prefix='extase_preview_')
-            os.close(fd)
-            with open(temp_path, 'w') as f:
-                tc.write(f)
-
-            fullscreen_script = os.path.join(BASE_DIR, "src", "core", "gtk_fullscreen_player.py")
-            cmd = [sys.executable, fullscreen_script, "--config", temp_path]
-
-            if self.video_path:
-                cmd.extend(["--video", self.video_path])
-
-            subprocess.Popen(cmd)
-            self._set_status("Preview GTK aberto")
-        except Exception as e:
-            self._set_status(f"Erro ao preparar preview: {e}")
-            import traceback
-            traceback.print_exc()
 
     def _toggle_pause(self):
         if hasattr(self, '_paused'):
@@ -2440,117 +2387,129 @@ class GTKCalibrator:
         self._set_status("Valores resetados")
 
     def on_save_config_clicked(self, widget):
-        hsv = self._get_current_hsv_values()
-
-        if 'ChromaKey' not in self.config:
-            self.config.add_section('ChromaKey')
-        if 'Conversor' not in self.config:
-            self.config.add_section('Conversor')
-        if 'PixelArt' not in self.config:
-            self.config.add_section('PixelArt')
-        if 'Mode' not in self.config:
-            self.config.add_section('Mode')
-
-        self.config.set('ChromaKey', 'h_min', str(hsv['h_min']))
-        self.config.set('ChromaKey', 'h_max', str(hsv['h_max']))
-        self.config.set('ChromaKey', 's_min', str(hsv['s_min']))
-        self.config.set('ChromaKey', 's_max', str(hsv['s_max']))
-        self.config.set('ChromaKey', 'v_min', str(hsv['v_min']))
-        self.config.set('ChromaKey', 'v_max', str(hsv['v_max']))
-        self.config.set('ChromaKey', 'erode', str(hsv['erode']))
-        self.config.set('ChromaKey', 'dilate', str(hsv['dilate']))
-
-        self.config.set('Conversor', 'target_width', str(int(self.spin_width.get_value())))
-        self.config.set('Conversor', 'target_height', str(int(self.spin_height.get_value())))
-        self.config.set('Conversor', 'sobel_threshold', str(int(self.scale_sobel.get_value())))
-        self.config.set('Conversor', 'sharpen_amount', str(self.scale_sharpen.get_value()))
-        self.config.set('Conversor', 'sharpen_enabled', str(self.chk_sharpen.get_active()).lower())
-        self.config.set('Conversor', 'char_aspect_ratio', str(self.converter_config.get('char_aspect_ratio', 1.0)))
-
-        luminance_ramp = self.converter_config.get('luminance_ramp', LUMINANCE_RAMP_DEFAULT)
-        self.config.set('Conversor', 'luminance_ramp', luminance_ramp)
-
-        self.config.set('Conversor', 'luminance_preset', self.converter_config.get('luminance_preset', 'standard'))
-
-        if self.spin_pixel_size:
-            self.config.set('PixelArt', 'pixel_size', str(int(self.spin_pixel_size.get_value())))
-        if self.spin_palette_size:
-            self.config.set('PixelArt', 'color_palette_size', str(int(self.spin_palette_size.get_value())))
-        if self.chk_fixed_palette:
-            self.config.set('PixelArt', 'use_fixed_palette', str(self.chk_fixed_palette.get_active()).lower())
-        if self.combo_fixed_palette:
-            palette_id = self.combo_fixed_palette.get_active_id()
-            if palette_id:
-                self.config.set('PixelArt', 'fixed_palette_name', palette_id)
-
-        self.config.set('Mode', 'conversion_mode', self.conversion_mode)
-
-        render_mode_names = {RENDER_MODE_USER: 'user', RENDER_MODE_BACKGROUND: 'background', RENDER_MODE_BOTH: 'both'}
-        self.config.set('Conversor', 'render_mode', render_mode_names.get(self.render_mode, 'user'))
-
-        self.config.set('Conversor', 'braille_enabled', str(self.braille_enabled).lower())
-        self.config.set('Conversor', 'braille_threshold', str(self.braille_threshold))
-        self.config.set('Conversor', 'temporal_coherence_enabled', str(self.temporal_enabled).lower())
-        self.config.set('Conversor', 'temporal_threshold', str(self.temporal_threshold))
-        self.config.set('Conversor', 'edge_boost_enabled', str(self.edge_boost_enabled).lower())
-        self.config.set('Conversor', 'edge_boost_amount', str(self.edge_boost_amount))
-        self.config.set('Conversor', 'use_edge_chars', str(self.use_edge_chars).lower())
-
-        if not self.config.has_section('MatrixRain'):
-            self.config.add_section('MatrixRain')
-        self.config.set('MatrixRain', 'enabled', str(self.matrix_enabled).lower())
-        self.config.set('MatrixRain', 'mode', self.matrix_mode)
-        self.config.set('MatrixRain', 'char_set', self.matrix_charset)
-        self.config.set('MatrixRain', 'num_particles', str(self.matrix_particles))
-        self.config.set('MatrixRain', 'speed_multiplier', str(self.matrix_speed))
-
-        if not self.config.has_section('PostFX'):
-            self.config.add_section('PostFX')
-        bloom = self.chk_bloom.get_active() if self.chk_bloom else False
-        chromatic = self.chk_chromatic.get_active() if self.chk_chromatic else False
-        scanlines = self.chk_scanlines.get_active() if self.chk_scanlines else False
-        glitch = self.chk_glitch.get_active() if self.chk_glitch else False
-        self.config.set('PostFX', 'bloom_enabled', str(bloom).lower())
-        self.config.set('PostFX', 'chromatic_enabled', str(chromatic).lower())
-        self.config.set('PostFX', 'scanlines_enabled', str(scanlines).lower())
-        self.config.set('PostFX', 'glitch_enabled', str(glitch).lower())
-
-        if not self.config.has_section('Style'):
-            self.config.add_section('Style')
-        style_enabled = self.chk_style.get_active() if self.chk_style else False
-        style_preset = self.combo_style_preset.get_active_id() if self.combo_style_preset else 'none'
-        self.config.set('Style', 'style_enabled', str(style_enabled).lower())
-        self.config.set('Style', 'style_preset', style_preset or 'none')
-
-        if not self.config.has_section('OpticalFlow'):
-            self.config.add_section('OpticalFlow')
-        of_enabled = self.chk_optical_flow.get_active() if self.chk_optical_flow else False
-        of_fps = self.combo_optical_flow_fps.get_active_id() if self.combo_optical_flow_fps else '30'
-        of_quality = self.combo_optical_flow_quality.get_active_id() if self.combo_optical_flow_quality else 'medium'
-        self.config.set('OpticalFlow', 'enabled', str(of_enabled).lower())
-        self.config.set('OpticalFlow', 'target_fps', of_fps or '30')
-        self.config.set('OpticalFlow', 'quality', of_quality or 'medium')
-
-        if not self.config.has_section('Audio'):
-            self.config.add_section('Audio')
-        audio_enabled = self.chk_audio.get_active() if self.chk_audio else False
-        bass_sens = self.scale_audio_bass.get_value() if self.scale_audio_bass else 1.0
-        mids_sens = self.scale_audio_mids.get_value() if self.scale_audio_mids else 1.0
-        treble_sens = self.scale_audio_treble.get_value() if self.scale_audio_treble else 1.0
-        self.config.set('Audio', 'enabled', str(audio_enabled).lower())
-        self.config.set('Audio', 'bass_sensitivity', str(bass_sens))
-        self.config.set('Audio', 'mids_sensitivity', str(mids_sens))
-        self.config.set('Audio', 'treble_sensitivity', str(treble_sens))
-
-        self.config.set('Conversor', 'auto_seg_enabled', str(self.auto_seg_enabled).lower())
-
         try:
+            hsv = self._get_current_hsv_values()
+
+            if 'ChromaKey' not in self.config:
+                self.config.add_section('ChromaKey')
+            if 'Conversor' not in self.config:
+                self.config.add_section('Conversor')
+            if 'PixelArt' not in self.config:
+                self.config.add_section('PixelArt')
+            if 'Mode' not in self.config:
+                self.config.add_section('Mode')
+
+            self.config.set('ChromaKey', 'h_min', str(hsv['h_min']))
+            self.config.set('ChromaKey', 'h_max', str(hsv['h_max']))
+            self.config.set('ChromaKey', 's_min', str(hsv['s_min']))
+            self.config.set('ChromaKey', 's_max', str(hsv['s_max']))
+            self.config.set('ChromaKey', 'v_min', str(hsv['v_min']))
+            self.config.set('ChromaKey', 'v_max', str(hsv['v_max']))
+            self.config.set('ChromaKey', 'erode', str(hsv['erode']))
+            self.config.set('ChromaKey', 'dilate', str(hsv['dilate']))
+
+            width = int(self.spin_width.get_value()) if self.spin_width else self.converter_config.get('target_width', 80)
+            height = int(self.spin_height.get_value()) if self.spin_height else self.converter_config.get('target_height', 22)
+            sobel = int(self.scale_sobel.get_value()) if self.scale_sobel else self.converter_config.get('sobel_threshold', 20)
+            sharpen_amt = self.scale_sharpen.get_value() if self.scale_sharpen else self.converter_config.get('sharpen_amount', 0.5)
+            sharpen_on = self.chk_sharpen.get_active() if self.chk_sharpen else self.converter_config.get('sharpen_enabled', True)
+
+            self.config.set('Conversor', 'target_width', str(width))
+            self.config.set('Conversor', 'target_height', str(height))
+            self.config.set('Conversor', 'sobel_threshold', str(sobel))
+            self.config.set('Conversor', 'sharpen_amount', str(sharpen_amt))
+            self.config.set('Conversor', 'sharpen_enabled', str(sharpen_on).lower())
+            self.config.set('Conversor', 'char_aspect_ratio', str(self.converter_config.get('char_aspect_ratio', 1.0)))
+
+            luminance_ramp = self.converter_config.get('luminance_ramp', LUMINANCE_RAMP_DEFAULT)
+            self.config.set('Conversor', 'luminance_ramp', luminance_ramp)
+
+            self.config.set('Conversor', 'luminance_preset', self.converter_config.get('luminance_preset', 'standard'))
+
+            if self.spin_pixel_size:
+                self.config.set('PixelArt', 'pixel_size', str(int(self.spin_pixel_size.get_value())))
+            if self.spin_palette_size:
+                self.config.set('PixelArt', 'color_palette_size', str(int(self.spin_palette_size.get_value())))
+            if self.chk_fixed_palette:
+                self.config.set('PixelArt', 'use_fixed_palette', str(self.chk_fixed_palette.get_active()).lower())
+            if self.combo_fixed_palette:
+                palette_id = self.combo_fixed_palette.get_active_id()
+                if palette_id:
+                    self.config.set('PixelArt', 'fixed_palette_name', palette_id)
+
+            self.config.set('Mode', 'conversion_mode', self.conversion_mode)
+
+            render_mode_names = {RENDER_MODE_USER: 'user', RENDER_MODE_BACKGROUND: 'background', RENDER_MODE_BOTH: 'both'}
+            self.config.set('Conversor', 'render_mode', render_mode_names.get(self.render_mode, 'user'))
+
+            self.config.set('Conversor', 'braille_enabled', str(self.braille_enabled).lower())
+            self.config.set('Conversor', 'braille_threshold', str(self.braille_threshold))
+            self.config.set('Conversor', 'temporal_coherence_enabled', str(self.temporal_enabled).lower())
+            self.config.set('Conversor', 'temporal_threshold', str(self.temporal_threshold))
+            self.config.set('Conversor', 'edge_boost_enabled', str(self.edge_boost_enabled).lower())
+            self.config.set('Conversor', 'edge_boost_amount', str(self.edge_boost_amount))
+            self.config.set('Conversor', 'use_edge_chars', str(self.use_edge_chars).lower())
+
+            if not self.config.has_section('MatrixRain'):
+                self.config.add_section('MatrixRain')
+            self.config.set('MatrixRain', 'enabled', str(self.matrix_enabled).lower())
+            self.config.set('MatrixRain', 'mode', self.matrix_mode)
+            self.config.set('MatrixRain', 'char_set', self.matrix_charset)
+            self.config.set('MatrixRain', 'num_particles', str(self.matrix_particles))
+            self.config.set('MatrixRain', 'speed_multiplier', str(self.matrix_speed))
+
+            if not self.config.has_section('PostFX'):
+                self.config.add_section('PostFX')
+            bloom = self.chk_bloom.get_active() if self.chk_bloom else False
+            chromatic = self.chk_chromatic.get_active() if self.chk_chromatic else False
+            scanlines = self.chk_scanlines.get_active() if self.chk_scanlines else False
+            glitch = self.chk_glitch.get_active() if self.chk_glitch else False
+            self.config.set('PostFX', 'bloom_enabled', str(bloom).lower())
+            self.config.set('PostFX', 'chromatic_enabled', str(chromatic).lower())
+            self.config.set('PostFX', 'scanlines_enabled', str(scanlines).lower())
+            self.config.set('PostFX', 'glitch_enabled', str(glitch).lower())
+
+            if not self.config.has_section('Style'):
+                self.config.add_section('Style')
+            style_enabled = self.chk_style.get_active() if self.chk_style else False
+            style_preset = self.combo_style_preset.get_active_id() if self.combo_style_preset else 'none'
+            self.config.set('Style', 'style_enabled', str(style_enabled).lower())
+            self.config.set('Style', 'style_preset', style_preset or 'none')
+
+            if not self.config.has_section('OpticalFlow'):
+                self.config.add_section('OpticalFlow')
+            of_enabled = self.chk_optical_flow.get_active() if self.chk_optical_flow else False
+            of_fps = self.combo_optical_flow_fps.get_active_id() if self.combo_optical_flow_fps else '30'
+            of_quality = self.combo_optical_flow_quality.get_active_id() if self.combo_optical_flow_quality else 'medium'
+            self.config.set('OpticalFlow', 'enabled', str(of_enabled).lower())
+            self.config.set('OpticalFlow', 'target_fps', of_fps or '30')
+            self.config.set('OpticalFlow', 'quality', of_quality or 'medium')
+
+            if not self.config.has_section('Audio'):
+                self.config.add_section('Audio')
+            audio_enabled = self.chk_audio.get_active() if self.chk_audio else False
+            bass_sens = self.scale_audio_bass.get_value() if self.scale_audio_bass else 1.0
+            mids_sens = self.scale_audio_mids.get_value() if self.scale_audio_mids else 1.0
+            treble_sens = self.scale_audio_treble.get_value() if self.scale_audio_treble else 1.0
+            self.config.set('Audio', 'enabled', str(audio_enabled).lower())
+            self.config.set('Audio', 'bass_sensitivity', str(bass_sens))
+            self.config.set('Audio', 'mids_sensitivity', str(mids_sens))
+            self.config.set('Audio', 'treble_sensitivity', str(treble_sens))
+
+            self.config.set('Conversor', 'auto_seg_enabled', str(self.auto_seg_enabled).lower())
+
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
             self.config_last_load = os.path.getmtime(self.config_path)
+            self._reload_converter_config()
+            self._reload_pixel_art_config()
             self._set_status("Config salvo!")
+            if widget is not None:
+                GLib.timeout_add(300, self._close_calibrator)
         except Exception as e:
-            self._set_status(f"Erro: {e}")
+            self._set_status(f"Erro ao salvar: {e}")
+            import traceback
+            traceback.print_exc()
 
     def on_record_mp4_toggled(self, widget):
         if widget.get_active():

@@ -174,6 +174,8 @@ class GtkFullscreenPlayer(Gtk.Window):
 
         mask = self._compute_mask(frame_bgr)
 
+        frame_h, frame_w = frame_bgr.shape[:2]
+
         target_dims = (self.target_width, self.target_height)
         grayscale = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         resized_gray = cv2.resize(grayscale, target_dims, interpolation=cv2.INTER_AREA)
@@ -193,15 +195,14 @@ class GtkFullscreenPlayer(Gtk.Window):
             resized_gray = np.where(temporal_mask, self._prev_gray_frame, resized_gray).astype(np.uint8)
         self._prev_gray_frame = resized_gray.copy()
 
-        canvas_w, canvas_h = self._get_canvas_size()
-        self._canvas_w = canvas_w
-        self._canvas_h = canvas_h
+        self._canvas_w = frame_w
+        self._canvas_h = frame_h
 
         self._init_effects()
 
         result_image = self._render_ascii_to_image(
             resized_gray, resized_color, resized_mask,
-            magnitude_norm, angle, canvas_h, canvas_w
+            magnitude_norm, angle, frame_h, frame_w
         )
 
         if self._matrix_rain and self.matrix_enabled:
