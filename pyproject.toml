@@ -4,7 +4,7 @@ build-backend = "setuptools.backends.legacy:build"
 
 [project]
 name = "extase-em-4r73"
-version = "2.6.1"
+version = "2.6.2"
 description = "Conversor de vídeo para ASCII art em tempo real com aceleração GPU"
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}

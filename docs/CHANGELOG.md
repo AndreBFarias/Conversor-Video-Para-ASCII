@@ -2,6 +2,32 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.6.2] - 2026-03-27
+
+### Fix: Calibrador - Preview Fullscreen e Salvar
+
+#### Preview Fullscreen no mesmo processo
+- Eliminado subprocess separado (gtk_fullscreen_player.py) que tinha pipeline incompleto
+- Preview agora roda no mesmo processo do calibrador, reusando o mesmo rendering
+- Duplo clique, botao Term e tecla t abrem janela fullscreen com resultado identico
+- Todas as configs (PostFX, MatrixRain, AutoSeg, Style, etc.) aparecem no preview
+
+#### Botao Salvar corrigido
+- Removida conexao duplicada do sinal (Glade auto-connect + manual)
+- Adicionado null checks com fallback nos widgets
+- Adicionado try/except para prevenir crash silencioso
+- Sincroniza converter_config e pixel_art_config apos salvar
+- Botao Salvar agora salva e fecha calibrador corretamente
+
+#### Encoding UTF-8
+- Corrigido encoding do arquivo temporario de config (causava crash com caracteres acentuados)
+
+### Arquivos Modificados
+- `src/core/gtk_calibrator.py` - Preview in-process, save robusto, null checks
+- `src/core/gtk_fullscreen_player.py` - Rendering com resolucao do frame de video
+
+---
+
 ## [2.6.0] - 2026-02-11
 
 ### Sprint 34: Encoder Pipeline + Async GPU Fix
