@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Extase em 4R73 - Changelog v2.5.0</title>
+<style>
+body { font-family: 'Fira Mono', monospace; background: #0d1117; color: #c9d1d9; max-width: 900px; margin: 40px auto; padding: 20px; }
+h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+h2 { color: #7ee787; }
+h3 { color: #d2a8ff; }
+li { margin: 4px 0; }
+strong { color: #ffa657; }
+hr { border: 1px solid #30363d; }
+</style>
+</head>
+<body>
+<h1>Changelog</h1>
+<br>
+Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
+<br>
+<h2>[2.5.0] - 2026-03-27</h2>
+<br>
+<h3>Corrigido</h3>
+<ul>
+<li>Calibrador inicia maximizado corretamente em qualquer resolucao</li>
+<li>Botao Salvar no calibrador apenas salva (nao fecha mais a janela)</li>
+<li>Tecla Space funciona para pausar/retomar video no calibrador</li>
+<li>Tela preta no calibrador quando sem green screen (render_mode corrigido para 'both')</li>
+<li>Janela do calibrador nao excede resolucao nativa do monitor (ScrolledWindow)</li>
+<li>Botao de maximizar aparece em todos os window managers (type-hint=normal)</li>
+<li>Calibrador agrupa com app principal no dock do GNOME/Pop!_OS (wmclass unificado)</li>
+<li>10 fallbacks divergentes unificados em 11 arquivos (temporal_threshold, sobel_threshold, char_aspect_ratio, render_mode, target_height, target_width)</li>
+<li>PostFX defaults alinhados entre calibrador e converters (8 parametros)</li>
+<li>"Restaurar Padroes" na GUI principal agora usa valores corretos</li>
+<li>ChromaKey defaults alinhados em todos os modulos</li>
+<li>Presets High/VeryHigh funcionam no calibrador (limite 150->300)</li>
+<li>Presets incluem char_aspect_ratio (QUALITY_PRESETS unificado com constants.py)</li>
+<li>luminance_ramp salva sem pipe trailing no config</li>
+<li>Encoding FFmpeg do calibrador alinhado com pipeline (CRF 12, -g 24, -vsync cfr)</li>
+<li>Audio Reactive nao sobrescreve mais estado manual do PostFX</li>
+<li>Braille e PixelArt agora sao mutuamente exclusivos (validacao automatica)</li>
+<li>Combo "Modo Render GPU" corrigido (high_quality -> high_fidelity)</li>
+<li>numpy constraint compativel com cupy-cuda12x 14.x</li>
+</ul>
+<br>
+<h3>Adicionado</h3>
+<ul>
+<li>`src/app/defaults.py` - Fonte unica de verdade para 84 chaves de configuracao em 16 secoes</li>
+<li>Geracao automatica de config.ini a partir de defaults.py</li>
+<li>Sincronizacao automatica de user config ao iniciar (chaves faltando sao adicionadas)</li>
+<li>Validacao de config contra defaults.py no `cli.py validate`</li>
+<li>Aviso visual para combinacoes incompativeis (Matrix Rain + PixelArt, Braille + PixelArt)</li>
+<li>ScrolledWindow no calibrador para adaptacao a qualquer resolucao de tela</li>
+</ul>
+<br>
+<h3>Refatorado</h3>
+<ul>
+<li>Funcoes duplicadas removidas de realtime_ascii.py (sharpen_frame, rgb_to_ansi256)</li>
+<li>_load_postfx_config duplicada removida de png_converter.py (usa postfx_loader)</li>
+<li>print() migrado para logging em 6 converters (converter, mp4, gpu, gif, png, realtime)</li>
+<li>QUALITY_PRESETS duplicado removido do calibrador (importa de constants.py)</li>
+</ul>
+<br>
+<h3>Documentacao</h3>
+<ul>
+<li>8 documentos de Sprint (34-41) em docs/</li>
+<li>Auditoria completa com 22 bugs mapeados e corrigidos</li>
+<li>CHANGELOG.md atualizado</li>
+<li>README.md atualizado (atalho Space, versao 2.5.0)</li>
+</ul>
+<br>
+<h2>[2.3.1] - 2026-01-20</h2>
+<br>
+<h3>Correcões e Melhorias</h3>
+<ul>
+<li><strong>Unificação do Terminal</strong>: Configuração do `kitty` sincronizada com Gnome Terminal (Dracula, Fonte 12pt).</li>
+<li><strong>Correção AutoSegmenter</strong>: Inversão da máscara (0=User) para corrigir renderização invertida.</li>
+<li><strong>Interface Simplificada</strong>: Remoção de opções de renderização obsoletas no Player.</li>
+<li><strong>Playback Unificado</strong>: Player agora utiliza o mesmo terminal configurado da webcam.</li>
+</ul>
+<br>
+<h2>[2.1.0] - 2025-12-31</h2>
+<br>
+<h3>Interface Renovada</h3>
+<br>
+#### Reorganizacao da Interface Principal
+<ul>
+<li>Nova ordem de secoes seguindo jornada do usuario:</li>
+</ul>
+  1. Selecionar (Arquivo/Pasta/ASCII)
+  2. Qualidade (Presets)
+  3. Ferramentas (Calibrador/Webcam)
+  4. Motor Grafico (ASCII/PixelArt)
+  5. Conversao (Botoes)
+  6. Progresso (Barra)
+  7. Reproducao (Modo + Controles)
+<ul>
+<li>Engrenagem de configuracoes movida para header</li>
+<li>Barra de progresso com altura aumentada (CSS override)</li>
+<li>Botoes de conversao com borda verde (#81c995)</li>
+<li>Label de selecao alinhado a direita com cor dinamica</li>
+</ul>
+<br>
+#### Nova Aba: Preferencias
+<ul>
+<li>Pasta de Entrada padrao (FileChooserButton)</li>
+<li>Pasta de Saida padrao (FileChooserButton)</li>
+<li>Motor Grafico padrao (ASCII/PixelArt)</li>
+<li>Qualidade padrao (Custom a Very High)</li>
+<li>Formato de Saida (txt/html/ansi)</li>
+</ul>
+<br>
+#### Opcoes Expandidas do Player
+<ul>
+<li>Limpar Tela Antes de Reproduzir</li>
+<li>Mostrar FPS Durante Reproducao</li>
+<li>Controle de Velocidade (0.5x a 2.0x)</li>
+</ul>
+<br>
+<h3>Sistema de Presets de Rampa de Luminancia</h3>
+<br>
+10 presets prontos para uso + modo manual:
+<ul>
+<li><strong>Padrao</strong> (70 chars) - Rampa completa classica</li>
+<li><strong>Simples</strong> (10 chars) - `@%#*+=-:. `</li>
+<li><strong>Blocos Unicode</strong> - Caracteres de bloco</li>
+<li><strong>Minimalista</strong> (5 chars) - `#=:. `</li>
+<li><strong>Binario (Matrix)</strong> - `10 `</li>
+<li><strong>Pontos</strong> - Circulos graduados</li>
+<li><strong>Detalhado</strong> - Versao densa</li>
+<li><strong>Letras</strong> - Apenas caracteres alfabeticos</li>
+<li><strong>Numeros</strong> - Apenas digitos</li>
+<li><strong>Setas/Simbolos</strong> - Formas geometricas</li>
+<li><strong>Custom</strong> - Edicao manual liberada</li>
+</ul>
+<br>
+<h3>Sistema de Paletas Fixas para Pixel Art</h3>
+<br>
+10 paletas retro/tematicas:
+<ul>
+<li><strong>Game Boy</strong> - 4 cores (verde classico)</li>
+<li><strong>CGA</strong> - 16 cores (IBM PC)</li>
+<li><strong>NES</strong> - 54 cores (Nintendo)</li>
+<li><strong>Commodore 64</strong> - 16 cores</li>
+<li><strong>PICO-8</strong> - 16 cores (fantasy console)</li>
+<li><strong>Escala de Cinza</strong> - 8 tons</li>
+<li><strong>Sepia</strong> - 8 tons (vintage)</li>
+<li><strong>Cyberpunk</strong> - 12 cores neon</li>
+<li><strong>Dracula Theme</strong> - 11 cores</li>
+<li><strong>Monitor Verde (CRT)</strong> - 12 tons de verde</li>
+</ul>
+<br>
+<h3>Correcoes</h3>
+<br>
+<ul>
+<li>Corrigida acentuacao em toda a interface (Extase, Configuracoes, etc.)</li>
+<li>Botao "Converter Pasta" agora desativado quando sem selecao</li>
+<li>CSS Provider para override de estilos do tema GTK</li>
+</ul>
+<br>
+<h3>Arquivos Modificados</h3>
+<ul>
+<li>`src/app/app.py` - CSS Provider, widgets, titulo</li>
+<li>`src/app/actions/file_actions.py` - Estados de botao, CSS dinamico</li>
+<li>`src/app/actions/options_actions.py` - Handlers de presets</li>
+<li>`src/app/constants.py` - LUMINANCE_RAMPS, FIXED_PALETTES</li>
+<li>`src/gui/main.glade` - Reorganizacao completa</li>
+</ul>
+<br>
+---
+<br>
+<h2>[2.0.0] - 2025-12-17</h2>
+<br>
+<h3>Compliance e Estrutura</h3>
+<ul>
+<li><strong>Reestruturação Completa de Diretórios:</strong></li>
+</ul>
+  - `src/ui` -> `src/gui`
+  - `src/assets` -> `assets/` (Root)
+  - Novos diretórios padronizados: `data_input/`, `data_output/`, `logs/`, `Dev_log/`
+<ul>
+<li><strong>Protocolo de Logging:</strong></li>
+</ul>
+  - Substituição de `print` por `logger` rotacionado em `logs/system.log`
+<ul>
+<li><strong>Documentação:</strong></li>
+</ul>
+  - README estritamente formatado conforme template visual
+  - Scripts de lifecycle (`install.sh`, `uninstall.sh`) atualizados
+<br>
+<h3>Novas Funcionalidades</h3>
+<br>
+#### Sistema de Presets de Qualidade
+<ul>
+<li>Adicionado ComboBox com presets dinâmicos: Mobile (100x25), Low (120x30), Medium (180x45), High (240x60), Very High (300x75)</li>
+<li>Detecção automática de modo (ASCII vs Pixel Art) com labels apropriados</li>
+<li>Persistência de preset selecionado no `config.ini`</li>
+</ul>
+<br>
+#### Modo Pixel Art Completo
+<ul>
+<li><strong>6 níveis de qualidade baseados em profundidade de cor:</strong></li>
+</ul>
+  - 8-bit Low (100x25, 16 cores, pixel_size=6)
+  - 8-bit High (120x30, 16 cores, pixel_size=5)
+  - 16-bit Low (150x38, 64 cores, pixel_size=4)
+  - 16-bit High (180x45, 64 cores, pixel_size=3)
+  - 32-bit (240x60, 128 cores, pixel_size=2)
+  - 64-bit (300x75, 256 cores, pixel_size=1)
+<ul>
+<li>Controle automático de `pixel_size` e `palette_size` por preset</li>
+<li>Novos arquivos: `pixel_art_converter.py`, `pixel_art_image_converter.py`</li>
+</ul>
+<br>
+#### Melhorias de Nitidez e Qualidade
+<ul>
+<li><strong>Sharpen Filter</strong> (Unsharp Mask) configurável via `config.ini`</li>
+</ul>
+  - Parâmetros: `sharpen_enabled` (bool), `sharpen_amount` (0.0-1.0)
+  - Aplicado em todos os conversores (ASCII e Pixel Art)
+<ul>
+<li><strong>Interpolação Lanczos</strong> para redimensionamento (substitui INTER_AREA)</li>
+</ul>
+  - Maior preservação de detalhes e bordas
+<br>
+#### Calibrador Automático de Chroma Key
+<ul>
+<li><strong>Auto-Detect</strong> - Atalho `'a'` analisa frame e calcula ranges HSV automaticamente</li>
+<li><strong>3 Presets prontos:</strong></li>
+</ul>
+  - Studio (H:35-85, S:50+, V:50+) - Verde profissional de estúdio
+  - Natural (H:35-90, S:30+, V:30+) - Verde natural/outdoor
+  - Bright (H:40-80, S:80+, V:80+) - Verde vibrante/iluminado
+<ul>
+<li><strong>Refinamento Morfológico de Bordas:</strong></li>
+</ul>
+  - Trackbar "Erode" (0-10) - Remove pixels isolados verdes
+  - Trackbar "Dilate" (0-10) - Fecha buracos na máscara
+<ul>
+<li>Atalho `'p'` para ciclar entre presets</li>
+<li>Função `auto_detect_green()` e `apply_morphological_refinement()`</li>
+</ul>
+<br>
+#### Otimizações de Player e Interface
+<ul>
+<li><strong>Zoom isolado no terminal do player:</strong> `--zoom=0.6` (gnome-terminal) ou fonte `6x10` (xterm)</li>
+<li>Não afeta configurações de fonte de outros terminais do sistema</li>
+<li>Permite até ~400x100 caracteres na tela</li>
+</ul>
+<br>
+#### Controle Expandido de Aspect Ratio
+<ul>
+<li>Range do `char_aspect_ratio` expandido: <strong>0.01 a 2.0</strong> (antes: 0.1 a 2.0)</li>
+<li>Permite ajustes ultra-finos para resoluções altas</li>
+</ul>
+<br>
+<h3>Modificacoes</h3>
+<br>
+#### Arquivos Modificados
+<ul>
+<li>`src/main.py` - ComboBox de presets, detecção de modo, handlers</li>
+<li>`src/core/calibrator.py` - Auto-detect, presets, refinamento morfológico</li>
+<li>`src/core/converter.py` - Sharpen filter, Lanczos resize</li>
+<li>`src/core/image_converter.py` - Sharpen filter, Lanczos resize</li>
+<li>`src/core/pixel_art_converter.py` - Sharpen filter, Lanczos resize</li>
+<li>`src/core/pixel_art_image_converter.py` - Sharpen filter, Lanczos resize</li>
+<li>`src/ui/main.glade` - Adjustment de aspect_ratio (mínimo 0.01)</li>
+<li>`config.ini` - Nova seção `[Quality]`, parâmetros sharpen</li>
+</ul>
+<br>
+#### Novos Arquivos
+<ul>
+<li>`src/core/pixel_art_converter.py` - Conversor Pixel Art para vídeo</li>
+<li>`src/core/pixel_art_image_converter.py` - Conversor Pixel Art para imagem</li>
+</ul>
+<br>
+<h3>Estatisticas</h3>
+<ul>
+<li><strong>~500 linhas adicionadas</strong> ao código</li>
+<li><strong>2 novos módulos</strong> criados</li>
+<li><strong>6 presets de qualidade</strong> para cada modo (ASCII e Pixel Art)</li>
+<li><strong>3 presets de chroma key</strong> prontos para uso</li>
+<li><strong>Zoom mínimo:</strong> 0.5 (testado com 0.6 como padrão)</li>
+</ul>
+<br>
+<h3>Contribuidores</h3>
+<ul>
+<li>[@vitoriamaria](https://github.com/vitoriamaria) - Todas as funcionalidades desta versão</li>
+</ul>
+<br>
+---
+<br>
+<h2>[1.0.0] - Data Original</h2>
+<br>
+<h3>Implementação Base</h3>
+<ul>
+<li>Conversor ASCII básico</li>
+<li>Chroma Key manual</li>
+<li>Player de terminal</li>
+<li>Interface GTK</li>
+<li>Calibrador manual</li>
+</ul>
+<br>
+<strong>Desenvolvedor Original:</strong> [[REDACTED]](https://github.com/[REDACTED])
+
+</body>
+</html>

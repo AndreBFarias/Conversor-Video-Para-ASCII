@@ -229,6 +229,8 @@ Conversor-Video-Para-ASCII/
 - [Referência de Configuração](docs/CONFIG_REFERENCE.md)
 - [Guia de Presets](docs/PRESETS_REFERENCE.md)
 - [Guia de Testes](docs/TESTING_GUIDE.md)
+- [Changelog](CHANGELOG.md)
+- [Auditoria v2.5.0](docs/AUDITORIA_FINAL_v2.5.0.md)
 
 ---
 

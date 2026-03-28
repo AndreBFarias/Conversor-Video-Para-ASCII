@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Auditoria Final - Extase em 4R73 v2.5.0</title>
+<style>
+body { font-family: 'Fira Mono', monospace; background: #0d1117; color: #c9d1d9; max-width: 1000px; margin: 40px auto; padding: 20px; }
+h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+h2 { color: #7ee787; }
+h3 { color: #d2a8ff; }
+table { width: 100%; margin: 10px 0; }
+td { padding: 6px; border: 1px solid #30363d; }
+strong { color: #ffa657; }
+</style>
+</head>
+<body>
+<h1>Auditoria Final - Extase em 4R73 v2.5.0</h1>
+<br>
+<strong>Data:</strong> 2026-03-27
+<strong>Versao:</strong> 2.5.0
+<strong>Resultado:</strong> 53 testes passando, 8/8 checks validate, 0 erros de sintaxe
+<br>
+---
+<br>
+<h2>Resultado da Auditoria</h2>
+<br>
+<h3>Sintaxe e Imports</h3>
+<li><strong>51 arquivos Python:</strong> 0 erros de sintaxe</li>
+<li><strong>2 arquivos Glade:</strong> XML valido</li>
+<li><strong>25 modulos importados:</strong> 0 erros</li>
+<br>
+<h3>Testes</h3>
+<li><strong>53 testes passando</strong>, 1 skipped, 0 falhas</li>
+<li><strong>cli.py validate:</strong> 8/8 checks OK</li>
+<li><strong>84 chaves de config sincronizadas</strong> com defaults.py</li>
+<br>
+<h3>Versoes Sincronizadas</h3>
+<li>pyproject.toml: 2.5.0</li>
+<li>install.sh: 2.5.0</li>
+<li>README.md: 2.5.0</li>
+<br>
+---
+<br>
+<h2>Bugs Corrigidos nesta Release (22 bugs em 8 sprints)</h2>
+<br>
+<h3>Sprint 34: Calibrador - Janela e Controles</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-01</td><td>Calibrador nao iniciava maximizado</td><td>Corrigido</td></tr>
+<tr><td>BUG-02</td><td>Botao Salvar fechava o calibrador</td><td>Corrigido</td></tr>
+<tr><td>BUG-19</td><td>Tecla Space nao pausava (on_key_press duplicado)</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 35: Unificacao de Fallbacks</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-05</td><td>render_mode fallback 'user' vs 'both'</td><td>Corrigido</td></tr>
+<tr><td>BUG-06</td><td>temporal_threshold 10/20/50</td><td>Corrigido (50)</td></tr>
+<tr><td>BUG-07</td><td>sobel_threshold 10/20/70/100</td><td>Corrigido (10)</td></tr>
+<tr><td>BUG-08</td><td>char_aspect_ratio 0.48/0.95/1.0</td><td>Corrigido (1.0)</td></tr>
+<tr><td>BUG-09</td><td>target_height 0/22/44</td><td>Corrigido (44 UIs, 0 converters)</td></tr>
+<tr><td>BUG-16</td><td>PostFX defaults divergentes calibrador vs config</td><td>Corrigido</td></tr>
+<tr><td>BUG-20</td><td>Restaurar Padroes usava valores errados</td><td>Corrigido</td></tr>
+<tr><td>BUG-21</td><td>ChromaKey defaults divergentes</td><td>Corrigido</td></tr>
+<tr><td>BUG-22</td><td>target_width fallback 120 vs 85</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 36: Presets e Limites</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-03</td><td>QUALITY_PRESETS duplicado sem aspect ratio</td><td>Corrigido</td></tr>
+<tr><td>BUG-04</td><td>Limite largura 150 impedia presets high/veryhigh</td><td>Corrigido (300)</td></tr>
+<tr><td>BUG-11</td><td>luminance_ramp salva com pipe trailing</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 37: Encoding FFmpeg</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-10</td><td>CRF 18, sem -g 24, sem -vsync cfr no calibrador</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 38: Compatibilidade de Features</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-15</td><td>Audio Reactive sobrescrevia PostFX manual</td><td>Corrigido</td></tr>
+<tr><td>BUG-17</td><td>Braille+PixelArt ativados simultaneamente</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 39: Eliminacao de Duplicacao</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-12</td><td>print() direto em vez de logging</td><td>Corrigido (6 converters)</td></tr>
+<tr><td>BUG-13</td><td>realtime_ascii duplicava funcoes de utils</td><td>Corrigido</td></tr>
+<tr><td>BUG-14</td><td>png_converter duplicava _load_postfx_config</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Sprint 40: Sincronizacao GUI</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>BUG-18</td><td>gpu_render_mode high_quality vs high_fidelity</td><td>Corrigido</td></tr>
+</table>
+<br>
+<h3>Correcoes pos-Sprint</h3>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>Bug</td><td>Descricao</td><td>Status</td></tr>
+</table>
+<br>
+<table border="1" cellpadding="6" style="border-collapse:collapse;border-color:#30363d;">
+<tr><td>-</td><td>Calibrador exibindo tela preta (render_mode=background)</td><td>Corrigido</td></tr>
+<tr><td>-</td><td>Janela excedendo resolucao nativa da tela</td><td>Corrigido (ScrolledWindow)</td></tr>
+<tr><td>-</td><td>Sem botao maximizar (faltava type-hint=normal)</td><td>Corrigido</td></tr>
+<tr><td>-</td><td>Duas instancias no dock (faltava wmclass)</td><td>Corrigido</td></tr>
+<tr><td>-</td><td>numpy<2.0.0 incompativel com cupy 14.x</td><td>Corrigido</td></tr>
+<tr><td>-</td><td>config.ini manual dessincronizado de defaults.py</td><td>Corrigido (geracao automatica)</td></tr>
+<tr><td>-</td><td>User config stale com gpu_render_mode=high_quality</td><td>Corrigido (sync_config)</td></tr>
+</table>
+<br>
+---
+<br>
+<h2>Itens Pendentes para Proxima Release</h2>
+<br>
+<h3>Fallbacks Hardcoded (baixa prioridade)</h3>
+Restam ~35 fallbacks hardcoded em converters que usam valores corretos mas nao importam de `get_default()`. Os valores estao corretos (alinhados com defaults.py), mas por consistencia seria ideal migrar todos para `get_default()`.
+<br>
+<strong>Arquivos afetados:</strong> converter.py, mp4_converter.py, gpu_converter.py, gif_converter.py, html_converter.py, png_converter.py, realtime_ascii.py, gtk_fullscreen_player.py, preview_actions.py
+<br>
+<h3>print() Residuais no realtime_ascii.py</h3>
+29 print() fora de __main__ em `src/core/realtime_ascii.py`. Modulo usa print extensivamente para debug de real-time. Migrar para logger quando o modulo for refatorado.
+<br>
+<h3>Sprint 41: Conflitos de Features (planejada)</h3>
+Documentacao completa em `docs/SPRINT_41_CONFLITOS_FEATURES.md`. Implementacao da funcao `_validate_features()` e verificacao pre-conversao.
+<br>
+---
+<br>
+<h2>Arquivos Modificados nesta Release</h2>
+<br>
+| Arquivo | Tipo de Mudanca |
+<br>
+| `src/app/defaults.py` | CRIADO - fonte unica de verdade (84 chaves) |
+| `src/core/gtk_calibrator.py` | 11 correcoes (janela, save, keys, fallbacks, PostFX, compatibilidade) |
+| `src/gui/calibrator.glade` | 5 correcoes (size, limits, type-hint, scroll, viewport) |
+| `src/gui/main.glade` | 1 correcao (gpu_render_mode id) |
+| `src/core/gpu_converter.py` | 2 correcoes (fallbacks, print->logger) |
+| `src/core/realtime_ascii.py` | 3 correcoes (duplicacao, fallbacks, import) |
+| `src/core/converter.py` | 1 correcao (print->logger) |
+| `src/core/mp4_converter.py` | 1 correcao (print->logger) |
+| `src/core/gif_converter.py` | 1 correcao (print->logger) |
+| `src/core/png_converter.py` | 2 correcoes (duplicacao, print->logger) |
+| `src/core/gtk_fullscreen_player.py` | 1 correcao (import defaults) |
+| `src/app/actions/options_actions.py` | 4 correcoes (fallbacks, restore, import) |
+| `src/app/actions/preview_actions.py` | 1 correcao (import defaults) |
+| `src/main.py` | 1 correcao (generate/sync config) |
+| `cli.py` | 1 correcao (validate usa defaults.py) |
+| `config.ini` | Regenerado a partir de defaults.py |
+| `install.sh` | Versao atualizada |
+| `pyproject.toml` | Versao + numpy constraint |
+| `requirements.txt` | numpy constraint removida |
+| `README.md` | Versao + atalho Space |
+
+</body>
+</html>

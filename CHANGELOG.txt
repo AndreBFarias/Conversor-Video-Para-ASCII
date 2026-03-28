@@ -1,10 +1,10 @@
-# Changelog
+Changelog
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
-## [2.5.0] - 2026-03-27
+[2.5.0] - 2026-03-27
 
-### Corrigido
+Corrigido
 - Calibrador inicia maximizado corretamente em qualquer resolucao
 - Botao Salvar no calibrador apenas salva (nao fecha mais a janela)
 - Tecla Space funciona para pausar/retomar video no calibrador
@@ -25,7 +25,7 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Combo "Modo Render GPU" corrigido (high_quality -> high_fidelity)
 - numpy constraint compativel com cupy-cuda12x 14.x
 
-### Adicionado
+Adicionado
 - `src/app/defaults.py` - Fonte unica de verdade para 84 chaves de configuracao em 16 secoes
 - Geracao automatica de config.ini a partir de defaults.py
 - Sincronizacao automatica de user config ao iniciar (chaves faltando sao adicionadas)
@@ -33,29 +33,29 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Aviso visual para combinacoes incompativeis (Matrix Rain + PixelArt, Braille + PixelArt)
 - ScrolledWindow no calibrador para adaptacao a qualquer resolucao de tela
 
-### Refatorado
+Refatorado
 - Funcoes duplicadas removidas de realtime_ascii.py (sharpen_frame, rgb_to_ansi256)
 - _load_postfx_config duplicada removida de png_converter.py (usa postfx_loader)
 - print() migrado para logging em 6 converters (converter, mp4, gpu, gif, png, realtime)
 - QUALITY_PRESETS duplicado removido do calibrador (importa de constants.py)
 
-### Documentacao
+Documentacao
 - 8 documentos de Sprint (34-41) em docs/
 - Auditoria completa com 22 bugs mapeados e corrigidos
 - CHANGELOG.md atualizado
 - README.md atualizado (atalho Space, versao 2.5.0)
 
-## [2.3.1] - 2026-01-20
+[2.3.1] - 2026-01-20
 
-### Correcões e Melhorias
-- **Unificação do Terminal**: Configuração do `kitty` sincronizada com Gnome Terminal (Dracula, Fonte 12pt).
-- **Correção AutoSegmenter**: Inversão da máscara (0=User) para corrigir renderização invertida.
-- **Interface Simplificada**: Remoção de opções de renderização obsoletas no Player.
-- **Playback Unificado**: Player agora utiliza o mesmo terminal configurado da webcam.
+Correcões e Melhorias
+- Unificação do Terminal: Configuração do `kitty` sincronizada com Gnome Terminal (Dracula, Fonte 12pt).
+- Correção AutoSegmenter: Inversão da máscara (0=User) para corrigir renderização invertida.
+- Interface Simplificada: Remoção de opções de renderização obsoletas no Player.
+- Playback Unificado: Player agora utiliza o mesmo terminal configurado da webcam.
 
-## [2.1.0] - 2025-12-31
+[2.1.0] - 2025-12-31
 
-### Interface Renovada
+Interface Renovada
 
 #### Reorganizacao da Interface Principal
 - Nova ordem de secoes seguindo jornada do usuario:
@@ -83,42 +83,42 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Mostrar FPS Durante Reproducao
 - Controle de Velocidade (0.5x a 2.0x)
 
-### Sistema de Presets de Rampa de Luminancia
+Sistema de Presets de Rampa de Luminancia
 
 10 presets prontos para uso + modo manual:
-- **Padrao** (70 chars) - Rampa completa classica
-- **Simples** (10 chars) - `@%#*+=-:. `
-- **Blocos Unicode** - Caracteres de bloco
-- **Minimalista** (5 chars) - `#=:. `
-- **Binario (Matrix)** - `10 `
-- **Pontos** - Circulos graduados
-- **Detalhado** - Versao densa
-- **Letras** - Apenas caracteres alfabeticos
-- **Numeros** - Apenas digitos
-- **Setas/Simbolos** - Formas geometricas
-- **Custom** - Edicao manual liberada
+- Padrao (70 chars) - Rampa completa classica
+- Simples (10 chars) - `@%#*+=-:. `
+- Blocos Unicode - Caracteres de bloco
+- Minimalista (5 chars) - `#=:. `
+- Binario (Matrix) - `10 `
+- Pontos - Circulos graduados
+- Detalhado - Versao densa
+- Letras - Apenas caracteres alfabeticos
+- Numeros - Apenas digitos
+- Setas/Simbolos - Formas geometricas
+- Custom - Edicao manual liberada
 
-### Sistema de Paletas Fixas para Pixel Art
+Sistema de Paletas Fixas para Pixel Art
 
 10 paletas retro/tematicas:
-- **Game Boy** - 4 cores (verde classico)
-- **CGA** - 16 cores (IBM PC)
-- **NES** - 54 cores (Nintendo)
-- **Commodore 64** - 16 cores
-- **PICO-8** - 16 cores (fantasy console)
-- **Escala de Cinza** - 8 tons
-- **Sepia** - 8 tons (vintage)
-- **Cyberpunk** - 12 cores neon
-- **Dracula Theme** - 11 cores
-- **Monitor Verde (CRT)** - 12 tons de verde
+- Game Boy - 4 cores (verde classico)
+- CGA - 16 cores (IBM PC)
+- NES - 54 cores (Nintendo)
+- Commodore 64 - 16 cores
+- PICO-8 - 16 cores (fantasy console)
+- Escala de Cinza - 8 tons
+- Sepia - 8 tons (vintage)
+- Cyberpunk - 12 cores neon
+- Dracula Theme - 11 cores
+- Monitor Verde (CRT) - 12 tons de verde
 
-### Correcoes
+Correcoes
 
 - Corrigida acentuacao em toda a interface (Extase, Configuracoes, etc.)
 - Botao "Converter Pasta" agora desativado quando sem selecao
 - CSS Provider para override de estilos do tema GTK
 
-### Arquivos Modificados
+Arquivos Modificados
 - `src/app/app.py` - CSS Provider, widgets, titulo
 - `src/app/actions/file_actions.py` - Estados de botao, CSS dinamico
 - `src/app/actions/options_actions.py` - Handlers de presets
@@ -127,20 +127,20 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
 ---
 
-## [2.0.0] - 2025-12-17
+[2.0.0] - 2025-12-17
 
-### Compliance e Estrutura
-- **Reestruturação Completa de Diretórios:**
+Compliance e Estrutura
+- Reestruturação Completa de Diretórios:
   - `src/ui` -> `src/gui`
   - `src/assets` -> `assets/` (Root)
   - Novos diretórios padronizados: `data_input/`, `data_output/`, `logs/`, `Dev_log/`
-- **Protocolo de Logging:**
+- Protocolo de Logging:
   - Substituição de `print` por `logger` rotacionado em `logs/system.log`
-- **Documentação:**
+- Documentação:
   - README estritamente formatado conforme template visual
   - Scripts de lifecycle (`install.sh`, `uninstall.sh`) atualizados
 
-### Novas Funcionalidades
+Novas Funcionalidades
 
 #### Sistema de Presets de Qualidade
 - Adicionado ComboBox com presets dinâmicos: Mobile (100x25), Low (120x30), Medium (180x45), High (240x60), Very High (300x75)
@@ -148,7 +148,7 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Persistência de preset selecionado no `config.ini`
 
 #### Modo Pixel Art Completo
-- **6 níveis de qualidade baseados em profundidade de cor:**
+- 6 níveis de qualidade baseados em profundidade de cor:
   - 8-bit Low (100x25, 16 cores, pixel_size=6)
   - 8-bit High (120x30, 16 cores, pixel_size=5)
   - 16-bit Low (150x38, 64 cores, pixel_size=4)
@@ -159,34 +159,34 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - Novos arquivos: `pixel_art_converter.py`, `pixel_art_image_converter.py`
 
 #### Melhorias de Nitidez e Qualidade
-- **Sharpen Filter** (Unsharp Mask) configurável via `config.ini`
+- Sharpen Filter (Unsharp Mask) configurável via `config.ini`
   - Parâmetros: `sharpen_enabled` (bool), `sharpen_amount` (0.0-1.0)
   - Aplicado em todos os conversores (ASCII e Pixel Art)
-- **Interpolação Lanczos** para redimensionamento (substitui INTER_AREA)
+- Interpolação Lanczos para redimensionamento (substitui INTER_AREA)
   - Maior preservação de detalhes e bordas
 
 #### Calibrador Automático de Chroma Key
-- **Auto-Detect** - Atalho `'a'` analisa frame e calcula ranges HSV automaticamente
-- **3 Presets prontos:**
+- Auto-Detect - Atalho `'a'` analisa frame e calcula ranges HSV automaticamente
+- 3 Presets prontos:
   - Studio (H:35-85, S:50+, V:50+) - Verde profissional de estúdio
   - Natural (H:35-90, S:30+, V:30+) - Verde natural/outdoor
   - Bright (H:40-80, S:80+, V:80+) - Verde vibrante/iluminado
-- **Refinamento Morfológico de Bordas:**
+- Refinamento Morfológico de Bordas:
   - Trackbar "Erode" (0-10) - Remove pixels isolados verdes
   - Trackbar "Dilate" (0-10) - Fecha buracos na máscara
 - Atalho `'p'` para ciclar entre presets
 - Função `auto_detect_green()` e `apply_morphological_refinement()`
 
 #### Otimizações de Player e Interface
-- **Zoom isolado no terminal do player:** `--zoom=0.6` (gnome-terminal) ou fonte `6x10` (xterm)
+- Zoom isolado no terminal do player: `--zoom=0.6` (gnome-terminal) ou fonte `6x10` (xterm)
 - Não afeta configurações de fonte de outros terminais do sistema
 - Permite até ~400x100 caracteres na tela
 
 #### Controle Expandido de Aspect Ratio
-- Range do `char_aspect_ratio` expandido: **0.01 a 2.0** (antes: 0.1 a 2.0)
+- Range do `char_aspect_ratio` expandido: 0.01 a 2.0 (antes: 0.1 a 2.0)
 - Permite ajustes ultra-finos para resoluções altas
 
-### Modificacoes
+Modificacoes
 
 #### Arquivos Modificados
 - `src/main.py` - ComboBox de presets, detecção de modo, handlers
@@ -202,25 +202,25 @@ Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 - `src/core/pixel_art_converter.py` - Conversor Pixel Art para vídeo
 - `src/core/pixel_art_image_converter.py` - Conversor Pixel Art para imagem
 
-### Estatisticas
-- **~500 linhas adicionadas** ao código
-- **2 novos módulos** criados
-- **6 presets de qualidade** para cada modo (ASCII e Pixel Art)
-- **3 presets de chroma key** prontos para uso
-- **Zoom mínimo:** 0.5 (testado com 0.6 como padrão)
+Estatisticas
+- ~500 linhas adicionadas ao código
+- 2 novos módulos criados
+- 6 presets de qualidade para cada modo (ASCII e Pixel Art)
+- 3 presets de chroma key prontos para uso
+- Zoom mínimo: 0.5 (testado com 0.6 como padrão)
 
-### Contribuidores
-- [@vitoriamaria](https://github.com/vitoriamaria) - Todas as funcionalidades desta versão
+Contribuidores
+- @vitoriamaria - Todas as funcionalidades desta versão
 
 ---
 
-## [1.0.0] - Data Original
+[1.0.0] - Data Original
 
-### Implementação Base
+Implementação Base
 - Conversor ASCII básico
 - Chroma Key manual
 - Player de terminal
 - Interface GTK
 - Calibrador manual
 
-**Desenvolvedor Original:** [[REDACTED]](https://github.com/[REDACTED])
+Desenvolvedor Original: [REDACTED]

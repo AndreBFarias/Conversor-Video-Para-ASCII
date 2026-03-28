@@ -1,0 +1,131 @@
+Auditoria Final - Extase em 4R73 v2.5.0
+
+Data: 2026-03-27
+Versao: 2.5.0
+Resultado: 53 testes passando, 8/8 checks validate, 0 erros de sintaxe
+
+---
+
+Resultado da Auditoria
+
+Sintaxe e Imports
+- 51 arquivos Python: 0 erros de sintaxe
+- 2 arquivos Glade: XML valido
+- 25 modulos importados: 0 erros
+
+Testes
+- 53 testes passando, 1 skipped, 0 falhas
+- cli.py validate: 8/8 checks OK
+- 84 chaves de config sincronizadas com defaults.py
+
+Versoes Sincronizadas
+- pyproject.toml: 2.5.0
+- install.sh: 2.5.0
+- README.md: 2.5.0
+
+---
+
+Bugs Corrigidos nesta Release (22 bugs em 8 sprints)
+
+Sprint 34: Calibrador - Janela e Controles
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-01 | Calibrador nao iniciava maximizado | Corrigido |
+| BUG-02 | Botao Salvar fechava o calibrador | Corrigido |
+| BUG-19 | Tecla Space nao pausava (on_key_press duplicado) | Corrigido |
+
+Sprint 35: Unificacao de Fallbacks
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-05 | render_mode fallback 'user' vs 'both' | Corrigido |
+| BUG-06 | temporal_threshold 10/20/50 | Corrigido (50) |
+| BUG-07 | sobel_threshold 10/20/70/100 | Corrigido (10) |
+| BUG-08 | char_aspect_ratio 0.48/0.95/1.0 | Corrigido (1.0) |
+| BUG-09 | target_height 0/22/44 | Corrigido (44 UIs, 0 converters) |
+| BUG-16 | PostFX defaults divergentes calibrador vs config | Corrigido |
+| BUG-20 | Restaurar Padroes usava valores errados | Corrigido |
+| BUG-21 | ChromaKey defaults divergentes | Corrigido |
+| BUG-22 | target_width fallback 120 vs 85 | Corrigido |
+
+Sprint 36: Presets e Limites
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-03 | QUALITY_PRESETS duplicado sem aspect ratio | Corrigido |
+| BUG-04 | Limite largura 150 impedia presets high/veryhigh | Corrigido (300) |
+| BUG-11 | luminance_ramp salva com pipe trailing | Corrigido |
+
+Sprint 37: Encoding FFmpeg
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-10 | CRF 18, sem -g 24, sem -vsync cfr no calibrador | Corrigido |
+
+Sprint 38: Compatibilidade de Features
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-15 | Audio Reactive sobrescrevia PostFX manual | Corrigido |
+| BUG-17 | Braille+PixelArt ativados simultaneamente | Corrigido |
+
+Sprint 39: Eliminacao de Duplicacao
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-12 | print() direto em vez de logging | Corrigido (6 converters) |
+| BUG-13 | realtime_ascii duplicava funcoes de utils | Corrigido |
+| BUG-14 | png_converter duplicava _load_postfx_config | Corrigido |
+
+Sprint 40: Sincronizacao GUI
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| BUG-18 | gpu_render_mode high_quality vs high_fidelity | Corrigido |
+
+Correcoes pos-Sprint
+| Bug | Descricao | Status |
+|-----|-----------|--------|
+| - | Calibrador exibindo tela preta (render_mode=background) | Corrigido |
+| - | Janela excedendo resolucao nativa da tela | Corrigido (ScrolledWindow) |
+| - | Sem botao maximizar (faltava type-hint=normal) | Corrigido |
+| - | Duas instancias no dock (faltava wmclass) | Corrigido |
+| - | numpy<2.0.0 incompativel com cupy 14.x | Corrigido |
+| - | config.ini manual dessincronizado de defaults.py | Corrigido (geracao automatica) |
+| - | User config stale com gpu_render_mode=high_quality | Corrigido (sync_config) |
+
+---
+
+Itens Pendentes para Proxima Release
+
+Fallbacks Hardcoded (baixa prioridade)
+Restam ~35 fallbacks hardcoded em converters que usam valores corretos mas nao importam de `get_default()`. Os valores estao corretos (alinhados com defaults.py), mas por consistencia seria ideal migrar todos para `get_default()`.
+
+Arquivos afetados: converter.py, mp4_converter.py, gpu_converter.py, gif_converter.py, html_converter.py, png_converter.py, realtime_ascii.py, gtk_fullscreen_player.py, preview_actions.py
+
+print() Residuais no realtime_ascii.py
+29 print() fora de __main__ em `src/core/realtime_ascii.py`. Modulo usa print extensivamente para debug de real-time. Migrar para logger quando o modulo for refatorado.
+
+Sprint 41: Conflitos de Features (planejada)
+Documentacao completa em `docs/SPRINT_41_CONFLITOS_FEATURES.md`. Implementacao da funcao `_validate_features()` e verificacao pre-conversao.
+
+---
+
+Arquivos Modificados nesta Release
+
+| Arquivo | Tipo de Mudanca |
+|---------|----------------|
+| `src/app/defaults.py` | CRIADO - fonte unica de verdade (84 chaves) |
+| `src/core/gtk_calibrator.py` | 11 correcoes (janela, save, keys, fallbacks, PostFX, compatibilidade) |
+| `src/gui/calibrator.glade` | 5 correcoes (size, limits, type-hint, scroll, viewport) |
+| `src/gui/main.glade` | 1 correcao (gpu_render_mode id) |
+| `src/core/gpu_converter.py` | 2 correcoes (fallbacks, print->logger) |
+| `src/core/realtime_ascii.py` | 3 correcoes (duplicacao, fallbacks, import) |
+| `src/core/converter.py` | 1 correcao (print->logger) |
+| `src/core/mp4_converter.py` | 1 correcao (print->logger) |
+| `src/core/gif_converter.py` | 1 correcao (print->logger) |
+| `src/core/png_converter.py` | 2 correcoes (duplicacao, print->logger) |
+| `src/core/gtk_fullscreen_player.py` | 1 correcao (import defaults) |
+| `src/app/actions/options_actions.py` | 4 correcoes (fallbacks, restore, import) |
+| `src/app/actions/preview_actions.py` | 1 correcao (import defaults) |
+| `src/main.py` | 1 correcao (generate/sync config) |
+| `cli.py` | 1 correcao (validate usa defaults.py) |
+| `config.ini` | Regenerado a partir de defaults.py |
+| `install.sh` | Versao atualizada |
+| `pyproject.toml` | Versao + numpy constraint |
+| `requirements.txt` | numpy constraint removida |
+| `README.md` | Versao + atalho Space |
