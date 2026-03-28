@@ -111,14 +111,23 @@
   <object class="GtkWindow" id="calibrator_window">
     <property name="can-focus">False</property>
     <property name="title">Extase em 4R73 - Calibrador</property>
-    <property name="default-width">1200</property>
-    <property name="default-height">700</property>
+    <property name="default-width">800</property>
+    <property name="default-height">600</property>
     <property name="window-position">center</property>
     <property name="resizable">True</property>
     <property name="decorated">True</property>
+    <property name="type-hint">normal</property>
     <signal name="destroy" handler="on_window_destroy"/>
     <signal name="key-press-event" handler="on_key_press"/>
     <child>
+      <object class="GtkScrolledWindow" id="main_scroll">
+        <property name="visible">True</property>
+        <property name="hscrollbar-policy">automatic</property>
+        <property name="vscrollbar-policy">automatic</property>
+        <child>
+          <object class="GtkViewport">
+            <property name="visible">True</property>
+            <child>
           <object class="GtkBox" id="main_box">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
@@ -714,6 +723,10 @@
         </child>
 
           </object>
+            </child>
+          </object>
+        </child>
+      </object>
     </child>
   </object>
 </interface>

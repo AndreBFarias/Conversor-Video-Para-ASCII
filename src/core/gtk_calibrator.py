@@ -413,6 +413,7 @@ class GTKCalibrator:
         self.builder.connect_signals(self)
 
         self.window = self.builder.get_object("calibrator_window")
+        self.window.set_wmclass("extase-em-4r73", "Extase em 4R73")
         self.window.connect("key-press-event", self.on_key_press)
 
         logo_path = os.path.join(BASE_DIR, "assets", "logo.png")
