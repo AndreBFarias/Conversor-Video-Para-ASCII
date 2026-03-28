@@ -59,20 +59,24 @@ _setup_cuda_environment()
 
 
 def _ensure_config_exists():
-    """Copia config.ini padrão para ~/.config/extase-em-4r73/ se não existir."""
-    from src.app.constants import CONFIG_PATH, DEFAULT_CONFIG_PATH, USER_CONFIG_DIR
-    import shutil
+    """Garante que config do usuario existe e esta sincronizado com defaults."""
+    from src.app.constants import CONFIG_PATH, USER_CONFIG_DIR
+    from src.app.defaults import generate_config_file, sync_config
 
     if not os.path.exists(CONFIG_PATH):
         try:
-            if os.path.exists(DEFAULT_CONFIG_PATH):
-                print(f"Criando configuracao inicial em: {CONFIG_PATH}")
-                shutil.copy2(DEFAULT_CONFIG_PATH, CONFIG_PATH)
-            else:
-                print(f"AVISO: Config padrao nao encontrada em {DEFAULT_CONFIG_PATH}")
-                # Criar um arquivo vazio ou minimo se necessario, mas o app deve lidar
+            os.makedirs(USER_CONFIG_DIR, exist_ok=True)
+            generate_config_file(CONFIG_PATH)
+            print(f"Configuracao inicial gerada em: {CONFIG_PATH}")
         except Exception as e:
-            print(f"Erro ao criar config do usuario: {e}")
+            print(f"Erro ao gerar config do usuario: {e}")
+    else:
+        try:
+            added = sync_config(CONFIG_PATH)
+            if added > 0:
+                print(f"Config sincronizado: {added} chave(s) adicionada(s)")
+        except Exception as e:
+            print(f"Erro ao sincronizar config: {e}")
 
 _ensure_config_exists()
 

@@ -531,27 +531,18 @@ def cmd_validate(args: argparse.Namespace) -> int:
     else:
         print("\n  (Checks 8-10 pulados: use --video para testar pipelines com video real)")
 
-    # 11. Settings Sync
-    settings_checks = {
-        'MatrixRain': ['enabled', 'mode', 'char_set', 'num_particles', 'speed_multiplier'],
-        'PostFX': ['bloom_enabled', 'chromatic_enabled', 'scanlines_enabled', 'glitch_enabled'],
-        'OpticalFlow': ['enabled', 'target_fps', 'quality'],
-        'Audio': ['enabled', 'sample_rate', 'chunk_size'],
-    }
-    settings_missing = []
-    for section, keys in settings_checks.items():
-        if not config.has_section(section):
-            settings_missing.append(f"[{section}] (secao inteira)")
-            continue
-        for key in keys:
-            if not config.has_option(section, key):
-                settings_missing.append(f"[{section}] {key}")
-
-    if not settings_missing:
-        _print_ok("Settings Sync", "MatrixRain, PostFX, OpticalFlow, Audio ok")
+    # 11. Defaults Sync (valida config contra defaults.py)
+    from src.app.defaults import validate_config, DEFAULTS
+    divergencias = validate_config(config_path)
+    chaves_faltando = [d for d in divergencias if 'faltando' in d]
+    if not chaves_faltando:
+        total_keys = sum(len(keys) for keys in DEFAULTS.values())
+        _print_ok("Defaults Sync", f"{total_keys} chaves sincronizadas com defaults.py")
         ok_count += 1
     else:
-        _print_fail("Settings Sync", f"faltando: {', '.join(settings_missing)}")
+        _print_fail("Defaults Sync", f"{len(chaves_faltando)} chave(s) faltando")
+        for d in chaves_faltando:
+            print(f"    {d}")
         fail_count += 1
 
     _print_header("Resultado")
