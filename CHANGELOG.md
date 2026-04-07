@@ -1,6 +1,15 @@
 # Changelog
 
-Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
+Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+
+## [2.6.3] - 2026-04-06
+
+### Corrigido
+- install.sh usa `/usr/bin/python3` (Python do sistema) para criar o venv, garantindo compatibilidade com pacotes GTK do apt independente de pyenv/asdf/mise ativo no shell
+
+### Documentação
+- Troubleshooting para incompatibilidade GTK com version managers (pyenv/asdf) adicionado ao INSTALL.md
+- Acentuação PT-BR corrigida no CHANGELOG
 
 ## [2.5.0] - 2026-03-27
 

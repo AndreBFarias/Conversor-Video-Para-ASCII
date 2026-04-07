@@ -42,7 +42,17 @@ if [ -d "${SCRIPT_DIR}/venv" ]; then
     echo "Removendo venv antigo..."
     rm -rf "${SCRIPT_DIR}/venv"
 fi
-python3 -m venv --system-site-packages "${SCRIPT_DIR}/venv" || { echo "ERRO: Falha ao criar ambiente virtual."; exit 1; }
+
+SYSTEM_PYTHON="/usr/bin/python3"
+if [ ! -x "${SYSTEM_PYTHON}" ]; then
+    echo "ERRO: Python3 do sistema nao encontrado em ${SYSTEM_PYTHON}."
+    exit 1
+fi
+SYSTEM_PY_VERSION=$("${SYSTEM_PYTHON}" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+echo "   -> Usando Python do sistema: ${SYSTEM_PYTHON} (${SYSTEM_PY_VERSION})"
+echo "   -> (Ignorando pyenv/asdf para garantir compatibilidade com pacotes GTK do apt)"
+
+"${SYSTEM_PYTHON}" -m venv --system-site-packages "${SCRIPT_DIR}/venv" || { echo "ERRO: Falha ao criar ambiente virtual."; exit 1; }
 
 echo "   -> Verificando acesso ao GTK no venv..."
 if ! "${SCRIPT_DIR}/venv/bin/python3" -c "import gi; print('GTK bindings OK')" &> /dev/null; then

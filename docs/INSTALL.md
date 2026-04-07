@@ -22,7 +22,7 @@ chmod +x install.sh
 O script automaticamente:
 1. Atualiza repositórios apt
 2. Instala dependências do sistema (GTK, OpenCV, etc)
-3. Cria ambiente virtual Python (venv)
+3. Cria ambiente virtual Python (venv) usando o Python do sistema para compatibilidade GTK
 4. Instala pacotes Python (numpy, opencv, Pillow, scikit-learn, cupy)
 5. Cria diretórios de trabalho (data_input, data_output, .cache, logs)
 6. Registra aplicação no menu GNOME
@@ -126,6 +126,25 @@ pip install cupy-cuda12x --no-cache-dir
 ```bash
 # Reinstalar dependências GTK
 sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 --reinstall
+```
+
+### GTK não funciona mesmo com python3-gi instalado (pyenv/asdf)
+
+Se você usa **pyenv**, **asdf** ou outro gerenciador de versões Python, o `python3`
+do shell pode apontar para uma versão diferente da do sistema. Os pacotes GTK do apt
+(`python3-gi`) são compilados exclusivamente para o Python do sistema (ex: 3.10 no
+Ubuntu 22.04). Um venv criado com Python 3.12 do pyenv não consegue carregar os
+bindings GTK do 3.10.
+
+**Solução:** O `install.sh` já utiliza `/usr/bin/python3` (Python do sistema) para
+criar o venv, ignorando version managers. Se o problema persistir:
+
+```bash
+# Recriar o venv forçando Python do sistema
+rm -rf venv
+/usr/bin/python3 -m venv --system-site-packages venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### .cache crescendo muito
