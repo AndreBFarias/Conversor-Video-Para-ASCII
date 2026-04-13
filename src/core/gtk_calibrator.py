@@ -74,12 +74,6 @@ except Exception as e:
     print(f"Auto Segmentation nao disponivel: {e}")
 
 
-CHROMA_PRESETS = {
-    'studio': {'h_min': 35, 'h_max': 85, 's_min': 50, 's_max': 255, 'v_min': 50, 'v_max': 255, 'erode': 2, 'dilate': 2},
-    'natural': {'h_min': 35, 'h_max': 90, 's_min': 30, 's_max': 255, 'v_min': 30, 'v_max': 255, 'erode': 2, 'dilate': 2},
-    'bright': {'h_min': 40, 'h_max': 80, 's_min': 80, 's_max': 255, 'v_min': 80, 'v_max': 255, 'erode': 2, 'dilate': 2},
-}
-
 DEFAULT_VALUES = {'h_min': 0, 'h_max': 84, 's_min': 154, 's_max': 255, 'v_min': 0, 'v_max': 228, 'erode': 1, 'dilate': 1}
 
 
@@ -184,18 +178,6 @@ class GTKCalibrator:
             padding: 6px 10px;
             margin: 2px;
             background-color: rgba(45, 30, 55, 0.4);
-        }
-        .island-presets {
-            border: 2px solid #5a3d7a;
-            border-radius: 15px;
-            padding: 4px 8px;
-            margin: 2px;
-        }
-        .island-actions {
-            border: 2px solid #5a3d7a;
-            border-radius: 15px;
-            padding: 4px 8px;
-            margin: 2px;
         }
         .island-recording {
             border: 2px solid #5a3d7a;
@@ -475,6 +457,7 @@ class GTKCalibrator:
         self.chk_temporal = self.builder.get_object("chk_temporal")
         self.scale_temporal_threshold = self.builder.get_object("scale_temporal_threshold")
         self.chk_auto_seg = self.builder.get_object("chk_auto_seg")
+        self.revealer_hsv = self.builder.get_object("revealer_hsv")
 
         self.chk_edge_boost = self.builder.get_object("chk_edge_boost")
         self.scale_edge_boost_amount = self.builder.get_object("scale_edge_boost_amount")
@@ -734,40 +717,6 @@ class GTKCalibrator:
         self.scale_erode.set_value(values.get('erode', 2))
         self.scale_dilate.set_value(values.get('dilate', 2))
         self._block_signals = False
-
-    def _auto_detect_green(self, frame) -> dict:
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        lower_broad = np.array([30, 40, 40])
-        upper_broad = np.array([90, 255, 255])
-        mask_broad = cv2.inRange(hsv, lower_broad, upper_broad)
-
-        green_pixels = hsv[mask_broad > 0]
-
-        if len(green_pixels) == 0:
-            self._set_status("Nenhum verde detectado")
-            return CHROMA_PRESETS['studio'].copy()
-
-        h_mean = np.mean(green_pixels[:, 0])
-        s_mean = np.mean(green_pixels[:, 1])
-        v_mean = np.mean(green_pixels[:, 2])
-        h_std = np.std(green_pixels[:, 0])
-        s_std = np.std(green_pixels[:, 1])
-        v_std = np.std(green_pixels[:, 2])
-
-        result = {
-            'h_min': max(0, int(h_mean - 1.5 * h_std)),
-            'h_max': min(179, int(h_mean + 1.5 * h_std)),
-            's_min': max(0, int(s_mean - 1.5 * s_std)),
-            's_max': 255,
-            'v_min': max(0, int(v_mean - 1.5 * v_std)),
-            'v_max': 255,
-            'erode': 2,
-            'dilate': 2
-        }
-
-        self._set_status(f"Auto: H={result['h_min']}-{result['h_max']}")
-        return result
 
     def _create_chroma_visualization(self, frame, mask):
         result = np.zeros_like(frame)
@@ -1795,12 +1744,8 @@ class GTKCalibrator:
                 self.auto_segmenter = None
             self._set_status("Auto Seg: Desativado")
 
-        hsv_sensitive = not self.auto_seg_enabled
-        for scale_name in ['scale_h_min', 'scale_h_max', 'scale_s_min', 'scale_s_max',
-                           'scale_v_min', 'scale_v_max', 'scale_erode', 'scale_dilate']:
-            scale = getattr(self, scale_name, None)
-            if scale:
-                scale.set_sensitive(hsv_sensitive)
+        if self.revealer_hsv:
+            self.revealer_hsv.set_reveal_child(not self.auto_seg_enabled)
 
     def on_edge_boost_changed(self, widget):
         if self._block_signals:
@@ -2365,27 +2310,6 @@ class GTKCalibrator:
     def on_preview_terminal_clicked(self, widget):
         self._save_and_open_preview()
 
-    def on_preset_studio_clicked(self, widget):
-        self._set_hsv_values(CHROMA_PRESETS['studio'])
-        self._set_status("Preset Studio")
-
-    def on_preset_natural_clicked(self, widget):
-        self._set_hsv_values(CHROMA_PRESETS['natural'])
-        self._set_status("Preset Natural")
-
-    def on_preset_bright_clicked(self, widget):
-        self._set_hsv_values(CHROMA_PRESETS['bright'])
-        self._set_status("Preset Bright")
-
-    def on_auto_detect_clicked(self, widget):
-        if self.current_frame is not None:
-            values = self._auto_detect_green(self.current_frame)
-            self._set_hsv_values(values)
-
-    def on_reset_clicked(self, widget):
-        self._set_hsv_values(DEFAULT_VALUES)
-        self._set_status("Valores resetados")
-
     def on_save_config_clicked(self, widget):
         try:
             hsv = self._get_current_hsv_values()
@@ -2549,14 +2473,6 @@ class GTKCalibrator:
 
         if keyname == 's':
             self.on_save_config_clicked(None)
-            return True
-
-        if keyname == 'r':
-            self.on_reset_clicked(None)
-            return True
-
-        if keyname == 'a':
-            self.on_auto_detect_clicked(None)
             return True
 
         if keyname == 't':

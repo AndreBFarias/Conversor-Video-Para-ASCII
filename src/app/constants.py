@@ -65,7 +65,7 @@ LUMINANCE_RAMPS = {
     },
     'blocks': {
         'name': 'Blocos Unicode',
-        'ramp': " "
+        'ramp': "\u2588\u2593\u2592\u2591 "
     },
     'minimal': {
         'name': 'Minimalista (5 chars)',
@@ -73,19 +73,15 @@ LUMINANCE_RAMPS = {
     },
     'binary': {
         'name': 'Binario (Matrix)',
-        'ramp': "10 "
+        'ramp': "10!|:. "
     },
     'dots': {
         'name': 'Pontos',
-        'ramp': ". "
-    },
-    'detailed': {
-        'name': 'Detalhado (Dense)',
-        'ramp': "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+        'ramp': "\u2022\u25cf\u25c9\u25ce\u25c6\u00b7\u2219\u00b0. "
     },
     'letters': {
         'name': 'Letras',
-        'ramp': "MWNXK0Okxdolc:;,'...  "
+        'ramp': "MWNXKOkxdolc;:,. "
     },
     'numbers': {
         'name': 'Numeros',
@@ -93,7 +89,7 @@ LUMINANCE_RAMPS = {
     },
     'arrows': {
         'name': 'Setas/Simbolos',
-        'ramp': "  "
+        'ramp': "\u25bc\u25b2\u25ba\u25c4\u25a0\u25a1\u25cf\u25cb\u00b7  "
     },
 }
 

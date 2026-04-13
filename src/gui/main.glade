@@ -1443,7 +1443,6 @@
                           <item id="minimal" translatable="yes">Minimalista (5 chars)</item>
                           <item id="binary" translatable="yes">Binario (Matrix)</item>
                           <item id="dots" translatable="yes">Pontos</item>
-                          <item id="detailed" translatable="yes">Detalhado (Dense)</item>
                           <item id="letters" translatable="yes">Letras</item>
                           <item id="numbers" translatable="yes">Numeros</item>
                           <item id="arrows" translatable="yes">Setas/Simbolos</item>
