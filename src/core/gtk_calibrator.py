@@ -135,6 +135,8 @@ class GTKCalibrator:
         self.matrix_speed = 1.0
         self.matrix_rain_instance = None
         self._prev_gray = None
+        self._ascii_font = None
+        self._ascii_font_size = 0
 
         self.auto_seg_enabled = False
         self.auto_segmenter = None
@@ -840,19 +842,34 @@ class GTKCalibrator:
 
         return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
+    def _get_ascii_font(self, font_size: int):
+        if self._ascii_font and self._ascii_font_size == font_size:
+            return self._ascii_font
+
+        for path in [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+            "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+        ]:
+            try:
+                self._ascii_font = ImageFont.truetype(path, font_size)
+                self._ascii_font_size = font_size
+                return self._ascii_font
+            except Exception:
+                continue
+
+        self._ascii_font = ImageFont.load_default()
+        self._ascii_font_size = font_size
+        return self._ascii_font
+
     def _render_ascii_to_image(self, resized_gray, resized_color, resized_mask, magnitude_norm, angle, frame_h, frame_w) -> np.ndarray:
         try:
             height, width = resized_gray.shape
 
             if height <= 0 or width <= 0 or frame_h <= 0 or frame_w <= 0:
-                print(f"[ERRO RENDER] Dimensoes invalidas: gray={width}x{height}, canvas={frame_w}x{frame_h}")
                 return np.zeros((max(1, frame_h), max(1, frame_w), 3), dtype=np.uint8)
-
-            ascii_image = np.zeros((frame_h, frame_w, 3), dtype=np.uint8)
         except Exception as e:
             print(f"[ERRO RENDER INIT] {e}")
-            import traceback
-            traceback.print_exc()
             return np.zeros((480, 640, 3), dtype=np.uint8)
 
         char_w_base = 8
@@ -871,7 +888,8 @@ class GTKCalibrator:
         offset_x = (frame_w - total_w) // 2
         offset_y = (frame_h - total_h) // 2
 
-        font_scale = max(0.25, 0.35 * scale)
+        font_size = max(8, int(char_h * 0.9))
+        font = self._get_ascii_font(font_size)
 
         luminance_ramp = self.converter_config['luminance_ramp']
         ramp_len = len(luminance_ramp)
@@ -887,9 +905,10 @@ class GTKCalibrator:
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
 
-        for y in range(height):
-            py = offset_y + y * char_h + char_h - 3
+        pil_image = Image.new('RGB', (frame_w, frame_h), (0, 0, 0))
+        draw = ImageDraw.Draw(pil_image)
 
+        for y in range(height):
             for x in range(width):
                 is_chroma = resized_mask[y, x] > 127
 
@@ -915,16 +934,16 @@ class GTKCalibrator:
                 else:
                     char = luminance_ramp[lum_indices[y, x]]
 
+                if not char.strip():
+                    continue
+
                 b, g, r = resized_color[y, x]
                 px = offset_x + x * char_w
-                rect_y = offset_y + y * char_h
+                py = offset_y + y * char_h
 
-                if char.strip():
-                    cv2.putText(ascii_image, char, (px, py), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (int(b), int(g), int(r)), 1)
-                else:
-                    cv2.rectangle(ascii_image, (px, rect_y), (px + char_w, rect_y + char_h), (int(b), int(g), int(r)), -1)
+                draw.text((px, py), char, font=font, fill=(int(r), int(g), int(b)))
 
-        return ascii_image
+        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
     def _render_pixelart_to_image(self, resized_color, resized_mask, frame_h, frame_w) -> np.ndarray:
         n_colors = self.pixel_art_config.get('color_palette_size', 16)

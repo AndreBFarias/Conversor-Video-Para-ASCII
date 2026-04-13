@@ -6,6 +6,7 @@ gi.require_version('Gdk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gdk, GLib
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import time
 import os
 import sys
@@ -93,6 +94,9 @@ class GtkFullscreenPlayer(Gtk.Window):
 
         render_mode_str = c.get('Conversor', 'render_mode', fallback='both').lower()
         self.render_mode = {'user': RENDER_MODE_USER, 'background': RENDER_MODE_BACKGROUND, 'both': RENDER_MODE_BOTH}.get(render_mode_str, RENDER_MODE_BOTH)
+
+        self._ascii_font = None
+        self._ascii_font_size = 0
 
         self.auto_seg_enabled = c.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
         self.temporal_enabled = c.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
@@ -322,8 +326,6 @@ class GtkFullscreenPlayer(Gtk.Window):
         if height <= 0 or width <= 0 or canvas_h <= 0 or canvas_w <= 0:
             return np.zeros((max(1, canvas_h), max(1, canvas_w), 3), dtype=np.uint8)
 
-        ascii_image = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
-
         char_w_base = 8
         char_h_base = 16
 
@@ -340,7 +342,21 @@ class GtkFullscreenPlayer(Gtk.Window):
         offset_x = (canvas_w - total_w) // 2
         offset_y = (canvas_h - total_h) // 2
 
-        font_scale = max(0.25, 0.35 * scale)
+        font_size = max(8, int(char_h * 0.9))
+        if not self._ascii_font or self._ascii_font_size != font_size:
+            for path in [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+            ]:
+                try:
+                    self._ascii_font = ImageFont.truetype(path, font_size)
+                    self._ascii_font_size = font_size
+                    break
+                except Exception:
+                    continue
+            else:
+                self._ascii_font = ImageFont.load_default()
+                self._ascii_font_size = font_size
 
         luminance_ramp = self.luminance_ramp
         ramp_len = len(luminance_ramp)
@@ -356,9 +372,10 @@ class GtkFullscreenPlayer(Gtk.Window):
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
 
-        for y in range(height):
-            py = offset_y + y * char_h + char_h - 3
+        pil_image = Image.new('RGB', (canvas_w, canvas_h), (0, 0, 0))
+        draw = ImageDraw.Draw(pil_image)
 
+        for y in range(height):
             for x in range(width):
                 is_chroma = resized_mask[y, x] > 127
 
@@ -385,20 +402,16 @@ class GtkFullscreenPlayer(Gtk.Window):
                     idx = min(max(lum_indices[y, x], 0), ramp_len - 1)
                     char = luminance_ramp[idx]
 
+                if not char.strip():
+                    continue
+
                 b, g, r = resized_color[y, x]
                 px = offset_x + x * char_w
-                rect_y = offset_y + y * char_h
+                py = offset_y + y * char_h
 
-                if char.strip():
-                    cv2.putText(ascii_image, char, (px, py),
-                                cv2.FONT_HERSHEY_SIMPLEX, font_scale,
-                                (int(b), int(g), int(r)), 1)
-                else:
-                    cv2.rectangle(ascii_image, (px, rect_y),
-                                  (px + char_w, rect_y + char_h),
-                                  (int(b), int(g), int(r)), -1)
+                draw.text((px, py), char, font=self._ascii_font, fill=(int(r), int(g), int(b)))
 
-        return ascii_image
+        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
     def display_frame(self, result_image: np.ndarray):
         if result_image is None or result_image.size == 0:

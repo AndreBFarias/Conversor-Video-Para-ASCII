@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import threading
 import gi
 gi.require_version('Gtk', '3.0')
@@ -9,6 +10,9 @@ from gi.repository import Gtk, GLib, GdkPixbuf
 from src.core.utils.ascii_converter import LUMINANCE_RAMP_DEFAULT
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.app.defaults import get_default
+
+_preview_font = None
+_preview_font_size = 0
 
 
 class PreviewActionsMixin:
@@ -128,7 +132,6 @@ class PreviewActionsMixin:
 
         canvas_w = 640
         canvas_h = 480
-        ascii_image = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
 
         height, width = resized_gray.shape
         char_w_base = 8
@@ -142,8 +145,24 @@ class PreviewActionsMixin:
         total_h = height * char_h
         offset_x = (canvas_w - total_w) // 2
         offset_y = (canvas_h - total_h) // 2
-        font_scale = max(0.25, 0.35 * scale)
         ramp_len = len(luminance_ramp)
+
+        font_size = max(8, int(char_h * 0.9))
+        global _preview_font, _preview_font_size
+        if not _preview_font or _preview_font_size != font_size:
+            for path in [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+            ]:
+                try:
+                    _preview_font = ImageFont.truetype(path, font_size)
+                    _preview_font_size = font_size
+                    break
+                except Exception:
+                    continue
+            else:
+                _preview_font = ImageFont.load_default()
+                _preview_font_size = font_size
 
         is_edge = magnitude_norm > sobel_threshold
 
@@ -155,8 +174,10 @@ class PreviewActionsMixin:
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
 
+        pil_image = Image.new('RGB', (canvas_w, canvas_h), (0, 0, 0))
+        draw = ImageDraw.Draw(pil_image)
+
         for y in range(height):
-            py = offset_y + y * char_h + char_h - 3
             for x in range(width):
                 is_chroma = resized_mask[y, x] > 127
                 if render_mode == RENDER_MODE_USER and is_chroma:
@@ -179,20 +200,16 @@ class PreviewActionsMixin:
                 else:
                     char = luminance_ramp[lum_indices[y, x]]
 
+                if not char.strip():
+                    continue
+
                 b, g, r = resized_color[y, x]
                 px = offset_x + x * char_w
-                rect_y = offset_y + y * char_h
+                py = offset_y + y * char_h
 
-                if char.strip():
-                    cv2.putText(ascii_image, char, (px, py),
-                                cv2.FONT_HERSHEY_SIMPLEX, font_scale,
-                                (int(b), int(g), int(r)), 1)
-                else:
-                    cv2.rectangle(ascii_image, (px, rect_y),
-                                  (px + char_w, rect_y + char_h),
-                                  (int(b), int(g), int(r)), -1)
+                draw.text((px, py), char, font=_preview_font, fill=(int(r), int(g), int(b)))
 
-        return ascii_image
+        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
     def _display_static_preview(self, bgr_image: np.ndarray):
         if not hasattr(self, 'preview_thumbnail') or not self.preview_thumbnail:
