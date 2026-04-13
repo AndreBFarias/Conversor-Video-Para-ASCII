@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Extase em 4R73 - Changelog v2.5.0</title>
+<title>Extase em 4R73 - Changelog v2.7.0</title>
 <style>
 body { font-family: 'Fira Mono', monospace; background: #0d1117; color: #c9d1d9; max-width: 900px; margin: 40px auto; padding: 20px; }
 h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
@@ -16,8 +16,54 @@ hr { border: 1px solid #30363d; }
 <body>
 <h1>Changelog</h1>
 <br>
-Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
+Todas as mudancas notaveis neste projeto serao documentadas neste arquivo.
 <br>
+
+<h2>[2.7.0] - 2026-04-13</h2>
+
+<h3>Calibrador - Limpeza UI e Reorganizacao</h3>
+<ul>
+<li>Janelas reordenadas: Origem | Processamento | Destino</li>
+<li>Removidos presets chroma (Studio/Natural/Bright) e acoes (Auto/Reset)</li>
+<li>Controles reorganizados por funcao: Segmentacao | Bordas | Rendering | Matrix | Audio</li>
+<li>HSV colapsavel via GtkRevealer quando Auto Seg ativo</li>
+<li>Fullscreen preview com overlay de controles no topo</li>
+<li>Fullscreen retorna ao calibrador ao inves de fechar tudo</li>
+</ul>
+
+<h3>Rampas de Luminancia</h3>
+<ul>
+<li>Restauradas rampas unicode: Blocos (5 chars) e Setas (11 chars)</li>
+<li>Expandida rampa Pontos (2 -> 10 chars com gradiente unicode)</li>
+<li>Expandida rampa Binario (3 -> 7 chars)</li>
+<li>Corrigida rampa Letras (removidos chars repetidos)</li>
+<li>Removida rampa Detalhado (redundante com Padrao)</li>
+</ul>
+
+<h3>Edge Detection</h3>
+<ul>
+<li>Edge Boost corrigido: escurece bordas (caracteres mais densos)</li>
+<li>Edge Chars corrigido: aplica apenas em bordas fortes (2x threshold)</li>
+<li>Edge Boost funciona em Pixel Art: escurece bordas antes da quantizacao</li>
+</ul>
+
+<h3>Renderer ASCII</h3>
+<ul>
+<li>Migrado de cv2.putText para PIL/ImageFont com TrueType</li>
+<li>Glyph atlas: caracteres pre-renderizados, composicao via numpy</li>
+<li>Celulas minimas 8x14px para caracteres reconheciveis</li>
+<li>Boost de visibilidade: cores escuras amplificadas para contraste</li>
+<li>Fonte detectada automaticamente do terminal via fc-match</li>
+</ul>
+
+<h3>Lancador</h3>
+<ul>
+<li>Novo run.sh: limpa caches, ativa venv e executa main.py</li>
+<li>.desktop aponta para run.sh</li>
+</ul>
+
+<hr>
+
 <h2>[2.5.0] - 2026-03-27</h2>
 <br>
 <h3>Corrigido</h3>

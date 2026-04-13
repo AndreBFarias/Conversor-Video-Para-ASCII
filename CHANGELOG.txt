@@ -1,6 +1,41 @@
 Changelog
 
-Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
+Todas as mudancas notaveis neste projeto serao documentadas neste arquivo.
+
+[2.7.0] - 2026-04-13
+
+Calibrador - Limpeza UI e Reorganizacao
+- Janelas reordenadas: Origem | Processamento | Destino
+- Removidos presets chroma (Studio/Natural/Bright) e acoes (Auto/Reset)
+- Controles reorganizados por funcao: Segmentacao | Bordas | Rendering | Matrix | Audio
+- HSV colapsavel via GtkRevealer quando Auto Seg ativo
+- Fullscreen preview com overlay de controles no topo
+- Fullscreen retorna ao calibrador ao inves de fechar tudo
+
+Rampas de Luminancia
+- Restauradas rampas unicode: Blocos (5 chars) e Setas (11 chars)
+- Expandida rampa Pontos (2 -> 10 chars com gradiente unicode)
+- Expandida rampa Binario (3 -> 7 chars)
+- Corrigida rampa Letras (removidos chars repetidos)
+- Removida rampa Detalhado (redundante com Padrao)
+
+Edge Detection
+- Edge Boost corrigido: escurece bordas (caracteres mais densos)
+- Edge Chars corrigido: aplica apenas em bordas fortes (2x threshold)
+- Edge Boost funciona em Pixel Art: escurece bordas antes da quantizacao
+
+Renderer ASCII
+- Migrado de cv2.putText para PIL/ImageFont com TrueType (Fira Mono)
+- Glyph atlas: caracteres pre-renderizados, composicao via numpy
+- Celulas minimas 8x14px para caracteres reconheciveis
+- Boost de visibilidade: cores escuras amplificadas para contraste
+- Fonte detectada automaticamente do terminal via fc-match
+
+Lancador
+- Novo run.sh: limpa caches, ativa venv e executa main.py
+- .desktop aponta para run.sh
+
+---
 
 [2.5.0] - 2026-03-27
 

@@ -162,13 +162,12 @@ fi
 echo "[7/8] Forjando o sigilo de invocacao (${DESKTOP_FILE_PATH})..."
 $SUDO_CMD mkdir -p "${INSTALL_DIR}"
 
-PYTHON_VENV_PATH="${SCRIPT_DIR}/venv/bin/python3"
-MAIN_SCRIPT_PATH="${SCRIPT_DIR}/main.py"
-EXEC_COMMAND="\"${PYTHON_VENV_PATH}\" \"${MAIN_SCRIPT_PATH}\""
+RUN_SCRIPT_PATH="${SCRIPT_DIR}/run.sh"
+EXEC_COMMAND="\"${RUN_SCRIPT_PATH}\""
 
 CATEGORIES="Video;AudioVideo;"
 
-$SUDO_CMD printf "[Desktop Entry]\nVersion=1.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII v2.6.1\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
+$SUDO_CMD printf "[Desktop Entry]\nVersion=1.0\nName=%s\nComment=Conversor de Videos e Imagens para Arte ASCII v2.7.0\nExec=%s\nIcon=%s\nTerminal=false\nType=Application\nCategories=%s\nStartupNotify=true\nStartupWMClass=%s\nPath=%s\n" \
     "${APP_DISPLAY_NAME}" \
     "${EXEC_COMMAND}" \
     "${ICON_NAME}" \
