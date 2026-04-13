@@ -8,38 +8,37 @@ As rampas de luminancia definem quais caracteres serao usados para representar d
 
 ### Presets Disponiveis
 
-| Preset | Descricao | Uso Recomendado |
-|--------|-----------|-----------------|
-| **Padrao** | 70 caracteres, cobertura completa | Uso geral, maximo detalhe |
-| **Simples** | 10 caracteres basicos | Videos com alto contraste |
-| **Blocos Unicode** | Caracteres de bloco solido | Efeito retro, compativel com UTF-8 |
-| **Minimalista** | 5 caracteres apenas | Arte minimalista, silhuetas |
-| **Binario (Matrix)** | Apenas "1" e "0" | Efeito Matrix/hacker |
-| **Pontos** | Circulos de tamanhos variados | Efeito de halftone |
-| **Detalhado** | Versao densa do padrao | Resolucoes muito altas |
-| **Letras** | Apenas A-Z | Efeito tipografico |
-| **Numeros** | Apenas 0-9 | Efeito digital/LED |
-| **Setas/Simbolos** | Formas geometricas | Arte abstrata |
-| **Custom** | Manual | Experimentacao livre |
+| Preset | Chars | Descricao | Uso Recomendado |
+|--------|-------|-----------|-----------------|
+| **Padrao** | 70 | Cobertura completa ASCII | Uso geral, maximo detalhe |
+| **Simples** | 10 | Caracteres basicos | Videos com alto contraste |
+| **Blocos** | 5 | Blocos solidos Unicode | Efeito retro, terminais UTF-8 |
+| **Minimalista** | 5 | Conjunto reduzido | Arte minimalista, silhuetas |
+| **Binario** | 7 | Estetica digital | Efeito Matrix/hacker |
+| **Pontos** | 10 | Gradiente de pontos Unicode | Efeito halftone |
+| **Letras** | 17 | Apenas A-Z por peso visual | Efeito tipografico |
+| **Numeros** | 12 | Apenas 0-9 | Efeito digital/LED |
+| **Setas** | 11 | Formas geometricas Unicode | Arte abstrata |
 
 ### Caracteres por Preset
 
 ```
-Padrao:     $@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
-Simples:    @%#*+=-:.
-Blocos:     (caracteres de bloco Unicode)
+Padrao:      $@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
+Simples:     @%#*+=-:.
+Blocos:      (blocos solidos Unicode graduados)
 Minimalista: #=:.
-Binario:    10
-Pontos:     (circulos Unicode graduados)
-Letras:     MWNXK0Okxdolc:;,'...
-Numeros:    8906532147.
+Binario:     10!|:.
+Pontos:      (circulos e pontos Unicode graduados)
+Letras:      MWNXKOkxdolc;:,.
+Numeros:     8906532147.
+Setas:       (triangulos, quadrados, circulos Unicode)
 ```
 
 ### Como Escolher
 
-1. **Para videos de pessoas/rostos**: Use "Padrao" ou "Detalhado"
-2. **Para silhuetas simples**: Use "Minimalista" ou "Simples"
-3. **Para efeitos artisticos**: Experimente "Blocos", "Binario" ou "Simbolos"
+1. **Para videos de pessoas/rostos**: Use "Padrao" ou "Simples"
+2. **Para silhuetas simples**: Use "Minimalista" ou "Blocos"
+3. **Para efeitos artisticos**: Experimente "Blocos", "Binario" ou "Setas"
 4. **Para terminais sem UTF-8**: Use "Simples", "Letras" ou "Numeros"
 
 ---

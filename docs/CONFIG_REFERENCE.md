@@ -80,13 +80,9 @@ Configuracoes do filtro de fundo verde.
 | `erode` | int | 0-10 | Iteracoes de erosao (remove ruido) |
 | `dilate` | int | 0-10 | Iteracoes de dilatacao (fecha buracos) |
 
-### Presets de Chroma Key
+### Segmentacao
 
-| Preset | H Min | H Max | S Min | V Min | Uso |
-|--------|-------|-------|-------|-------|-----|
-| Studio | 35 | 85 | 50 | 50 | Estudio profissional |
-| Natural | 35 | 90 | 30 | 30 | Ambientes externos |
-| Bright | 40 | 80 | 80 | 80 | Verde saturado |
+O calibrador usa Auto Seg (MediaPipe) como metodo primario de segmentacao. Os sliders HSV servem como fallback quando Auto Seg esta desativado.
 
 ## [Mode]
 

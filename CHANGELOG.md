@@ -2,6 +2,31 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [2.7.0] - 2026-04-13
+
+### Calibrador - Limpeza UI e Reorganização
+- Janelas reordenadas: Origem | Processamento | Destino
+- Removidos presets chroma (Studio/Natural/Bright) e ações (Auto/Reset)
+- Controles reorganizados por função: Segmentação | Bordas | Rendering | Matrix | Audio
+- HSV colapsável via GtkRevealer quando Auto Seg ativo
+- Fullscreen preview com overlay de controles (rampa, boost, contornos, modo)
+- Fullscreen retorna ao calibrador ao invés de fechar tudo
+
+### Rampas de Luminância
+- Restauradas rampas unicode: Blocos (5 chars) e Setas (11 chars)
+- Expandida rampa Pontos (2 -> 10 chars com gradiente unicode)
+- Expandida rampa Binário (3 -> 7 chars)
+- Corrigida rampa Letras (removidos chars repetidos)
+- Removida rampa Detalhado (redundante com Padrão)
+
+### Edge Detection
+- Edge Boost corrigido: escurece bordas (caracteres mais densos) ao invés de clarear
+- Edge Boost normalizado: intensidade relativa ao comprimento da rampa
+- Edge Chars corrigido: aplica apenas em bordas fortes (2x threshold)
+- Edge Boost funciona em Pixel Art: escurece bordas antes da quantização
+
+---
+
 ## [2.6.3] - 2026-04-06
 
 ### Corrigido

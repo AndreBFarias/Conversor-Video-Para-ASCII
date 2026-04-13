@@ -2,6 +2,42 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.7.0] - 2026-04-13
+
+### Calibrador - Limpeza UI e Reorganizacao
+- Janelas reordenadas: Origem | Processamento | Destino
+- Removidos presets chroma (Studio/Natural/Bright) e acoes (Auto/Reset)
+- ROW 4 reorganizada por funcao: Segmentacao | Bordas | Rendering | Matrix | Audio
+- HSV colapsavel via GtkRevealer quando Auto Seg ativo
+- Fullscreen preview com overlay de controles (rampa, boost, contornos, modo)
+- Fullscreen retorna ao calibrador ao inves de fechar tudo
+
+### Rampas de Luminancia
+- Restauradas rampas unicode: Blocos (5 chars) e Setas (11 chars) perdidas no commit 622739c
+- Expandida rampa Pontos (2 -> 10 chars com gradiente de pontos unicode)
+- Expandida rampa Binario (3 -> 7 chars)
+- Corrigida rampa Letras (removidos chars repetidos, 22 -> 17 chars)
+- Removida rampa Detalhado (redundante com Padrao)
+
+### Edge Detection
+- Edge Boost corrigido: escurece bordas (caracteres mais densos) ao inves de clarear
+- Edge Boost normalizado: intensidade relativa ao comprimento da rampa
+- Edge Chars corrigido: aplica apenas em bordas fortes (2x threshold)
+- Edge Boost funciona em Pixel Art: escurece bordas antes da quantizacao
+
+### Arquivos Modificados
+- `src/gui/calibrator.glade` - Layout reorganizado
+- `src/gui/main.glade` - Removida rampa Detalhado
+- `src/core/gtk_calibrator.py` - Fullscreen, revealer, handlers removidos
+- `src/app/constants.py` - Rampas corrigidas e expandidas
+- `src/core/utils/ascii_converter.py` - Edge Boost/Chars corrigidos
+- `src/core/realtime_ascii.py` - Edge Boost/Chars corrigidos
+- `src/core/gtk_fullscreen_player.py` - Edge Boost/Chars corrigidos
+- `src/app/actions/preview_actions.py` - Edge Boost/Chars corrigidos
+- `src/core/pixel_art_converter.py` - Edge Boost adicionado
+
+---
+
 ## [2.6.2] - 2026-03-27
 
 ### Fix: Calibrador - Preview Fullscreen e Salvar

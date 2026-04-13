@@ -16,7 +16,7 @@ sudo apt-get install -f
 
 ### Via Script
 ```bash
-git clone https://github.com/AndreBFarias/Conversor-Video-Para-ASCII
+git clone https://github.com/[REDACTED]/Conversor-Video-Para-ASCII
 cd Conversor-Video-Para-ASCII
 ./install.sh
 ```
@@ -71,15 +71,20 @@ Clique em "Calibrar Chroma Key" na interface principal.
 |-------|------|
 | `a` | Auto-detect chroma key |
 | `p` | Ciclar presets |
-| `r` | Reset para valores padrao |
 | `s` | Salvar configuracoes |
 | `Space` | Pausar/Continuar |
 | `Esc` | Fechar calibrador |
 
-### Presets de Chroma Key
-- **Studio**: Verde de estudio profissional
-- **Natural**: Verde natural/outdoor
-- **Bright**: Verde vibrante/iluminado
+### Janelas do Calibrador
+- **Origem**: Frame original do video/webcam
+- **Processamento**: Visualizacao da mascara de segmentacao
+- **Destino**: Resultado final (ASCII ou Pixel Art)
+
+Duplo clique no Destino abre preview fullscreen com controles.
+
+### Bordas
+- **Edge Boost**: Aumenta densidade dos caracteres nas bordas para melhor definicao. Funciona em ASCII e Pixel Art.
+- **Edge Chars (Contornos)**: Aplica caracteres direcionais (`/|\-`) nas bordas mais fortes.
 
 ---
 
@@ -264,6 +269,6 @@ No Ubuntu: `sudo apt install python3-pyaudio`
 
 ## Creditos
 
-- Desenvolvido por: AndreBFarias
+- Desenvolvido por: [REDACTED]
 - Licenca: GPLv3
-- Repositorio: https://github.com/AndreBFarias/Conversor-Video-Para-ASCII
+- Repositorio: https://github.com/[REDACTED]/Conversor-Video-Para-ASCII

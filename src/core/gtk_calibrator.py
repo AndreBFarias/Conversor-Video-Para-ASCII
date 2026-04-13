@@ -1462,22 +1462,70 @@ class GTKCalibrator:
 
         self.window.hide()
 
-        fs_win = Gtk.Window(title="Extase em 4R73 - Real-Time")
+        fs_win = Gtk.Window(title="Extase em 4R73 - Preview")
         fs_win.set_wmclass("extase-em-4r73", "Extase em 4R73")
 
         screen = Gdk.Screen.get_default()
         css = Gtk.CssProvider()
-        css.load_from_data(b"window { background-color: #000000; }")
+        css.load_from_data(b"""
+            window { background-color: #000000; }
+            .fs-overlay {
+                background-color: rgba(30, 20, 40, 0.85);
+                border-radius: 10px;
+                padding: 8px 16px;
+                margin: 8px;
+            }
+        """)
         Gtk.StyleContext.add_provider_for_screen(
             screen, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
         fs_win.maximize()
 
-        aspect = Gtk.AspectFrame(xalign=0.5, yalign=0.5, ratio=4/3, obey_child=False)
+        overlay = Gtk.Overlay()
+
+        aspect = Gtk.AspectFrame(xalign=0.5, yalign=0.5, ratio=self.source_aspect_ratio, obey_child=False)
         img = Gtk.Image()
         aspect.add(img)
-        fs_win.add(aspect)
+        overlay.add(aspect)
+
+        controls = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER, valign=Gtk.Align.END)
+        controls.get_style_context().add_class("fs-overlay")
+        controls.set_margin_bottom(12)
+
+        combo_ramp = Gtk.ComboBoxText()
+        for ramp_id, ramp_data in LUMINANCE_RAMPS.items():
+            combo_ramp.append(ramp_id, ramp_data['name'])
+        current_preset = self.converter_config.get('luminance_preset', 'standard')
+        combo_ramp.set_active_id(current_preset)
+        combo_ramp.connect("changed", self._on_fs_ramp_changed)
+        controls.pack_start(combo_ramp, False, False, 0)
+
+        chk_boost = Gtk.CheckButton(label="Boost")
+        chk_boost.set_active(self.edge_boost_enabled)
+        chk_boost.connect("toggled", self._on_fs_edge_boost_toggled)
+        controls.pack_start(chk_boost, False, False, 0)
+
+        chk_contours = Gtk.CheckButton(label="Contornos")
+        chk_contours.set_active(self.use_edge_chars)
+        chk_contours.connect("toggled", self._on_fs_edge_chars_toggled)
+        controls.pack_start(chk_contours, False, False, 0)
+
+        radio_ascii = Gtk.RadioButton.new_with_label(None, "ASCII")
+        radio_pixel = Gtk.RadioButton.new_with_label_from_widget(radio_ascii, "PixelArt")
+        if self.conversion_mode == MODE_PIXELART:
+            radio_pixel.set_active(True)
+        radio_ascii.connect("toggled", self._on_fs_mode_toggled)
+        controls.pack_start(radio_ascii, False, False, 0)
+        controls.pack_start(radio_pixel, False, False, 0)
+
+        btn_back = Gtk.Button(label="Voltar")
+        btn_back.connect("clicked", lambda w: self._close_fullscreen())
+        controls.pack_start(btn_back, False, False, 0)
+
+        overlay.add_overlay(controls)
+
+        fs_win.add(overlay)
 
         self._fullscreen_window = fs_win
         self._fullscreen_image = img
@@ -1486,6 +1534,37 @@ class GTKCalibrator:
         fs_win.connect("key-press-event", self._on_fullscreen_key_press)
         fs_win.connect("destroy", self._on_fullscreen_destroy)
         fs_win.show_all()
+
+    def _on_fs_ramp_changed(self, widget):
+        preset_id = widget.get_active_id()
+        if preset_id and preset_id in LUMINANCE_RAMPS:
+            self.converter_config['luminance_ramp'] = LUMINANCE_RAMPS[preset_id]['ramp']
+            self.converter_config['luminance_preset'] = preset_id
+            if self.combo_ramp_preset:
+                self._block_signals = True
+                self.combo_ramp_preset.set_active_id(preset_id)
+                self._block_signals = False
+
+    def _on_fs_edge_boost_toggled(self, widget):
+        self.edge_boost_enabled = widget.get_active()
+        if self.chk_edge_boost:
+            self._block_signals = True
+            self.chk_edge_boost.set_active(self.edge_boost_enabled)
+            self._block_signals = False
+
+    def _on_fs_edge_chars_toggled(self, widget):
+        self.use_edge_chars = widget.get_active()
+        if self.chk_use_edge_chars:
+            self._block_signals = True
+            self.chk_use_edge_chars.set_active(self.use_edge_chars)
+            self._block_signals = False
+
+    def _on_fs_mode_toggled(self, widget):
+        if widget.get_active():
+            self.conversion_mode = MODE_ASCII
+        else:
+            self.conversion_mode = MODE_PIXELART
+        self._update_mode_visibility()
 
     def _on_fullscreen_key_press(self, widget, event):
         keyname = Gdk.keyval_name(event.keyval)
@@ -1506,9 +1585,7 @@ class GTKCalibrator:
             self._fullscreen_window = None
             self._fullscreen_image = None
             self._fullscreen_aspect = None
-        self._cleanup()
-        if Gtk.main_level() > 0:
-            Gtk.main_quit()
+        self.window.show()
 
     def _close_calibrator(self):
         self._cleanup()

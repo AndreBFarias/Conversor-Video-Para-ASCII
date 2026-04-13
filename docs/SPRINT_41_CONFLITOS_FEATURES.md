@@ -40,7 +40,7 @@ O projeto tem 11 features independentes que podem ser combinadas livremente:
 | Audio Reactive + Scanlines | INFO | Scanlines nao eh modulado pelo audio | Info no status |
 | Temporal + resolucao >200 | PERFORMANCE | 22500+ comparacoes por frame | Aviso no status |
 | Auto Seg + ChromaKey | LOGICA | HSV stale salvos como fallback | Documentar |
-| Edge Boost + PixelArt | SEM EFEITO | Nao ha caracteres ASCII em PixelArt | Desabilitar widget |
+| Edge Boost + PixelArt | FUNCIONAL | Edge Boost escurece bordas antes da quantizacao | Nenhuma |
 | 4+ features GPU pesadas | PERFORMANCE | Memory pressure, possivel OOM | Aviso no status |
 
 ## Arquivos a Modificar
