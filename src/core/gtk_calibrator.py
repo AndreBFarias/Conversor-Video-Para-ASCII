@@ -805,13 +805,7 @@ class GTKCalibrator:
         draw = ImageDraw.Draw(pil_image)
 
         font_size = max(8, int(char_h * 0.9))
-        try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size)
-        except:
-            try:
-                font = ImageFont.truetype("/usr/share/fonts/TTF/DejaVuSansMono.ttf", font_size)
-            except:
-                font = ImageFont.load_default()
+        font = self._get_ascii_font(font_size)
 
         color_h, color_w = resized_color.shape[:2]
         mask_h, mask_w = resized_mask.shape[:2]
