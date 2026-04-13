@@ -26,8 +26,10 @@ def converter_frame_para_ascii(
 
     if edge_boost_enabled:
         brightness = gray_frame.astype(np.int32)
-        edge_boost = is_edge.astype(np.int32) * edge_boost_amount
-        brightness = np.clip(brightness + edge_boost, 0, 255)
+        boost_normalized = int(edge_boost_amount * ramp_len / 70)
+        pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
+        edge_darkening = is_edge.astype(np.int32) * pixel_boost
+        brightness = np.clip(brightness - edge_darkening, 0, 255)
         lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
     else:
         lum_indices = ((gray_frame / 255) * (ramp_len - 1)).astype(np.int32)
@@ -35,16 +37,18 @@ def converter_frame_para_ascii(
     chars = ramp_array[lum_indices].copy()
 
     if use_edge_chars:
+        strong_edge = magnitude_frame > (sobel_threshold * 2)
+
         angle_degrees = angle_frame * (180 / np.pi)
         angle_degrees = (angle_degrees + 180) % 180
 
-        slash_mask = is_edge & (((angle_degrees >= 22.5) & (angle_degrees < 67.5)) |
-                                ((angle_degrees >= 157.5) & (angle_degrees < 202.5)))
-        pipe_mask = is_edge & (((angle_degrees >= 67.5) & (angle_degrees < 112.5)) |
-                               ((angle_degrees >= 247.5) & (angle_degrees < 292.5)))
-        backslash_mask = is_edge & (((angle_degrees >= 112.5) & (angle_degrees < 157.5)) |
-                                    ((angle_degrees >= 292.5) & (angle_degrees < 337.5)))
-        dash_mask = is_edge & ~(slash_mask | pipe_mask | backslash_mask)
+        slash_mask = strong_edge & (((angle_degrees >= 22.5) & (angle_degrees < 67.5)) |
+                                    ((angle_degrees >= 157.5) & (angle_degrees < 202.5)))
+        pipe_mask = strong_edge & (((angle_degrees >= 67.5) & (angle_degrees < 112.5)) |
+                                   ((angle_degrees >= 247.5) & (angle_degrees < 292.5)))
+        backslash_mask = strong_edge & (((angle_degrees >= 112.5) & (angle_degrees < 157.5)) |
+                                        ((angle_degrees >= 292.5) & (angle_degrees < 337.5)))
+        dash_mask = strong_edge & ~(slash_mask | pipe_mask | backslash_mask)
 
         chars[slash_mask] = '/'
         chars[pipe_mask] = '|'

@@ -881,8 +881,10 @@ class GTKCalibrator:
 
         if self.edge_boost_enabled:
             brightness = resized_gray.astype(np.int32)
-            edge_boost = is_edge.astype(np.int32) * self.edge_boost_amount
-            brightness = np.clip(brightness + edge_boost, 0, 255)
+            boost_normalized = int(self.edge_boost_amount * ramp_len / 70)
+            pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
+            edge_darkening = is_edge.astype(np.int32) * pixel_boost
+            brightness = np.clip(brightness - edge_darkening, 0, 255)
             lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
@@ -903,7 +905,7 @@ class GTKCalibrator:
                 mag = magnitude_norm[y, x]
                 ang = angle[y, x]
 
-                if self.use_edge_chars and mag > sobel_threshold:
+                if self.use_edge_chars and mag > (sobel_threshold * 2):
                     if 22.5 <= ang < 67.5 or 157.5 <= ang < 202.5:
                         char = '/'
                     elif 67.5 <= ang < 112.5 or 247.5 <= ang < 292.5:
@@ -937,10 +939,22 @@ class GTKCalibrator:
 
         height, width = resized_color.shape[:2]
 
+        color_for_quant = resized_color.copy()
+
+        if self.edge_boost_enabled:
+            gray = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
+            sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+            magnitude = np.hypot(sobel_x, sobel_y)
+            magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+            edge_mask = magnitude_norm > self.converter_config.get('sobel_threshold', 20)
+            darken_factor = max(0.3, 1.0 - (self.edge_boost_amount / 255.0))
+            color_for_quant[edge_mask] = (color_for_quant[edge_mask] * darken_factor).astype(np.uint8)
+
         try:
-            quantized = quantize_colors(resized_color, n_colors, use_fixed_palette=use_fixed, custom_palette=custom_palette)
+            quantized = quantize_colors(color_for_quant, n_colors, use_fixed_palette=use_fixed, custom_palette=custom_palette)
         except Exception:
-            quantized = resized_color
+            quantized = color_for_quant
 
         if self.render_mode == RENDER_MODE_USER:
             mask_filter = resized_mask <= 127
@@ -1758,7 +1772,7 @@ class GTKCalibrator:
         if self.scale_edge_boost_amount:
             self.scale_edge_boost_amount.set_sensitive(self.edge_boost_enabled)
 
-        status = "Edge Boost: Ativado" if self.edge_boost_enabled else "Edge Boost: Desativado"
+        status = "Edge Boost: Ativado (bordas densas)" if self.edge_boost_enabled else "Edge Boost: Desativado"
         if self.edge_boost_enabled:
             status += f" ({self.edge_boost_amount})"
         self._set_status(status)

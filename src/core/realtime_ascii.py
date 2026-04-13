@@ -56,15 +56,19 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
 
     if edge_boost_enabled:
         brightness = gray_frame.astype(np.int32)
-        edge_boost = is_edge.astype(np.int32) * edge_boost_amount
-        brightness = np.clip(brightness + edge_boost, 0, 255).astype(np.uint8)
+        boost_normalized = int(edge_boost_amount * ramp_len / 70)
+        pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
+        edge_darkening = is_edge.astype(np.int32) * pixel_boost
+        brightness = np.clip(brightness - edge_darkening, 0, 255).astype(np.uint8)
     else:
         brightness = gray_frame
+
+    strong_edge = magnitude_frame > (sobel_threshold * 2)
 
     for y in range(height):
         line_buffer = []
         for x in range(width):
-            if use_edge_chars and is_edge[y, x]:
+            if use_edge_chars and strong_edge[y, x]:
                 angle = angle_frame[y, x]
                 if (angle > 67.5 and angle <= 112.5):
                     char = "|"

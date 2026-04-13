@@ -56,7 +56,9 @@ def quantize_colors(image, n_colors=16, use_fixed_palette=False, custom_palette=
     return quantized.reshape((h, w, c))
 
 
-def converter_frame_para_pixelart(frame, mask, pixel_size, n_colors, use_fixed_palette):
+def converter_frame_para_pixelart(frame, mask, pixel_size, n_colors, use_fixed_palette,
+                                   edge_boost_enabled=False, edge_boost_amount=100,
+                                   sobel_threshold=20):
     h, w = frame.shape[:2]
 
     if pixel_size > 1:
@@ -68,7 +70,19 @@ def converter_frame_para_pixelart(frame, mask, pixel_size, n_colors, use_fixed_p
         frame_small = frame
         mask_small = mask
 
-    quantized = quantize_colors(frame_small, n_colors, use_fixed_palette)
+    color_for_quant = frame_small.copy()
+
+    if edge_boost_enabled:
+        gray = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
+        sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+        magnitude = np.hypot(sobel_x, sobel_y)
+        magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        edge_mask = magnitude_norm > sobel_threshold
+        darken_factor = max(0.3, 1.0 - (edge_boost_amount / 255.0))
+        color_for_quant[edge_mask] = (color_for_quant[edge_mask] * darken_factor).astype(np.uint8)
+
+    quantized = quantize_colors(color_for_quant, n_colors, use_fixed_palette)
 
     height, width = quantized.shape[:2]
     ascii_str_lines = []
@@ -102,6 +116,10 @@ def iniciar_conversao(video_path, output_dir, config):
 
         sharpen_enabled = config.getboolean('Conversor', 'sharpen_enabled', fallback=True)
         sharpen_amount = config.getfloat('Conversor', 'sharpen_amount', fallback=0.5)
+
+        edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
+        edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
+        sobel_threshold = config.getint('Conversor', 'sobel_threshold', fallback=20)
 
         lower_green = np.array([
             config.getint('ChromaKey', 'h_min'),
@@ -167,14 +185,16 @@ def iniciar_conversao(video_path, output_dir, config):
         resized_mask = cv2.resize(mask, target_dimensions, interpolation=cv2.INTER_NEAREST)
 
         frame_pixelart = converter_frame_para_pixelart(
-            resized_color, resized_mask, pixel_size, n_colors, use_fixed_palette
+            resized_color, resized_mask, pixel_size, n_colors, use_fixed_palette,
+            edge_boost_enabled=edge_boost_enabled, edge_boost_amount=edge_boost_amount,
+            sobel_threshold=sobel_threshold
         )
         frames_pixelart.append(frame_pixelart)
         frame_count += 1
 
     captura.release()
     print(f"Processados {frame_count} frames em pixel art.")
-    
+
     try:
         with open(caminho_saida, 'w') as f:
             f.write(f"{fps}\n")
