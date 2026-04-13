@@ -7,6 +7,7 @@ from gi.repository import Gtk, GdkPixbuf, Gdk, GLib
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import subprocess
 import time
 import os
 import sys
@@ -343,19 +344,36 @@ class GtkFullscreenPlayer(Gtk.Window):
 
         font_size = max(8, int(char_h * 0.85))
         if not self._ascii_font or self._ascii_font_size != font_size:
-            for path in [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-                "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
-            ]:
-                try:
-                    self._ascii_font = ImageFont.truetype(path, font_size)
+            font_family = self.config.get('Preview', 'font_family', fallback='auto') if self.config else 'auto'
+            if font_family == 'auto':
+                from src.utils.terminal_font_detector import detect_terminal_font
+                font_family = detect_terminal_font().get('family', 'monospace')
+
+            try:
+                result = subprocess.run(
+                    ['fc-match', font_family, '--format=%{file}'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    self._ascii_font = ImageFont.truetype(result.stdout.strip(), font_size)
                     self._ascii_font_size = font_size
-                    break
-                except Exception:
-                    continue
-            else:
-                self._ascii_font = ImageFont.load_default()
-                self._ascii_font_size = font_size
+            except Exception:
+                pass
+
+            if not self._ascii_font or self._ascii_font_size != font_size:
+                for path in [
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                    "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+                ]:
+                    try:
+                        self._ascii_font = ImageFont.truetype(path, font_size)
+                        self._ascii_font_size = font_size
+                        break
+                    except Exception:
+                        continue
+                else:
+                    self._ascii_font = ImageFont.load_default()
+                    self._ascii_font_size = font_size
 
         luminance_ramp = self.luminance_ramp
         ramp_len = len(luminance_ramp)

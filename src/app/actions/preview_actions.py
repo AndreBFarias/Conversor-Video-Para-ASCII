@@ -148,17 +148,41 @@ class PreviewActionsMixin:
         font_size = max(8, int(char_h * 0.85))
         global _preview_font, _preview_font_size
         if not _preview_font or _preview_font_size != font_size:
-            for path in [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-                "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
-            ]:
-                try:
-                    _preview_font = ImageFont.truetype(path, font_size)
+            font_family = 'monospace'
+            try:
+                from src.utils.terminal_font_detector import detect_terminal_font
+                font_family = detect_terminal_font().get('family', 'monospace')
+            except Exception:
+                pass
+
+            loaded = False
+            try:
+                import subprocess as sp
+                result = sp.run(
+                    ['fc-match', font_family, '--format=%{file}'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    _preview_font = ImageFont.truetype(result.stdout.strip(), font_size)
                     _preview_font_size = font_size
-                    break
-                except Exception:
-                    continue
-            else:
+                    loaded = True
+            except Exception:
+                pass
+
+            if not loaded:
+                for path in [
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                    "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+                ]:
+                    try:
+                        _preview_font = ImageFont.truetype(path, font_size)
+                        _preview_font_size = font_size
+                        loaded = True
+                        break
+                    except Exception:
+                        continue
+
+            if not loaded:
                 _preview_font = ImageFont.load_default()
                 _preview_font_size = font_size
 

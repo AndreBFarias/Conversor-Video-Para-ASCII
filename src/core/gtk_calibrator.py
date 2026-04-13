@@ -846,10 +846,23 @@ class GTKCalibrator:
         if self._ascii_font and self._ascii_font_size == font_size:
             return self._ascii_font
 
+        font_family = self.terminal_font.get('family', 'monospace') if self.terminal_font else 'monospace'
+
+        try:
+            result = subprocess.run(
+                ['fc-match', font_family, '--format=%{file}'],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                self._ascii_font = ImageFont.truetype(result.stdout.strip(), font_size)
+                self._ascii_font_size = font_size
+                return self._ascii_font
+        except Exception:
+            pass
+
         for path in [
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
             "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
         ]:
             try:
                 self._ascii_font = ImageFont.truetype(path, font_size)
@@ -1518,10 +1531,13 @@ class GTKCalibrator:
         controls.set_margin_bottom(12)
 
         combo_ramp = Gtk.ComboBoxText()
+        combo_ramp.set_property("popup-fixed-width", False)
         for ramp_id, ramp_data in LUMINANCE_RAMPS.items():
             combo_ramp.append(ramp_id, ramp_data['name'])
         current_preset = self.converter_config.get('luminance_preset', 'standard')
         combo_ramp.set_active_id(current_preset)
+        if combo_ramp.get_active() < 0:
+            combo_ramp.set_active(0)
         combo_ramp.connect("changed", self._on_fs_ramp_changed)
         controls.pack_start(combo_ramp, False, False, 0)
 
