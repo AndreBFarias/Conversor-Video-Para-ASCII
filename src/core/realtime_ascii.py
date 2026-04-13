@@ -56,9 +56,7 @@ def frame_para_ascii_rt(gray_frame, color_frame, magnitude_frame, angle_frame, s
 
     if edge_boost_enabled:
         brightness = gray_frame.astype(np.int32)
-        boost_normalized = int(edge_boost_amount * ramp_len / 70)
-        pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
-        edge_darkening = is_edge.astype(np.int32) * pixel_boost
+        edge_darkening = is_edge.astype(np.int32) * edge_boost_amount
         brightness = np.clip(brightness - edge_darkening, 0, 255).astype(np.uint8)
     else:
         brightness = gray_frame

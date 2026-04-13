@@ -881,9 +881,7 @@ class GTKCalibrator:
 
         if self.edge_boost_enabled:
             brightness = resized_gray.astype(np.int32)
-            boost_normalized = int(self.edge_boost_amount * ramp_len / 70)
-            pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
-            edge_darkening = is_edge.astype(np.int32) * pixel_boost
+            edge_darkening = is_edge.astype(np.int32) * self.edge_boost_amount
             brightness = np.clip(brightness - edge_darkening, 0, 255)
             lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
         else:
@@ -948,7 +946,7 @@ class GTKCalibrator:
             magnitude = np.hypot(sobel_x, sobel_y)
             magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
             edge_mask = magnitude_norm > self.converter_config.get('sobel_threshold', 20)
-            darken_factor = max(0.3, 1.0 - (self.edge_boost_amount / 255.0))
+            darken_factor = max(0.5, 1.0 - (self.edge_boost_amount / 510.0))
             color_for_quant[edge_mask] = (color_for_quant[edge_mask] * darken_factor).astype(np.uint8)
 
         try:
@@ -1465,10 +1463,9 @@ class GTKCalibrator:
         fs_win = Gtk.Window(title="Extase em 4R73 - Preview")
         fs_win.set_wmclass("extase-em-4r73", "Extase em 4R73")
 
-        screen = Gdk.Screen.get_default()
-        css = Gtk.CssProvider()
-        css.load_from_data(b"""
-            window { background-color: #000000; }
+        self._fs_css_provider = Gtk.CssProvider()
+        self._fs_css_provider.load_from_data(b"""
+            .fs-window { background-color: #1e1428; }
             .fs-overlay {
                 background-color: rgba(30, 20, 40, 0.85);
                 border-radius: 10px;
@@ -1477,8 +1474,11 @@ class GTKCalibrator:
             }
         """)
         Gtk.StyleContext.add_provider_for_screen(
-            screen, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            Gdk.Screen.get_default(),
+            self._fs_css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
+        fs_win.get_style_context().add_class("fs-window")
 
         fs_win.maximize()
 
@@ -1585,6 +1585,12 @@ class GTKCalibrator:
             self._fullscreen_window = None
             self._fullscreen_image = None
             self._fullscreen_aspect = None
+        if hasattr(self, '_fs_css_provider') and self._fs_css_provider:
+            Gtk.StyleContext.remove_provider_for_screen(
+                Gdk.Screen.get_default(),
+                self._fs_css_provider
+            )
+            self._fs_css_provider = None
         self.window.show()
 
     def _close_calibrator(self):

@@ -79,7 +79,7 @@ def converter_frame_para_pixelart(frame, mask, pixel_size, n_colors, use_fixed_p
         magnitude = np.hypot(sobel_x, sobel_y)
         magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
         edge_mask = magnitude_norm > sobel_threshold
-        darken_factor = max(0.3, 1.0 - (edge_boost_amount / 255.0))
+        darken_factor = max(0.5, 1.0 - (edge_boost_amount / 510.0))
         color_for_quant[edge_mask] = (color_for_quant[edge_mask] * darken_factor).astype(np.uint8)
 
     quantized = quantize_colors(color_for_quant, n_colors, use_fixed_palette)

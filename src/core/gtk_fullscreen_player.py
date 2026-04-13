@@ -350,9 +350,7 @@ class GtkFullscreenPlayer(Gtk.Window):
 
         if self.edge_boost_enabled:
             brightness = resized_gray.astype(np.int32)
-            boost_normalized = int(self.edge_boost_amount * ramp_len / 70)
-            pixel_boost = boost_normalized * 255 // max(ramp_len, 1)
-            edge_darkening = is_edge.astype(np.int32) * pixel_boost
+            edge_darkening = is_edge.astype(np.int32) * self.edge_boost_amount
             brightness = np.clip(brightness - edge_darkening, 0, 255)
             lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
         else:
