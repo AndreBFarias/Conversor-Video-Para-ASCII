@@ -130,24 +130,22 @@ class PreviewActionsMixin:
         angle = (angle + 180) % 180
         magnitude_norm = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
-        canvas_w = 640
-        canvas_h = 480
-
         height, width = resized_gray.shape
-        char_w_base = 8
-        char_h_base = 16
-        scale_x = canvas_w / (width * char_w_base)
-        scale_y = canvas_h / (height * char_h_base)
-        scale = min(scale_x, scale_y)
-        char_w = max(1, int(char_w_base * scale))
-        char_h = max(1, int(char_h_base * scale))
+
+        MIN_CHAR_W = 8
+        MIN_CHAR_H = 14
+        canvas_w = max(640, width * MIN_CHAR_W)
+        canvas_h = max(480, height * MIN_CHAR_H)
+
+        char_w = canvas_w // width
+        char_h = canvas_h // height
         total_w = width * char_w
         total_h = height * char_h
         offset_x = (canvas_w - total_w) // 2
         offset_y = (canvas_h - total_h) // 2
         ramp_len = len(luminance_ramp)
 
-        font_size = max(8, int(char_h * 0.9))
+        font_size = max(8, int(char_h * 0.85))
         global _preview_font, _preview_font_size
         if not _preview_font or _preview_font_size != font_size:
             for path in [
@@ -173,6 +171,12 @@ class PreviewActionsMixin:
             lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
+
+        color_vis = resized_color.astype(np.float32)
+        max_ch = np.max(color_vis, axis=2, keepdims=True)
+        max_ch = np.maximum(max_ch, 1.0)
+        boost = np.where(max_ch < 60, 60.0 / max_ch, 1.0)
+        color_vis = np.clip(color_vis * boost, 0, 255).astype(np.uint8)
 
         pil_image = Image.new('RGB', (canvas_w, canvas_h), (0, 0, 0))
         draw = ImageDraw.Draw(pil_image)
@@ -203,7 +207,7 @@ class PreviewActionsMixin:
                 if not char.strip():
                     continue
 
-                b, g, r = resized_color[y, x]
+                b, g, r = color_vis[y, x]
                 px = offset_x + x * char_w
                 py = offset_y + y * char_h
 

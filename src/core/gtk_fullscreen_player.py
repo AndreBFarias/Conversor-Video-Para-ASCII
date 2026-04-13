@@ -326,23 +326,22 @@ class GtkFullscreenPlayer(Gtk.Window):
         if height <= 0 or width <= 0 or canvas_h <= 0 or canvas_w <= 0:
             return np.zeros((max(1, canvas_h), max(1, canvas_w), 3), dtype=np.uint8)
 
-        char_w_base = 8
-        char_h_base = 16
+        MIN_CHAR_W = 8
+        MIN_CHAR_H = 14
 
-        scale_x = canvas_w / (width * char_w_base)
-        scale_y = canvas_h / (height * char_h_base)
-        scale = min(scale_x, scale_y)
+        render_w = max(canvas_w, width * MIN_CHAR_W)
+        render_h = max(canvas_h, height * MIN_CHAR_H)
 
-        char_w = max(1, int(char_w_base * scale))
-        char_h = max(1, int(char_h_base * scale))
+        char_w = render_w // width
+        char_h = render_h // height
 
         total_w = width * char_w
         total_h = height * char_h
 
-        offset_x = (canvas_w - total_w) // 2
-        offset_y = (canvas_h - total_h) // 2
+        offset_x = (render_w - total_w) // 2
+        offset_y = (render_h - total_h) // 2
 
-        font_size = max(8, int(char_h * 0.9))
+        font_size = max(8, int(char_h * 0.85))
         if not self._ascii_font or self._ascii_font_size != font_size:
             for path in [
                 "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
@@ -372,7 +371,13 @@ class GtkFullscreenPlayer(Gtk.Window):
         else:
             lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
 
-        pil_image = Image.new('RGB', (canvas_w, canvas_h), (0, 0, 0))
+        color_vis = resized_color.astype(np.float32)
+        max_ch = np.max(color_vis, axis=2, keepdims=True)
+        max_ch = np.maximum(max_ch, 1.0)
+        boost = np.where(max_ch < 60, 60.0 / max_ch, 1.0)
+        color_vis = np.clip(color_vis * boost, 0, 255).astype(np.uint8)
+
+        pil_image = Image.new('RGB', (render_w, render_h), (0, 0, 0))
         draw = ImageDraw.Draw(pil_image)
 
         for y in range(height):
@@ -405,7 +410,7 @@ class GtkFullscreenPlayer(Gtk.Window):
                 if not char.strip():
                     continue
 
-                b, g, r = resized_color[y, x]
+                b, g, r = color_vis[y, x]
                 px = offset_x + x * char_w
                 py = offset_y + y * char_h
 
