@@ -379,6 +379,16 @@ class GtkFullscreenPlayer(Gtk.Window):
         ramp_len = len(luminance_ramp)
         sobel_threshold = self.sobel_threshold
 
+        atlas = {}
+        all_chars = set(luminance_ramp) | {'/', '|', '\\', '-'}
+        for ch in all_chars:
+            if not ch.strip():
+                continue
+            glyph_img = Image.new('L', (char_w, char_h), 0)
+            draw = ImageDraw.Draw(glyph_img)
+            draw.text((0, 0), ch, font=self._ascii_font, fill=255)
+            atlas[ch] = np.array(glyph_img, dtype=np.float32) / 255.0
+
         is_edge = magnitude_norm > sobel_threshold
 
         if self.edge_boost_enabled:
@@ -392,11 +402,10 @@ class GtkFullscreenPlayer(Gtk.Window):
         color_vis = resized_color.astype(np.float32)
         max_ch = np.max(color_vis, axis=2, keepdims=True)
         max_ch = np.maximum(max_ch, 1.0)
-        boost = np.where(max_ch < 60, 60.0 / max_ch, 1.0)
-        color_vis = np.clip(color_vis * boost, 0, 255).astype(np.uint8)
+        boost_factor = np.where(max_ch < 60, 60.0 / max_ch, 1.0)
+        color_vis = np.clip(color_vis * boost_factor, 0, 255).astype(np.uint8)
 
-        pil_image = Image.new('RGB', (render_w, render_h), (0, 0, 0))
-        draw = ImageDraw.Draw(pil_image)
+        canvas = np.zeros((render_h, render_w, 3), dtype=np.uint8)
 
         for y in range(height):
             for x in range(width):
@@ -425,16 +434,29 @@ class GtkFullscreenPlayer(Gtk.Window):
                     idx = min(max(lum_indices[y, x], 0), ramp_len - 1)
                     char = luminance_ramp[idx]
 
-                if not char.strip():
+                glyph = atlas.get(char)
+                if glyph is None:
                     continue
 
                 b, g, r = color_vis[y, x]
                 px = offset_x + x * char_w
                 py = offset_y + y * char_h
+                py_end = min(py + char_h, render_h)
+                px_end = min(px + char_w, render_w)
+                gh = py_end - py
+                gw = px_end - px
+                if gh <= 0 or gw <= 0:
+                    continue
 
-                draw.text((px, py), char, font=self._ascii_font, fill=(int(r), int(g), int(b)))
+                g_slice = glyph[:gh, :gw]
+                canvas[py:py_end, px:px_end, 0] = np.maximum(
+                    canvas[py:py_end, px:px_end, 0], (g_slice * b).astype(np.uint8))
+                canvas[py:py_end, px:px_end, 1] = np.maximum(
+                    canvas[py:py_end, px:px_end, 1], (g_slice * g).astype(np.uint8))
+                canvas[py:py_end, px:px_end, 2] = np.maximum(
+                    canvas[py:py_end, px:px_end, 2], (g_slice * r).astype(np.uint8))
 
-        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        return canvas
 
     def display_frame(self, result_image: np.ndarray):
         if result_image is None or result_image.size == 0:

@@ -875,6 +875,23 @@ class GTKCalibrator:
         self._ascii_font_size = font_size
         return self._ascii_font
 
+    def _build_glyph_atlas(self, chars: str, font, char_w: int, char_h: int) -> dict:
+        atlas = {}
+        for ch in set(chars):
+            if not ch.strip():
+                continue
+            glyph_img = Image.new('L', (char_w, char_h), 0)
+            draw = ImageDraw.Draw(glyph_img)
+            draw.text((0, 0), ch, font=font, fill=255)
+            atlas[ch] = np.array(glyph_img, dtype=np.float32) / 255.0
+        for ch in ['/', '|', '\\', '-']:
+            if ch not in atlas:
+                glyph_img = Image.new('L', (char_w, char_h), 0)
+                draw = ImageDraw.Draw(glyph_img)
+                draw.text((0, 0), ch, font=font, fill=255)
+                atlas[ch] = np.array(glyph_img, dtype=np.float32) / 255.0
+        return atlas
+
     def _render_ascii_to_image(self, resized_gray, resized_color, resized_mask, magnitude_norm, angle, frame_h, frame_w) -> np.ndarray:
         try:
             height, width = resized_gray.shape
@@ -907,6 +924,8 @@ class GTKCalibrator:
         ramp_len = len(luminance_ramp)
         sobel_threshold = self.converter_config['sobel_threshold']
 
+        atlas = self._build_glyph_atlas(luminance_ramp, font, char_w, char_h)
+
         is_edge = magnitude_norm > sobel_threshold
 
         if self.edge_boost_enabled:
@@ -923,8 +942,7 @@ class GTKCalibrator:
         boost = np.where(max_ch < 60, 60.0 / max_ch, 1.0)
         color_vis = np.clip(color_vis * boost, 0, 255).astype(np.uint8)
 
-        pil_image = Image.new('RGB', (render_w, render_h), (0, 0, 0))
-        draw = ImageDraw.Draw(pil_image)
+        canvas = np.zeros((render_h, render_w, 3), dtype=np.uint8)
 
         for y in range(height):
             for x in range(width):
@@ -952,16 +970,31 @@ class GTKCalibrator:
                 else:
                     char = luminance_ramp[lum_indices[y, x]]
 
-                if not char.strip():
+                glyph = atlas.get(char)
+                if glyph is None:
                     continue
 
                 b, g, r = color_vis[y, x]
                 px = offset_x + x * char_w
                 py = offset_y + y * char_h
 
-                draw.text((px, py), char, font=font, fill=(int(r), int(g), int(b)))
+                py_end = min(py + char_h, render_h)
+                px_end = min(px + char_w, render_w)
+                gh = py_end - py
+                gw = px_end - px
 
-        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+                if gh <= 0 or gw <= 0:
+                    continue
+
+                g_slice = glyph[:gh, :gw]
+                canvas[py:py_end, px:px_end, 0] = np.maximum(
+                    canvas[py:py_end, px:px_end, 0], (g_slice * b).astype(np.uint8))
+                canvas[py:py_end, px:px_end, 1] = np.maximum(
+                    canvas[py:py_end, px:px_end, 1], (g_slice * g).astype(np.uint8))
+                canvas[py:py_end, px:px_end, 2] = np.maximum(
+                    canvas[py:py_end, px:px_end, 2], (g_slice * r).astype(np.uint8))
+
+        return canvas
 
     def _render_pixelart_to_image(self, resized_color, resized_mask, frame_h, frame_w) -> np.ndarray:
         n_colors = self.pixel_art_config.get('color_palette_size', 16)
@@ -1526,9 +1559,9 @@ class GTKCalibrator:
         aspect.add(img)
         overlay.add(aspect)
 
-        controls = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER, valign=Gtk.Align.END)
+        controls = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER, valign=Gtk.Align.START)
         controls.get_style_context().add_class("fs-overlay")
-        controls.set_margin_bottom(12)
+        controls.set_margin_top(12)
 
         combo_ramp = Gtk.ComboBoxText()
         combo_ramp.set_property("popup-fixed-width", False)
