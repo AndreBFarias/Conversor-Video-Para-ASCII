@@ -48,6 +48,8 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+        style_preset = config.get('Style', 'style_preset', fallback='none')
+        contrast_boost = style_preset.startswith('cyber_')
 
         auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
         temporal_enabled = config.getboolean('Conversor', 'temporal_coherence_enabled', fallback=False)
@@ -242,7 +244,8 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
             output_format="file",
             edge_boost_enabled=edge_boost_enabled,
             edge_boost_amount=edge_boost_amount,
-            use_edge_chars=use_edge_chars
+            use_edge_chars=use_edge_chars,
+            contrast_boost=contrast_boost
         )
         frames_ascii.append(frame_ascii)
 
