@@ -975,6 +975,12 @@
                                 <item id="clean" translatable="yes">Limpo (Clean)</item>
                                 <item id="retro" translatable="yes">Retro (Scanlines)</item>
                                 <item id="cyber" translatable="yes">Cyberpunk (Glow)</item>
+                                <item id="cyber_eris" translatable="yes">Eris</item>
+                                <item id="cyber_juno" translatable="yes">Juno</item>
+                                <item id="cyber_lars" translatable="yes">Lars</item>
+                                <item id="cyber_luna" translatable="yes">Luna</item>
+                                <item id="cyber_mars" translatable="yes">Mars</item>
+                                <item id="cyber_somn" translatable="yes">Somn</item>
                                 <item id="paper" translatable="yes">Papel (Ink)</item>
                             </items>
                         </object>
