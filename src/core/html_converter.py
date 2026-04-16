@@ -280,6 +280,8 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+        style_preset = config.get('Style', 'style_preset', fallback='none')
+        contrast_boost = style_preset.startswith('cyber_')
 
         render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()
         if render_mode not in ('user', 'background', 'both'):
@@ -398,7 +400,8 @@ def converter_video_para_html(video_path: str, output_dir: str, config: configpa
             output_format="file",
             edge_boost_enabled=edge_boost_enabled,
             edge_boost_amount=edge_boost_amount,
-            use_edge_chars=use_edge_chars
+            use_edge_chars=use_edge_chars,
+            contrast_boost=contrast_boost
         )
 
         # Parse ASCII RAW "char§code§char§code" into Interleaved Integer Array [char, color, char, color...]

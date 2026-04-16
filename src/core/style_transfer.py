@@ -64,7 +64,87 @@ STYLE_PRESETS = {
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
-    }
+    },
+    'cyber_eris': {
+        'name': 'Eris',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_juno': {
+        'name': 'Juno',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_lars': {
+        'name': 'Lars',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_luna': {
+        'name': 'Luna',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_mars': {
+        'name': 'Mars',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_somn': {
+        'name': 'Somn',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+}
+
+CYBERPUNK_COLORS = {
+    'cyberpunk': {
+        'color1': (200, 0, 255),
+        'color2': (227, 127, 127),
+        'color3': (255, 255, 0),
+    },
+    'cyber_eris': {
+        'color1': (85, 85, 255),
+        'color2': (198, 121, 255),
+        'color3': (108, 184, 255),
+    },
+    'cyber_juno': {
+        'color1': (8, 179, 234),
+        'color2': (237, 58, 124),
+        'color3': (88, 203, 164),
+    },
+    'cyber_lars': {
+        'color1': (123, 250, 80),
+        'color2': (253, 233, 139),
+        'color3': (249, 147, 189),
+    },
+    'cyber_luna': {
+        'color1': (249, 147, 189),
+        'color2': (198, 121, 255),
+        'color3': (253, 233, 139),
+    },
+    'cyber_mars': {
+        'color1': (85, 85, 255),
+        'color2': (108, 184, 255),
+        'color3': (164, 114, 98),
+    },
+    'cyber_somn': {
+        'color1': (253, 233, 139),
+        'color2': (249, 147, 189),
+        'color3': (255, 240, 168),
+    },
 }
 
 
@@ -72,7 +152,7 @@ class StyleTransferProcessor:
 
     def __init__(self, config: Optional[StyleConfig] = None):
         self.config = config or StyleConfig()
-        self._cyberpunk_cache = {}
+        self._neon_cache = {}
 
     def process(self, frame: np.ndarray) -> np.ndarray:
         if not self.config.style_enabled or self.config.style_preset == 'none':
@@ -88,8 +168,9 @@ class StyleTransferProcessor:
         if self.config.style_preset == 'neon':
             edges_color = cv2.applyColorMap(edges, cv2.COLORMAP_HOT)
             result = cv2.addWeighted(frame, 0.3, edges_color, 0.7, 0)
-        elif self.config.style_preset == 'cyberpunk':
-            result = self._apply_cyberpunk(frame, edges)
+        elif self.config.style_preset in CYBERPUNK_COLORS:
+            c = CYBERPUNK_COLORS[self.config.style_preset]
+            result = self._apply_neon_glow(frame, edges, c['color1'], c['color2'], c['color3'])
         elif self.config.style_preset in ('sketch', 'ink'):
             edges_inv = 255 - edges
             result = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
@@ -118,28 +199,32 @@ class StyleTransferProcessor:
 
         return dog
 
-    def _apply_cyberpunk(self, frame: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    def _apply_neon_glow(self, frame: np.ndarray, edges: np.ndarray,
+                         color1_bgr: tuple, color2_bgr: tuple,
+                         color3_bgr: tuple) -> np.ndarray:
         h, w = frame.shape[:2]
-        cache_key = (h, w)
+        cache_key = (h, w, color1_bgr, color2_bgr, color3_bgr)
 
-        if cache_key not in self._cyberpunk_cache:
-            gradient = np.linspace(0, 1, w, dtype=np.float32).reshape(1, w)
-            gradient = np.tile(gradient, (h, 1))
+        if cache_key not in self._neon_cache:
+            grad = np.linspace(0, 1, w, dtype=np.float32).reshape(1, w)
+            grad = np.tile(grad, (h, 1))
 
-            magenta = np.zeros((h, w, 3), dtype=np.float32)
-            magenta[:, :, 0] = 200
-            magenta[:, :, 2] = 255
+            c1 = np.array(color1_bgr, dtype=np.float32).reshape(1, 1, 3)
+            c2 = np.array(color2_bgr, dtype=np.float32).reshape(1, 1, 3)
+            c3 = np.array(color3_bgr, dtype=np.float32).reshape(1, 1, 3)
 
-            cyan = np.zeros((h, w, 3), dtype=np.float32)
-            cyan[:, :, 0] = 255
-            cyan[:, :, 1] = 255
+            left_t = np.clip(grad * 2, 0, 1)[:, :, np.newaxis]
+            right_t = np.clip((grad - 0.5) * 2, 0, 1)[:, :, np.newaxis]
 
-            neon_color = (magenta * (1 - gradient[:, :, np.newaxis]) +
-                          cyan * gradient[:, :, np.newaxis])
+            left_color = c1 * (1 - left_t) + c2 * left_t
+            right_color = c2 * (1 - right_t) + c3 * right_t
 
-            self._cyberpunk_cache[cache_key] = neon_color
+            mask = (grad < 0.5)[:, :, np.newaxis]
+            neon_color = np.where(mask, left_color, right_color)
 
-        neon_color = self._cyberpunk_cache[cache_key]
+            self._neon_cache[cache_key] = neon_color
+
+        neon_color = self._neon_cache[cache_key]
 
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         hsv[:, :, 1] = np.clip(hsv[:, :, 1].astype(np.float32) * 1.4, 0, 255).astype(np.uint8)

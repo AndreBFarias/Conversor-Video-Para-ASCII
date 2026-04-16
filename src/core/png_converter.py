@@ -40,6 +40,8 @@ def _read_config_params(config: configparser.ConfigParser, chroma_override=None)
     edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
     edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
     use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
+    style_preset = config.get('Style', 'style_preset', fallback='none')
+    contrast_boost = style_preset.startswith('cyber_')
 
     render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()
     if render_mode not in ('user', 'background', 'both'):
@@ -68,6 +70,7 @@ def _read_config_params(config: configparser.ConfigParser, chroma_override=None)
         'edge_boost_enabled': edge_boost_enabled,
         'edge_boost_amount': edge_boost_amount,
         'use_edge_chars': use_edge_chars,
+        'contrast_boost': contrast_boost,
         'render_mode': render_mode,
         'auto_seg_enabled': auto_seg_enabled,
         'lower_green': lower_green,
@@ -137,7 +140,8 @@ def _process_frame(frame_colorido, params, auto_segmenter=None):
         output_format="file",
         edge_boost_enabled=params['edge_boost_enabled'],
         edge_boost_amount=params['edge_boost_amount'],
-        use_edge_chars=params['use_edge_chars']
+        use_edge_chars=params['use_edge_chars'],
+        contrast_boost=params.get('contrast_boost', False)
     )
 
     frame_image = render_ascii_as_image(ascii_string, font_scale=0.5)

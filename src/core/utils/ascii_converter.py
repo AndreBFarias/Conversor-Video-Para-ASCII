@@ -1,8 +1,11 @@
+import cv2
 import numpy as np
 from .color import rgb_to_ansi256, rgb_to_ansi256_vectorized
 
 COLOR_SEPARATOR = "§"
 LUMINANCE_RAMP_DEFAULT = "$@B8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+
+_clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
 
 
 def converter_frame_para_ascii(
@@ -16,21 +19,24 @@ def converter_frame_para_ascii(
     output_format: str = "file",
     edge_boost_enabled: bool = False,
     edge_boost_amount: int = 100,
-    use_edge_chars: bool = True
+    use_edge_chars: bool = True,
+    contrast_boost: bool = False
 ) -> str:
     height, width = gray_frame.shape
     ramp_len = len(luminance_ramp)
     ramp_array = np.array(list(luminance_ramp))
 
+    gray_for_lum = _clahe.apply(gray_frame) if contrast_boost else gray_frame
+
     is_edge = magnitude_frame > sobel_threshold
 
     if edge_boost_enabled:
-        brightness = gray_frame.astype(np.int32)
+        brightness = gray_for_lum.astype(np.int32)
         edge_darkening = is_edge.astype(np.int32) * edge_boost_amount
         brightness = np.clip(brightness - edge_darkening, 0, 255)
         lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
     else:
-        lum_indices = ((gray_frame / 255) * (ramp_len - 1)).astype(np.int32)
+        lum_indices = ((gray_for_lum / 255) * (ramp_len - 1)).astype(np.int32)
 
     chars = ramp_array[lum_indices].copy()
 

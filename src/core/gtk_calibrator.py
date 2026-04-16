@@ -922,13 +922,17 @@ class GTKCalibrator:
 
         is_edge = magnitude_norm > sobel_threshold
 
+        gray_for_lum = resized_gray
+        if self.style_enabled and self.style_preset.startswith('cyber_'):
+            gray_for_lum = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8)).apply(resized_gray)
+
         if self.edge_boost_enabled:
-            brightness = resized_gray.astype(np.int32)
+            brightness = gray_for_lum.astype(np.int32)
             edge_darkening = is_edge.astype(np.int32) * self.edge_boost_amount
             brightness = np.clip(brightness - edge_darkening, 0, 255)
             lum_indices = ((brightness / 255) * (ramp_len - 1)).astype(np.int32)
         else:
-            lum_indices = (resized_gray * (ramp_len - 1) / 255).astype(np.int32)
+            lum_indices = (gray_for_lum * (ramp_len - 1) / 255).astype(np.int32)
 
         color_vis = resized_color.astype(np.float32)
         max_ch = np.max(color_vis, axis=2, keepdims=True)
@@ -1233,7 +1237,8 @@ class GTKCalibrator:
                 output_format="file",
                 edge_boost_enabled=self.edge_boost_enabled,
                 edge_boost_amount=self.edge_boost_amount,
-                use_edge_chars=self.use_edge_chars
+                use_edge_chars=self.use_edge_chars,
+                contrast_boost=self.style_enabled and self.style_preset.startswith('cyber_')
             )
             self.ascii_frames.append(frame_for_file)
 
