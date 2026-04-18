@@ -2,6 +2,66 @@
 
 Todas as mudanças notaveis neste projeto serao documentadas neste arquivo.
 
+## [2.9.0] - 2026-04-18
+
+### Panteão Noturno: Filtros cyberpunk v2
+
+Nova geração de filtros por entidade baseada no princípio das três luzes
+(alma 60% / cúmplice 30% / faísca 10%). Tom "noturno, poético, introspectivo".
+Sétima entidade **Nyx** adicionada (noturna, executora, observadora).
+
+#### Presets v2 (novo padrão, tom moody)
+- `cyber_luna_v2` — violeta lunar / cinza-violeta / âmbar fantasma
+- `cyber_eris_v2` — rosa-choque / vermelho veludo / âmbar ácido
+- `cyber_juno_v2` — verde oliva / dourado antigo / marfim
+- `cyber_mars_v2` — vermelho sangue / aço azulado / coral ardente
+- `cyber_lars_v2` — turquesa profundo / índigo noturno / dourado críptico
+- `cyber_somn_v2` — lilás brumoso / cinza-azulado / rosa-quartzo
+- `cyber_nyx_v2`  — violeta monitor / grafite azulado / âmbar vigília
+
+#### Presets neon (geração original v2.8.0, depreciada mas preservada)
+- `cyber_luna`, `cyber_eris`, `cyber_juno`, `cyber_mars`, `cyber_lars`, `cyber_somn`
+- Label no combo ganhou sufixo `(neon)` para distinguir dos v2
+- Cores e rampas originais intocadas
+
+#### Mudanças comportamentais
+- Default de `Conversor/style_preset` passou para `cyber_luna_v2`
+- CLAHE boost (contraste agressivo em filtros `cyber_*`) continua ativo automaticamente
+- DoG de Nyx levemente mais agressivo (σ1=0.6, σ2=2.4, τ=0.94, edge=3.2)
+
+#### Rampas Unicode
+- 7 rampas `cyber_*_v2` em `LUMINANCE_RAMPS`, uma por entidade
+
+#### FIXED_PALETTES
+- 7 paletas v2 com 12 cores via escala tonal (preto → cúmplice escurecida → alma → faísca → branco)
+
+#### Documentação
+- Amostras visuais em `docs/paletas-v2-screenshots/` (7 MP4 + 7 PNG por entidade)
+
+### Arquivos Modificados
+- `src/core/style_transfer.py` — STYLE_PRESETS (DoG) + CYBERPUNK_COLORS com 13 IDs
+- `src/app/constants.py` — LUMINANCE_RAMPS + STYLE_PRESETS UI + FIXED_PALETTES
+- `src/gui/main.glade` — combo `pref_style_combo` com 13 items
+- `src/app/defaults.py` — novo default `cyber_luna_v2`
+- `pyproject.toml` — versao 2.9.0
+
+---
+
+## [2.8.0] - 2026-04-16
+
+### 6 Filtros cyberpunk tematicos com rampas Unicode e boost CLAHE
+
+Primeira geracao de filtros por entidade do panteao Luna:
+`cyber_luna`, `cyber_eris`, `cyber_juno`, `cyber_mars`, `cyber_lars`, `cyber_somn`
+com tríades neon inspiradas em Dracula. PR #8.
+
+- Rampas Unicode por entidade em `LUMINANCE_RAMPS`
+- Triades neon em `CYBERPUNK_COLORS` (alma/cumplice/faisca primitiva)
+- Boost CLAHE automatico para presets com prefixo `cyber_`
+- 6 paletas expandidas em `FIXED_PALETTES` com 12 cores cada
+
+---
+
 ## [2.7.0] - 2026-04-13
 
 ### Calibrador - Limpeza UI e Reorganizacao

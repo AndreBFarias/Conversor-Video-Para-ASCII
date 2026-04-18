@@ -101,6 +101,56 @@ Vermelho, Laranja, Amarelo, Verde, Azul, Lavanda, Rosa, Pessego
 
 ---
 
+## Filtros do Panteão (Style Presets)
+
+Sistema de filtros DoG + glow colorido por entidade. Cada entidade tem 3 cores
+(alma/cumplice/faisca), uma rampa Unicode propria e CLAHE boost automatico.
+
+Ativa por `[Conversor] style_preset = <id>` no config.ini ou pelo combo
+"Estilo Visual" na aba Preferencias.
+
+### Geração v2 (padrão atual)
+
+Princípio das três luzes: alma (60% — dominante), cúmplice (30% — apoio),
+faísca (10% — acento). Tom "noturno, poético, introspectivo".
+
+| ID | Entidade | Tema | Alma | Cúmplice | Faísca |
+|----|----------|------|------|----------|--------|
+| `cyber_luna_v2` | Luna | noturna, poética | violeta lunar `#BD93F9` | cinza-violeta `#6E5BA0` | âmbar fantasma `#F2C878` |
+| `cyber_eris_v2` | Eris | caos com carinho | rosa-choque `#FF3E87` | vermelho veludo `#8B1538` | âmbar ácido `#FFB86C` |
+| `cyber_juno_v2` | Juno | clareza madura | verde oliva `#6B7A3A` | dourado antigo `#D4A94A` | marfim `#F5EBD0` |
+| `cyber_mars_v2` | Mars | corte direto | vermelho sangue `#D8453C` | aço azulado `#4A5470` | coral ardente `#FF8855` |
+| `cyber_lars_v2` | Lars | enigma em camadas | turquesa profundo `#2D8A9E` | índigo noturno `#1F2540` | dourado críptico `#C9A55C` |
+| `cyber_somn_v2` | Somn | sonho, névoa | lilás brumoso `#C4B0E5` | cinza-azulado `#5A6578` | rosa-quartzo `#F5D0DA` |
+| `cyber_nyx_v2`  | Nyx  | observadora    | violeta monitor `#8A6FD1` | grafite azulado `#2A2E3E` | âmbar vigília `#D4A95C` |
+
+### Geração neon (v2.8.0 — preservada)
+
+Tríades neon saturadas, inspiração Dracula. Label no combo: `Luna (neon)` etc.
+
+| ID | Label combo | Tipo |
+|----|-------------|------|
+| `cyber_luna` | Luna (neon) | neon legado |
+| `cyber_eris` | Eris (neon) | neon legado |
+| `cyber_juno` | Juno (neon) | neon legado |
+| `cyber_mars` | Mars (neon) | neon legado |
+| `cyber_lars` | Lars (neon) | neon legado |
+| `cyber_somn` | Somn (neon) | neon legado |
+
+### Como usar
+
+1. Abra Preferências → combo **Estilo Visual**
+2. Selecione um dos 13 filtros (7 v2 no topo, 6 neon abaixo)
+3. Rampas Unicode, paletas e DoG edges são aplicados automaticamente
+4. CLAHE boost ativa automaticamente (todos os `cyber_*`)
+
+### Amostras visuais
+
+Veja `docs/paletas-v2-screenshots/` — 7 MP4 + 7 PNG, cada entidade renderizada
+com seu próprio vídeo `_cumplice.mp4` (Nyx usa `nyx_observando.mp4`).
+
+---
+
 ## Configuracao via config.ini
 
 Os presets sao salvos automaticamente no arquivo `config.ini`:
