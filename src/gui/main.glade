@@ -975,12 +975,19 @@
                                 <item id="clean" translatable="yes">Limpo (Clean)</item>
                                 <item id="retro" translatable="yes">Retro (Scanlines)</item>
                                 <item id="cyber" translatable="yes">Cyberpunk (Glow)</item>
-                                <item id="cyber_eris" translatable="yes">Eris</item>
-                                <item id="cyber_juno" translatable="yes">Juno</item>
-                                <item id="cyber_lars" translatable="yes">Lars</item>
-                                <item id="cyber_luna" translatable="yes">Luna</item>
-                                <item id="cyber_mars" translatable="yes">Mars</item>
-                                <item id="cyber_somn" translatable="yes">Somn</item>
+                                <item id="cyber_luna_v2" translatable="yes">Luna</item>
+                                <item id="cyber_eris_v2" translatable="yes">Eris</item>
+                                <item id="cyber_juno_v2" translatable="yes">Juno</item>
+                                <item id="cyber_mars_v2" translatable="yes">Mars</item>
+                                <item id="cyber_lars_v2" translatable="yes">Lars</item>
+                                <item id="cyber_somn_v2" translatable="yes">Somn</item>
+                                <item id="cyber_nyx_v2" translatable="yes">Nyx</item>
+                                <item id="cyber_luna_v1" translatable="yes">Luna (v1)</item>
+                                <item id="cyber_eris_v1" translatable="yes">Eris (v1)</item>
+                                <item id="cyber_juno_v1" translatable="yes">Juno (v1)</item>
+                                <item id="cyber_lars_v1" translatable="yes">Lars (v1)</item>
+                                <item id="cyber_mars_v1" translatable="yes">Mars (v1)</item>
+                                <item id="cyber_somn_v1" translatable="yes">Somn (v1)</item>
                                 <item id="paper" translatable="yes">Papel (Ink)</item>
                             </items>
                         </object>

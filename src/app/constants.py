@@ -115,6 +115,34 @@ LUMINANCE_RAMPS = {
         'name': 'Somn',
         'ramp': "\u2601\u2237\u2591\u25e6\u00b7. "
     },
+    'cyber_luna_v2': {
+        'name': 'Luna',
+        'ramp': "\u263d\u2726\u203b\u25e6\u00b7."
+    },
+    'cyber_eris_v2': {
+        'name': 'Eris',
+        'ramp': "\u2665\u2666\u2736*\u00b7."
+    },
+    'cyber_juno_v2': {
+        'name': 'Juno',
+        'ramp': "\u263c\u25c9\u25cf\u25e6\u00b7."
+    },
+    'cyber_mars_v2': {
+        'name': 'Mars',
+        'ramp': "\u2660\u2593\u2592\u2591\u00b7."
+    },
+    'cyber_lars_v2': {
+        'name': 'Lars',
+        'ramp': "\u25c8\u25c6\u25c7\u25cb\u00b7."
+    },
+    'cyber_somn_v2': {
+        'name': 'Somn',
+        'ramp': "\u2601\u2237\u2591\u25e6\u00b7."
+    },
+    'cyber_nyx_v2': {
+        'name': 'Nyx',
+        'ramp': "\u25b8\u25aa\u25ab\u25e6\u00b7."
+    },
 }
 
 FIXED_PALETTES = {
@@ -206,52 +234,108 @@ FIXED_PALETTES = {
             (0, 255, 0), (50, 255, 50), (100, 255, 100), (200, 255, 200)
         ]
     },
-    'cyber_eris': {
-        'name': 'Eris',
+    'cyber_eris_v1': {
+        'name': 'Eris (v1)',
         'colors': [
             (0, 0, 0), (61, 43, 77), (255, 85, 85), (255, 121, 198),
             (255, 184, 108), (248, 248, 242), (200, 60, 60), (200, 100, 180),
             (180, 50, 120), (255, 150, 150), (128, 30, 60), (255, 255, 255)
         ]
     },
-    'cyber_juno': {
-        'name': 'Juno',
+    'cyber_juno_v1': {
+        'name': 'Juno (v1)',
         'colors': [
             (0, 0, 0), (30, 27, 75), (234, 179, 8), (124, 58, 237),
             (248, 250, 252), (200, 150, 10), (100, 40, 200), (180, 140, 60),
             (80, 30, 180), (255, 200, 50), (160, 80, 220), (255, 255, 255)
         ]
     },
-    'cyber_lars': {
-        'name': 'Lars',
+    'cyber_lars_v1': {
+        'name': 'Lars (v1)',
         'colors': [
             (0, 0, 0), (40, 42, 54), (80, 250, 123), (98, 114, 164),
             (139, 233, 253), (248, 248, 242), (60, 200, 90), (80, 90, 130),
             (40, 180, 70), (120, 255, 160), (70, 100, 150), (255, 255, 255)
         ]
     },
-    'cyber_luna': {
-        'name': 'Luna',
+    'cyber_luna_v1': {
+        'name': 'Luna (v1)',
         'colors': [
             (0, 0, 0), (40, 42, 54), (189, 147, 249), (255, 121, 198),
             (80, 250, 123), (248, 248, 242), (150, 110, 220), (220, 100, 170),
             (120, 80, 200), (210, 170, 255), (255, 150, 210), (255, 255, 255)
         ]
     },
-    'cyber_mars': {
-        'name': 'Mars',
+    'cyber_mars_v1': {
+        'name': 'Mars (v1)',
         'colors': [
             (0, 0, 0), (13, 13, 13), (255, 85, 85), (68, 71, 90),
             (255, 184, 108), (248, 248, 242), (200, 60, 60), (50, 55, 70),
             (180, 40, 40), (255, 120, 120), (90, 90, 110), (255, 255, 255)
         ]
     },
-    'cyber_somn': {
-        'name': 'Somn',
+    'cyber_somn_v1': {
+        'name': 'Somn (v1)',
         'colors': [
             (0, 0, 0), (10, 10, 24), (139, 233, 253), (189, 147, 249),
             (248, 248, 242), (100, 200, 230), (150, 110, 220), (120, 180, 240),
             (170, 130, 240), (180, 250, 255), (210, 170, 255), (255, 255, 255)
+        ]
+    },
+    'cyber_luna_v2': {
+        'name': 'Luna',
+        'colors': [
+            (0, 0, 0), (64, 36, 44), (112, 64, 77), (160, 91, 110),
+            (174, 116, 132), (204, 119, 150), (199, 118, 151), (249, 147, 189),
+            (250, 163, 199), (184, 174, 216), (120, 200, 242), (160, 216, 246)
+        ]
+    },
+    'cyber_eris_v2': {
+        'name': 'Eris',
+        'colors': [
+            (0, 0, 0), (22, 8, 56), (39, 15, 97), (56, 21, 139),
+            (86, 56, 156), (96, 42, 197), (108, 50, 204), (135, 62, 255),
+            (153, 91, 255), (122, 123, 255), (108, 184, 255), (152, 205, 255)
+        ]
+    },
+    'cyber_juno_v2': {
+        'name': 'Juno',
+        'colors': [
+            (0, 0, 0), (23, 49, 43), (41, 85, 75), (58, 122, 107),
+            (88, 142, 129), (66, 146, 160), (59, 135, 170), (74, 169, 212),
+            (101, 182, 218), (141, 202, 228), (208, 235, 245), (222, 241, 248)
+        ]
+    },
+    'cyber_mars_v2': {
+        'name': 'Mars',
+        'colors': [
+            (0, 0, 0), (45, 34, 30), (78, 59, 52), (112, 84, 74),
+            (133, 110, 101), (86, 76, 145), (48, 55, 173), (60, 69, 216),
+            (89, 97, 222), (72, 102, 236), (85, 136, 255), (136, 172, 255)
+        ]
+    },
+    'cyber_lars_v2': {
+        'name': 'Lars',
+        'colors': [
+            (0, 0, 0), (26, 15, 12), (45, 26, 22), (64, 37, 31),
+            (93, 70, 65), (111, 88, 38), (126, 110, 36), (158, 138, 45),
+            (173, 156, 76), (125, 152, 123), (92, 165, 201), (141, 192, 217)
+        ]
+    },
+    'cyber_somn_v2': {
+        'name': 'Somn',
+        'colors': [
+            (0, 0, 0), (48, 40, 36), (84, 71, 63), (120, 101, 90),
+            (140, 124, 115), (174, 138, 143), (183, 141, 157), (229, 176, 196),
+            (233, 188, 205), (224, 192, 220), (218, 208, 245), (229, 222, 248)
+        ]
+    },
+    'cyber_nyx_v2': {
+        'name': 'Nyx',
+        'colors': [
+            (0, 0, 0), (25, 18, 17), (43, 32, 29), (62, 46, 42),
+            (91, 77, 74), (136, 78, 90), (167, 89, 110), (209, 111, 138),
+            (216, 133, 156), (150, 140, 175), (92, 169, 212), (141, 195, 225)
         ]
     },
 }
@@ -271,44 +355,93 @@ STYLE_PRESETS = {
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_eris': {
-        'name': 'Eris',
+    'cyber_eris_v1': {
+        'name': 'Eris (v1)',
         'luminance_ramp': "\u2665\u2666\u2736*\u00b7. ",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_juno': {
-        'name': 'Juno',
+    'cyber_juno_v1': {
+        'name': 'Juno (v1)',
         'luminance_ramp': "\u263c\u25c9\u25cf\u25e6\u00b7. ",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_lars': {
-        'name': 'Lars',
+    'cyber_lars_v1': {
+        'name': 'Lars (v1)',
         'luminance_ramp': "\u25c8\u25c6\u25c7\u25cb\u00b7. ",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_luna': {
-        'name': 'Luna',
+    'cyber_luna_v1': {
+        'name': 'Luna (v1)',
         'luminance_ramp': "\u263d\u2726\u203b\u25e6\u00b7. ",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_mars': {
-        'name': 'Mars',
+    'cyber_mars_v1': {
+        'name': 'Mars (v1)',
         'luminance_ramp': "\u2660\u2593\u2592\u2591\u00b7. ",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0
     },
-    'cyber_somn': {
-        'name': 'Somn',
+    'cyber_somn_v1': {
+        'name': 'Somn (v1)',
         'luminance_ramp': "\u2601\u2237\u2591\u25e6\u00b7. ",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_luna_v2': {
+        'name': 'Luna',
+        'luminance_ramp': "\u263d\u2726\u203b\u25e6\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_eris_v2': {
+        'name': 'Eris',
+        'luminance_ramp': "\u2665\u2666\u2736*\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_juno_v2': {
+        'name': 'Juno',
+        'luminance_ramp': "\u263c\u25c9\u25cf\u25e6\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_mars_v2': {
+        'name': 'Mars',
+        'luminance_ramp': "\u2660\u2593\u2592\u2591\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_lars_v2': {
+        'name': 'Lars',
+        'luminance_ramp': "\u25c8\u25c6\u25c7\u25cb\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_somn_v2': {
+        'name': 'Somn',
+        'luminance_ramp': "\u2601\u2237\u2591\u25e6\u00b7.",
+        'sobel': 50,
+        'sharpen_amount': 1.0,
+        'aspect': 1.0
+    },
+    'cyber_nyx_v2': {
+        'name': 'Nyx',
+        'luminance_ramp': "\u25b8\u25aa\u25ab\u25e6\u00b7.",
         'sobel': 50,
         'sharpen_amount': 1.0,
         'aspect': 1.0

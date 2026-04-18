@@ -14,6 +14,7 @@ DEFAULTS = {
         'sharpen_enabled': True,
         'sharpen_amount': 0.8,
         'luminance_preset': 'standard',
+        'style_preset': 'cyber_luna_v2',
         'gpu_enabled': True,
         'gpu_render_mode': 'high_fidelity',
         'gpu_async_enabled': True,
@@ -118,6 +119,23 @@ DEFAULTS = {
         'theme': 'dark',
     },
 }
+
+
+CYBER_V1_MIGRATION = {
+    'cyber_eris': 'cyber_eris_v1',
+    'cyber_juno': 'cyber_juno_v1',
+    'cyber_lars': 'cyber_lars_v1',
+    'cyber_luna': 'cyber_luna_v1',
+    'cyber_mars': 'cyber_mars_v1',
+    'cyber_somn': 'cyber_somn_v1',
+}
+
+
+def migrate_style_preset(value: str) -> str:
+    """Migra valores legados cyber_* para cyber_*_v1 (preservando preferencia)."""
+    if not value:
+        return value
+    return CYBER_V1_MIGRATION.get(value.strip(), value)
 
 
 def get_default(section: str, key: str):

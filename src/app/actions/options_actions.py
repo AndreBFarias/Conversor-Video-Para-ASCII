@@ -3,7 +3,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 from ..constants import QUALITY_PRESETS, BIT_PRESETS, DEFAULT_LUMINANCE_RAMP, LUMINANCE_RAMPS, FIXED_PALETTES, STYLE_PRESETS
-from ..defaults import get_default
+from ..defaults import get_default, migrate_style_preset
 
 
 class OptionsActionsMixin:
@@ -451,7 +451,7 @@ class OptionsActionsMixin:
                         self.opt_font_size_spin.set_value(12)
 
             if hasattr(self, 'pref_style_combo') and self.pref_style_combo:
-                style = self.config.get('Conversor', 'style_preset', fallback='clean')
+                style = migrate_style_preset(self.config.get('Conversor', 'style_preset', fallback='cyber_luna_v2'))
                 # Map style IDs to combo index? Or use set_active_id for ComboBoxText
                 # GtkComboBoxText supports set_active_id
                 if not self.pref_style_combo.set_active_id(style):

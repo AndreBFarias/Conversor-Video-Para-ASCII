@@ -21,6 +21,7 @@ from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE
 from src.core.renderer import render_ascii_as_image, ASCII_CHAR_WIDTH, ASCII_CHAR_HEIGHT
 from src.core.audio_utils import extract_audio_as_aac, mux_video_audio
 from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
+from src.app.defaults import migrate_style_preset
 
 if POSTFX_AVAILABLE:
     from src.core.post_fx_gpu import PostFXProcessor
@@ -44,7 +45,7 @@ def converter_video_para_mp4(video_path: str, output_dir: str, config: configpar
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
-        style_preset = config.get('Style', 'style_preset', fallback='none')
+        style_preset = migrate_style_preset(config.get('Style', 'style_preset', fallback='none'))
         contrast_boost = style_preset.startswith('cyber_')
 
         render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()

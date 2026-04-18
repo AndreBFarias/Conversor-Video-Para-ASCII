@@ -27,7 +27,7 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT, COLOR_SEPARATOR
 from src.core.pixel_art_converter import quantize_colors
 from src.app.constants import LUMINANCE_RAMPS, FIXED_PALETTES, QUALITY_PRESETS
-from src.app.defaults import get_default
+from src.app.defaults import get_default, migrate_style_preset
 from src.utils.terminal_font_detector import detect_terminal_font
 
 try:
@@ -2146,7 +2146,7 @@ class GTKCalibrator:
 
         if 'Style' in self.config:
             style_enabled = self.config.getboolean('Style', 'style_enabled', fallback=False)
-            style_preset = self.config.get('Style', 'style_preset', fallback='none')
+            style_preset = migrate_style_preset(self.config.get('Style', 'style_preset', fallback='none'))
 
             if self.chk_style:
                 self.chk_style.set_active(style_enabled)

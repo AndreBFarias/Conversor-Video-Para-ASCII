@@ -20,6 +20,7 @@ from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP
 from src.core.renderer import render_ascii_as_image
 from src.core.utils.postfx_loader import load_postfx_config, POSTFX_AVAILABLE
+from src.app.defaults import migrate_style_preset
 
 if POSTFX_AVAILABLE:
     from src.core.post_fx_gpu import PostFXProcessor
@@ -43,7 +44,7 @@ def converter_video_para_gif(video_path: str, output_dir: str, config: configpar
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
-        style_preset = config.get('Style', 'style_preset', fallback='none')
+        style_preset = migrate_style_preset(config.get('Style', 'style_preset', fallback='none'))
         contrast_boost = style_preset.startswith('cyber_')
 
         render_mode = config.get('Conversor', 'render_mode', fallback='both').lower()
