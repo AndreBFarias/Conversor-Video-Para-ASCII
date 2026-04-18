@@ -121,23 +121,6 @@ DEFAULTS = {
 }
 
 
-CYBER_V1_MIGRATION = {
-    'cyber_eris': 'cyber_eris_v1',
-    'cyber_juno': 'cyber_juno_v1',
-    'cyber_lars': 'cyber_lars_v1',
-    'cyber_luna': 'cyber_luna_v1',
-    'cyber_mars': 'cyber_mars_v1',
-    'cyber_somn': 'cyber_somn_v1',
-}
-
-
-def migrate_style_preset(value: str) -> str:
-    """Migra valores legados cyber_* para cyber_*_v1 (preservando preferencia)."""
-    if not value:
-        return value
-    return CYBER_V1_MIGRATION.get(value.strip(), value)
-
-
 def get_default(section: str, key: str):
     """Retorna o valor padrao para uma chave de config."""
     return DEFAULTS.get(section, {}).get(key)

@@ -65,43 +65,43 @@ STYLE_PRESETS = {
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_eris_v1': {
-        'name': 'Eris (v1)',
+    'cyber_eris': {
+        'name': 'Eris (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_juno_v1': {
-        'name': 'Juno (v1)',
+    'cyber_juno': {
+        'name': 'Juno (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_lars_v1': {
-        'name': 'Lars (v1)',
+    'cyber_lars': {
+        'name': 'Lars (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_luna_v1': {
-        'name': 'Luna (v1)',
+    'cyber_luna': {
+        'name': 'Luna (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_mars_v1': {
-        'name': 'Mars (v1)',
+    'cyber_mars': {
+        'name': 'Mars (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_somn_v1': {
-        'name': 'Somn (v1)',
+    'cyber_somn': {
+        'name': 'Somn (neon)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
@@ -164,32 +164,32 @@ CYBERPUNK_COLORS = {
         'color2': (227, 127, 127),
         'color3': (255, 255, 0),
     },
-    'cyber_eris_v1': {
+    'cyber_eris': {
         'color1': (85, 85, 255),
         'color2': (198, 121, 255),
         'color3': (108, 184, 255),
     },
-    'cyber_juno_v1': {
+    'cyber_juno': {
         'color1': (8, 179, 234),
         'color2': (237, 58, 124),
         'color3': (88, 203, 164),
     },
-    'cyber_lars_v1': {
+    'cyber_lars': {
         'color1': (123, 250, 80),
         'color2': (253, 233, 139),
         'color3': (249, 147, 189),
     },
-    'cyber_luna_v1': {
+    'cyber_luna': {
         'color1': (249, 147, 189),
         'color2': (198, 121, 255),
         'color3': (253, 233, 139),
     },
-    'cyber_mars_v1': {
+    'cyber_mars': {
         'color1': (85, 85, 255),
         'color2': (108, 184, 255),
         'color3': (164, 114, 98),
     },
-    'cyber_somn_v1': {
+    'cyber_somn': {
         'color1': (253, 233, 139),
         'color2': (249, 147, 189),
         'color3': (255, 240, 168),
@@ -205,8 +205,8 @@ CYBERPUNK_COLORS = {
         'color3': (108, 184, 255),
     },
     'cyber_juno_v2': {
-        'color1': (74, 169, 212),
-        'color2': (58, 122, 107),
+        'color1': (58, 122, 107),
+        'color2': (74, 169, 212),
         'color3': (208, 235, 245),
     },
     'cyber_mars_v2': {
@@ -339,10 +339,9 @@ class StyleTransferProcessor:
 
 def create_style_processor_from_config(config_parser) -> StyleTransferProcessor:
     try:
-        from src.app.defaults import migrate_style_preset
         style_config = StyleConfig(
             style_enabled=config_parser.getboolean('Style', 'style_enabled', fallback=False),
-            style_preset=migrate_style_preset(config_parser.get('Style', 'style_preset', fallback='none')),
+            style_preset=config_parser.get('Style', 'style_preset', fallback='none'),
         )
         return StyleTransferProcessor(style_config)
     except Exception:
