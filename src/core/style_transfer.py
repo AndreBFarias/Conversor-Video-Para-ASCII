@@ -65,47 +65,96 @@ STYLE_PRESETS = {
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_eris': {
-        'name': 'Eris',
+    'cyber_eris_v1': {
+        'name': 'Eris (v1)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_juno': {
-        'name': 'Juno',
+    'cyber_juno_v1': {
+        'name': 'Juno (v1)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_lars': {
-        'name': 'Lars',
+    'cyber_lars_v1': {
+        'name': 'Lars (v1)',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_luna': {
+    'cyber_luna_v1': {
+        'name': 'Luna (v1)',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_mars_v1': {
+        'name': 'Mars (v1)',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_somn_v1': {
+        'name': 'Somn (v1)',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_luna_v2': {
         'name': 'Luna',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_mars': {
+    'cyber_eris_v2': {
+        'name': 'Eris',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_juno_v2': {
+        'name': 'Juno',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_mars_v2': {
         'name': 'Mars',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
     },
-    'cyber_somn': {
+    'cyber_lars_v2': {
+        'name': 'Lars',
+        'dog_sigma1': 0.7,
+        'dog_sigma2': 2.2,
+        'dog_tau': 0.93,
+        'edge_strength': 3.0
+    },
+    'cyber_somn_v2': {
         'name': 'Somn',
         'dog_sigma1': 0.7,
         'dog_sigma2': 2.2,
         'dog_tau': 0.93,
         'edge_strength': 3.0
+    },
+    'cyber_nyx_v2': {
+        'name': 'Nyx',
+        'dog_sigma1': 0.6,
+        'dog_sigma2': 2.4,
+        'dog_tau': 0.94,
+        'edge_strength': 3.2
     },
 }
 
@@ -115,35 +164,70 @@ CYBERPUNK_COLORS = {
         'color2': (227, 127, 127),
         'color3': (255, 255, 0),
     },
-    'cyber_eris': {
+    'cyber_eris_v1': {
         'color1': (85, 85, 255),
         'color2': (198, 121, 255),
         'color3': (108, 184, 255),
     },
-    'cyber_juno': {
+    'cyber_juno_v1': {
         'color1': (8, 179, 234),
         'color2': (237, 58, 124),
         'color3': (88, 203, 164),
     },
-    'cyber_lars': {
+    'cyber_lars_v1': {
         'color1': (123, 250, 80),
         'color2': (253, 233, 139),
         'color3': (249, 147, 189),
     },
-    'cyber_luna': {
+    'cyber_luna_v1': {
         'color1': (249, 147, 189),
         'color2': (198, 121, 255),
         'color3': (253, 233, 139),
     },
-    'cyber_mars': {
+    'cyber_mars_v1': {
         'color1': (85, 85, 255),
         'color2': (108, 184, 255),
         'color3': (164, 114, 98),
     },
-    'cyber_somn': {
+    'cyber_somn_v1': {
         'color1': (253, 233, 139),
         'color2': (249, 147, 189),
         'color3': (255, 240, 168),
+    },
+    'cyber_luna_v2': {
+        'color1': (249, 147, 189),
+        'color2': (160, 91, 110),
+        'color3': (120, 200, 242),
+    },
+    'cyber_eris_v2': {
+        'color1': (135, 62, 255),
+        'color2': (56, 21, 139),
+        'color3': (108, 184, 255),
+    },
+    'cyber_juno_v2': {
+        'color1': (74, 169, 212),
+        'color2': (58, 122, 107),
+        'color3': (208, 235, 245),
+    },
+    'cyber_mars_v2': {
+        'color1': (60, 69, 216),
+        'color2': (112, 84, 74),
+        'color3': (85, 136, 255),
+    },
+    'cyber_lars_v2': {
+        'color1': (158, 138, 45),
+        'color2': (64, 37, 31),
+        'color3': (92, 165, 201),
+    },
+    'cyber_somn_v2': {
+        'color1': (229, 176, 196),
+        'color2': (120, 101, 90),
+        'color3': (218, 208, 245),
+    },
+    'cyber_nyx_v2': {
+        'color1': (209, 111, 138),
+        'color2': (62, 46, 42),
+        'color3': (92, 169, 212),
     },
 }
 
@@ -255,9 +339,10 @@ class StyleTransferProcessor:
 
 def create_style_processor_from_config(config_parser) -> StyleTransferProcessor:
     try:
+        from src.app.defaults import migrate_style_preset
         style_config = StyleConfig(
             style_enabled=config_parser.getboolean('Style', 'style_enabled', fallback=False),
-            style_preset=config_parser.get('Style', 'style_preset', fallback='none'),
+            style_preset=migrate_style_preset(config_parser.get('Style', 'style_preset', fallback='none')),
         )
         return StyleTransferProcessor(style_config)
     except Exception:

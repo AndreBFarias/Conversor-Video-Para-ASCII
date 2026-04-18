@@ -15,6 +15,7 @@ if BASE_DIR not in sys.path:
 from src.core.utils.color import rgb_to_ansi256
 from src.core.utils.image import sharpen_frame, apply_morphological_refinement
 from src.core.utils.ascii_converter import converter_frame_para_ascii, LUMINANCE_RAMP_DEFAULT as LUMINANCE_RAMP, COLOR_SEPARATOR
+from src.app.defaults import migrate_style_preset
 
 try:
     from src.core.auto_segmenter import AutoSegmenter, is_available as auto_seg_available
@@ -48,7 +49,7 @@ def iniciar_conversao(video_path, output_dir, config, chroma_override=None, forc
         edge_boost_enabled = config.getboolean('Conversor', 'edge_boost_enabled', fallback=False)
         edge_boost_amount = config.getint('Conversor', 'edge_boost_amount', fallback=100)
         use_edge_chars = config.getboolean('Conversor', 'use_edge_chars', fallback=True)
-        style_preset = config.get('Style', 'style_preset', fallback='none')
+        style_preset = migrate_style_preset(config.get('Style', 'style_preset', fallback='none'))
         contrast_boost = style_preset.startswith('cyber_')
 
         auto_seg_enabled = config.getboolean('Conversor', 'auto_seg_enabled', fallback=False)
