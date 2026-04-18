@@ -35,6 +35,7 @@ Conversor de vídeo para ASCII art em tempo real com aceleração GPU (CUDA), si
 | **Matrix Rain** | Sistema de partículas GPU, modos Katakana/Binary/Symbols |
 | **Audio Reactive** | Modulação por frequência (Bass/Mids/Treble) |
 | **Optical Flow** | Interpolação de frames (15 FPS para 60 FPS) |
+| **Filtros do Panteão** | 7 filtros v2 (Luna, Eris, Juno, Mars, Lars, Somn, Nyx) + 6 neon legados |
 | **Interface** | Tema Dark/Light, GTK3 moderno, Player integrado, UI reorganizada |
 | **Exportação** | TXT, MP4, GIF, HTML standalone, PNG |
 | **Deploy** | AppImage, Flatpak, .deb |
@@ -54,6 +55,28 @@ Conversor de vídeo para ASCII art em tempo real com aceleração GPU (CUDA), si
 <div align="center">
 <img src="assets/calibrator.png" width="700" alt="Calibrador Chroma Key">
 </div>
+
+---
+
+### Filtros do Panteão (v2.9.0)
+
+Sistema de filtros cyberpunk por entidade, combinando DoG edges + glow colorido + CLAHE boost + rampa Unicode própria. Selecionável no combo **Estilo Visual**.
+
+**Geração v2** (padrão atual, tom "noturno, poético, introspectivo" — princípio 60/30/10 alma/cúmplice/faísca):
+
+| Entidade | Alma | Cúmplice | Faísca |
+|----------|------|----------|--------|
+| Luna | violeta lunar | cinza-violeta | âmbar fantasma |
+| Eris | rosa-choque | vermelho veludo | âmbar ácido |
+| Juno | verde oliva | dourado antigo | marfim |
+| Mars | vermelho sangue | aço azulado | coral ardente |
+| Lars | turquesa profundo | índigo noturno | dourado críptico |
+| Somn | lilás brumoso | cinza-azulado | rosa-quartzo |
+| Nyx  | violeta monitor | grafite azulado | âmbar vigília |
+
+**Geração neon** (v2.8.0, preservada com sufixo `(neon)` no combo): 6 filtros originais com tríades saturadas.
+
+Amostras visuais: [`docs/paletas-v2-screenshots/`](docs/paletas-v2-screenshots/). Referência completa: [`docs/PRESETS_REFERENCE.md`](docs/PRESETS_REFERENCE.md).
 
 ---
 
