@@ -1,0 +1,127 @@
+name: anonymity-check
+
+# Status check obrigatorio. Reprova qualquer push cujos commits tragam
+# trailers de coautoria de IA, mensagens com mencao a ferramentas IA no
+# subject, ou identidades de autor com email de provedor IA.
+#
+# Quando marcado como required check em branch protection, falha do job
+# bloqueia merge no main mesmo que o commit tenha sido criado com
+# `--no-verify` localmente. Defesa server-side ultima.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scan-commits:
+    runs-on: ubuntu-latest
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PUSH_BEFORE: ${{ github.event.before }}
+      PUSH_AFTER: ${{ github.event.after }}
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Definir intervalo a auditar
+        id: range
+        run: |
+          set -u
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "range=${PR_BASE_SHA}..${PR_HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            if [ "$PUSH_BEFORE" = '0000000000000000000000000000000000000000' ] || [ -z "$PUSH_BEFORE" ]; then
+              echo "range=${PUSH_AFTER}" >> "$GITHUB_OUTPUT"
+            else
+              echo "range=${PUSH_BEFORE}..${PUSH_AFTER}" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Auditar mensagens de commit
+        env:
+          RANGE: ${{ steps.range.outputs.range }}
+        run: |
+          set -u
+          echo "Intervalo auditado: $RANGE"
+
+          TOOL_RE='laude|nthropic|opilot|emini|hatGPT|gpt-[0-9]|aider|ursor|indsurf|odeium|abnine|eepseek'
+          NOREPLY_RE='noreply@(anthropic|openai|github)\.com'
+
+          FAIL=0
+          MAPFILE=$(git log --pretty=format:'%H' "$RANGE" 2>/dev/null || true)
+          if [ -z "$MAPFILE" ]; then
+            echo "Nada a auditar (intervalo vazio)."
+            exit 0
+          fi
+
+          while IFS= read -r SHA; do
+            [ -z "$SHA" ] && continue
+            MSG=$(git log -1 --pretty=format:'%B' "$SHA")
+            AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae' "$SHA")
+            COMMITTER_EMAIL=$(git log -1 --pretty=format:'%ce' "$SHA")
+            SUBJECT=$(printf '%s\n' "$MSG" | head -1)
+
+              echo "::error::commit $SHA tem trailer de coautoria com IA"
+              FAIL=1
+            fi
+
+            if printf '%s\n' "$SUBJECT" | grep -qiE "($TOOL_RE)"; then
+              echo "::error::commit $SHA: subject menciona ferramenta IA"
+              FAIL=1
+            fi
+
+            if printf '%s' "$AUTHOR_EMAIL" | grep -qiE "@(anthropic|openai)\.com"; then
+              echo "::error::commit $SHA: author email de provedor IA"
+              FAIL=1
+            fi
+            if printf '%s' "$COMMITTER_EMAIL" | grep -qiE "@(anthropic|openai)\.com"; then
+              echo "::error::commit $SHA: committer email de provedor IA"
+              FAIL=1
+            fi
+          done <<<"$MAPFILE"
+
+          if [ $FAIL -ne 0 ]; then
+            echo "::error::Auditoria de anonimato falhou. Use git anonymity-rebase para limpar antes de re-pushar."
+            exit 1
+          fi
+          echo "OK: nenhum trailer/identidade IA detectado no intervalo."
+
+      - name: Auditar arquivos de instrucao IA no tree
+        run: |
+          set -u
+          BLACKLIST=(
+            'CLAUDE.md' 'AGENTS.md' 'GEMINI.md' 'COPILOT.md'
+            'HANDOFF-PROMPT.md' 'HANDOFF.md' 'HOW_TO_RESUME.md'
+            'VALIDATOR_BRIEF.md' 'STATE.md'
+            '.cursorrules' '.windsurfrules'
+          )
+          BLACKDIRS=( '.claude' '.cursor' '.aider' '.continue' )
+
+          FAIL=0
+          for f in "${BLACKLIST[@]}"; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+              echo "::error::arquivo proibido versionado: $f"
+              FAIL=1
+            fi
+          done
+          for d in "${BLACKDIRS[@]}"; do
+            if git ls-files | grep -qE "(^|/)${d//./\\.}/"; then
+              echo "::error::diretorio proibido versionado: $d/"
+              FAIL=1
+            fi
+          done
+          if git ls-files --error-unmatch '.github/copilot-instructions.md' >/dev/null 2>&1; then
+            echo "::error::arquivo proibido versionado: .github/copilot-instructions.md"
+            FAIL=1
+          fi
+          [ $FAIL -ne 0 ] && exit 1
+          echo "OK: tree sem arquivos de instrucao IA."
